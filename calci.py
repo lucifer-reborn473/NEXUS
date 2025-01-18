@@ -1,12 +1,23 @@
 from dataclasses import dataclass
 from collections.abc import Iterator
 from more_itertools import peekable
-from tokens import keyword_tokens
-
-# from typing import Optional
+from typing import Optional, Any
+from tokens import (
+    keyword_tokens,
+    base_type_tokens,
+    top_level_operator_tokens,
+    base_operator_tokens,
+)
 
 
 class AST:
+    """
+    Abstract Syntax Tree (AST) class.
+
+    This class represents the abstract syntax tree used in the compiler.
+    It serves as a base class for all nodes in the AST.
+    """
+
     pass
 
 
@@ -18,6 +29,12 @@ class BinOp(AST):
 
 
 @dataclass
+class UnaryOp(AST):
+    op: str
+    val: AST
+
+
+@dataclass
 class Number(AST):
     val: str
 
@@ -25,6 +42,18 @@ class Number(AST):
 @dataclass
 class String(AST):
     val: str
+
+
+@dataclass
+class Variable(AST):
+    name: str
+    dtype: Optional[str]
+    val: Optional[Any]
+
+
+@dataclass
+class Display(AST):
+    val: any
 
 
 def e(tree: AST) -> int:
@@ -53,6 +82,14 @@ def e(tree: AST) -> int:
             return e(l) <= e(r)
         case BinOp(">=", l, r):
             return e(l) >= e(r)
+        case UnaryOp("~", val):
+            return ~e(val)
+        case UnaryOp("!", val):
+            return not e(val)
+        case UnaryOp("++", val):
+            return e(val) + 1
+        case UnaryOp("--", val):
+            return e(val) - 1
         case If(cond, sat, else_):
             return e(sat) if e(cond) else e(else_)
         case Display(val):
@@ -84,8 +121,8 @@ class KeywordToken(Token):
 
 
 @dataclass
-class Display(AST):
-    val: any
+class TypeToken(Token):
+    t: str
 
 
 @dataclass
@@ -113,6 +150,8 @@ def lex(s: str) -> Iterator[Token]:
                 i = i + 1
             if t in keyword_tokens:
                 yield KeywordToken(t)
+            elif t in base_type_tokens:
+                yield TypeToken(t)
             else:
                 yield StringToken(t)
         elif s[i] == "'" or s[i] == '"':
@@ -138,23 +177,29 @@ def lex(s: str) -> Iterator[Token]:
         else:
             match t := s[i]:
                 case "-":
-                    if prev is None or prev in "+-*/(":
+                    if (
+                        prev is None or prev in "+-*/("
+                    ):  # check if it is a negative number
                         prev = s[i]
                         i = i + 1
                         yield NumberToken("-" + s[i])
                         i = i + 1
-                    else:
+                    else:  # check if it is a token
                         prev = s[i]
                         i = i + 1
                         yield OperatorToken(t)
-                case "+" | "*" | "/" | "(" | ")" | "<" | ">" | "==" | "!=" | "<=" | ">=":
+                case t if t in base_operator_tokens:
                     prev = s[i]
                     i = i + 1
-                    yield OperatorToken(t)
+                    if (t + s[i]) in top_level_operator_tokens:
+                        prev = s[i]
+                        i = i + 1
+                        yield OperatorToken(t + prev)
+                    else:
+                        yield (OperatorToken(t))
 
 
 def parse(s: str) -> AST:
-    from more_itertools import peekable
 
     t = peekable(lex(s))
 
@@ -187,34 +232,29 @@ def parse(s: str) -> AST:
                 return parse_cmp()
 
     def parse_cmp():
-        l = parse_sub()
-        match t.peek(None):
-            case OperatorToken("<"):
-                next(t)
-                r = parse_sub()
-                return BinOp("<", l, r)
-            case OperatorToken(">"):
-                next(t)
-                r = parse_sub()
-                return BinOp(">", l, r)
-            case OperatorToken("=="):
-                next(t)
-                r = parse_sub()
-                return BinOp("==", l, r)
-            case OperatorToken("!="):
-                next(t)
-                r = parse_sub()
-                return BinOp("!=", l, r)
-            case OperatorToken("<="):
-                next(t)
-                r = parse_sub()
-                return BinOp("<=", l, r)
-            case OperatorToken(">="):
-                next(t)
-                r = parse_sub()
-                return BinOp(">=", l, r)
-            case _:
-                return l
+        ast = parse_sub()
+        while True:
+            match t.peek(None):
+                case OperatorToken("<"):
+                    next(t)
+                    ast = BinOp("<", ast, parse_sub())
+                case OperatorToken(">"):
+                    next(t)
+                    ast = BinOp(">", ast, parse_sub())
+                case OperatorToken("=="):
+                    next(t)
+                    ast = BinOp("==", ast, parse_sub())
+                case OperatorToken("!="):
+                    next(t)
+                    ast = BinOp("!=", ast, parse_sub())
+                case OperatorToken("<="):
+                    next(t)
+                    ast = BinOp("<=", ast, parse_sub())
+                case OperatorToken(">="):
+                    next(t)
+                    ast = BinOp(">=", ast, parse_sub())
+                case _:
+                    return ast
 
     def parse_sub():
         ast = parse_add()
@@ -298,8 +338,11 @@ if __name__ == "__main__":
     # sample_exp="if 2 < 3 then 0 end"
     # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
-    expr = "display (3 *(3+1*(4-1)) /2) "
-    exp_2 = "display ('hello peeps')"
+    # expr = "display (3 *(3+1*(4-1)) /2) "
+    expr = "display 0<= 1 >=2 "
+    exp_2 = "var integer x=2"
+    for t in lex(expr):
+        print(t)
     # t = peekable(lex(expr))
     # print(t.peek(None))
     # next(t)
