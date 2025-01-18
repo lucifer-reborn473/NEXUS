@@ -8,6 +8,7 @@ from tokens import (
     top_level_operator_tokens,
     base_operator_tokens,
 )
+from context import Context
 
 
 class AST:
@@ -20,6 +21,29 @@ class AST:
 
     pass
 
+class ABT: #unused for the time being
+    """
+    ABT (Abstract Binding Tree) class.
+
+    This class represents an abstract binding tree used in the compilation process.
+    It is designed to handle the structure and operations related to the binding of
+    variables and expressions in a compiler.
+    """
+    pass
+
+@dataclass
+class Binding(AST):
+    name: str
+    dtype: Optional[str]
+    value: AST
+
+        
+@dataclass
+class Variable(AST):
+    name: str
+    
+    def eval(self,context):
+        return context[self.name]
 
 @dataclass
 class BinOp(AST):
@@ -43,20 +67,13 @@ class Number(AST):
 class String(AST):
     val: str
 
-
-@dataclass
-class Variable(AST):
-    name: str
-    dtype: Optional[str]
-    val: Optional[Any]
-
-
 @dataclass
 class Display(AST):
     val: any
 
 
 def e(tree: AST) -> int:
+    context=Context()
     match tree:
         case Number(v):
             return int(v)
@@ -94,7 +111,9 @@ def e(tree: AST) -> int:
             return e(sat) if e(cond) else e(else_)
         case Display(val):
             return print(e(val))
-
+        case Binding(name, dtype, value):
+            context.add_variable(name,e(value),dtype)
+            return context #temporary return value
 
 class Token:
     pass
@@ -125,6 +144,7 @@ class TypeToken(Token):
     t: str
 
 
+
 @dataclass
 class If(AST):
     c: AST
@@ -134,7 +154,8 @@ class If(AST):
 
 def lex(s: str) -> Iterator[Token]:
     i = 0
-    prev = None
+    prev_char = None
+    prev_token= None
     while True:
         while i < len(s) and s[i].isspace():
             i = i + 1
@@ -168,7 +189,7 @@ def lex(s: str) -> Iterator[Token]:
 
         elif s[i].isdigit():
             t = s[i]
-            prev = s[i]
+            prev_char = s[i]
             i = i + 1
             while i < len(s) and s[i].isdigit():
                 t = t + s[i]
@@ -178,23 +199,23 @@ def lex(s: str) -> Iterator[Token]:
             match t := s[i]:
                 case "-":
                     if (
-                        prev is None or prev in "+-*/("
+                        prev_char is None or prev_char in "+-*/("
                     ):  # check if it is a negative number
-                        prev = s[i]
+                        prev_char = s[i]
                         i = i + 1
                         yield NumberToken("-" + s[i])
                         i = i + 1
                     else:  # check if it is a token
-                        prev = s[i]
+                        prev_char = s[i]
                         i = i + 1
                         yield OperatorToken(t)
                 case t if t in base_operator_tokens:
-                    prev = s[i]
+                    prev_char = s[i]
                     i = i + 1
-                    if (t + s[i]) in top_level_operator_tokens:
-                        prev = s[i]
+                    if i<len(s) and (t + s[i]) in top_level_operator_tokens:
+                        prev_char = s[i]
                         i = i + 1
-                        yield OperatorToken(t + prev)
+                        yield OperatorToken(t + prev_char)
                     else:
                         yield (OperatorToken(t))
 
@@ -210,13 +231,36 @@ def parse(s: str) -> AST:
         raise SyntaxError(f"Expected {what}")
 
     def parse_display():
-        match t.peek(None):
-            case KeywordToken("display"):
-                next(t)
-                return Display(parse_if())
-            case _:
-                return parse_if()
+        ast=parse_var()
+        while True:
+            match t.peek(None):
+                case KeywordToken("display"):
+                    next(t)
+                    ast=Display(parse_var())
+                case _:
+                    return ast
 
+    def parse_var():
+        ast=parse_if()
+        while True:
+            match t.peek(None):
+                case KeywordToken("var"):
+                    next(t)
+                    dtype=None
+                    if isinstance(t.peek(None), TypeToken):
+                        dtype= t.peek(None).t
+                        next(t)
+                    # print(t.peek(None))
+                    if isinstance(t.peek(None), StringToken):
+                        name = t.peek(None).s
+                        next(t)
+                    # print(t.peek(None))
+                    expect(OperatorToken("="))
+                    next(t)
+                    value = parse_var()
+                    ast=Binding(name, dtype, value)
+                case _:
+                    return ast
     def parse_if():
         match t.peek(None):
             case KeywordToken("if"):
@@ -300,13 +344,13 @@ def parse(s: str) -> AST:
         match t.peek(None):
             case OperatorToken("("):
                 next(t)
-                ast = parse_sub()
+                ast = parse_display()
                 match t.peek(None):
                     case OperatorToken(")"):
                         next(t)
                         return ast
                     case _:
-                        raise SyntaxError("Expected ')'")
+                        raise SyntaxError(f"Expected ')' got {t.peek(None)}")
             case _:
                 return parse_string()
 
@@ -339,15 +383,17 @@ if __name__ == "__main__":
     # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
     # expr = "display (3 *(3+1*(4-1)) /2) "
-    expr = "display 0<= 1 >=2 "
-    exp_2 = "var integer x=2"
+    # expr = "display 0<= 1 >=2 "
+    expr = " display( var integer x= (2+ 1))"
     for t in lex(expr):
         print(t)
     # t = peekable(lex(expr))
     # print(t.peek(None))
     # next(t)
     # print(t.peek(None))
+    print("Parsed expression:")
     print(parse(expr))
+    print("Evaluated expression:")
     e(parse(expr))
     # loop <condition> then <statement> end
     # int32 x=2
