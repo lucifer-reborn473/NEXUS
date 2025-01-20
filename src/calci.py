@@ -113,7 +113,7 @@ def e(tree: AST) -> int:
             return print(e(val))
         case Binding(name, dtype, value):
             context.add_variable(name,e(value),dtype)
-            return context #temporary return value
+            return context #temporary return value -> will be removed later
 
 class Token:
     pass
@@ -199,7 +199,7 @@ def lex(s: str) -> Iterator[Token]:
             match t := s[i]:
                 case "-":
                     if (
-                        prev_char is None or prev_char in "+-*/("
+                        prev_char is None or prev_char in "+-*/(<>!="
                     ):  # check if it is a negative number
                         prev_char = s[i]
                         i = i + 1
@@ -385,6 +385,7 @@ if __name__ == "__main__":
     # expr = "display (3 *(3+1*(4-1)) /2) "
     # expr = "display 0<= 1 >=2 "
     expr = " display( var integer x= (2+ 1))"
+    compound_assignment= "display ( -3 < -2 <-1)"
     for t in lex(expr):
         print(t)
     # t = peekable(lex(expr))

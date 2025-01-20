@@ -20,13 +20,13 @@ class Context:
     def add_variable(self, name: str, value: Any, var_type: Optional[str] = None, redundant: Optional[Any] = None):
         if not isinstance(name, str):
             raise TypeError(f"Variable name must be a string, got {type(name)}")
-        # if var_type:
-        #     try:
-        #         get_type= eval(self.type_map[var_type])
-        #         print(get_type)
-        #         value= get_type(value)
-        #     except (NameError, ValueError, TypeError) as e:
-        #         print (f"Error: Cannot convert '{value}' to type '{var_type}'. {e}")
+        if var_type:
+            if var_type not in self.type_map:
+                raise TypeError(f"Invalid variable type: {var_type}")
+            try:
+                value = self.type_map[var_type](value)
+            except ValueError as e:
+                raise ValueError(f"Cannot convert {value} to {var_type}: {e}")
 
         self.variables[name] = VariableInfo(value, var_type, redundant)
 
