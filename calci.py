@@ -53,6 +53,28 @@ def e(tree: AST) -> int:
             return e(l) <= e(r)
         case BinOp(">=", l, r):
             return e(l) >= e(r)
+
+    
+        case BinOp("and", l, r):
+            return e(l) and e(r)
+        case BinOp("or", l, r):
+            return e(l) or e(r)
+        case BinOp("&", l, r):
+            return e(l) & e(r)
+        case BinOp("|", l, r):
+            return e(l) | e(r)
+        case BinOp("^", l, r):
+            return e(l) ^ e(r)
+        case BinOp("<<", l, r):
+            return e(l) << e(r)
+        case BinOp(">>", l, r):
+            return e(l) >> e(r)
+        case BinOp("not", l, _):  # Unary logical operator
+            return not e(l)
+        case BinOp("~", l, _):  # Unary bitwise operator
+            return ~e(l)
+
+  
         case If(cond, sat, else_):
             return e(sat) if e(cond) else e(else_)
         case Display(val):
@@ -153,6 +175,26 @@ def lex(s: str) -> Iterator[Token]:
                     yield OperatorToken(t)
 
 
+        elif s[i] in {'&', '|', '^', '~'}:
+            match t := s[i]:
+                case "&" | "|" | "^" | "~":
+                    prev = s[i]
+                    i += 1
+                    yield OperatorToken(t)
+                case "<" | ">":
+                    if i + 1 < len(s) and s[i + 1] == t:  # << or >>
+                    prev = s[i]
+                    i += 2
+                    yield OperatorToken(t * 2)
+                else:
+                    prev = s[i]
+                    i += 1
+                    yield OperatorToken(t)
+                    if t in {"and", "or", "not"}:
+                    yield KeywordToken(t)
+
+
+
 def parse(s: str) -> AST:
     from more_itertools import peekable
 
@@ -165,12 +207,13 @@ def parse(s: str) -> AST:
         raise SyntaxError(f"Expected {what}")
 
     def parse_display():
-        match t.peek(None):
-            case KeywordToken("display"):
-                next(t)
-                return Display(parse_if())
-            case _:
-                return parse_if()
+    match t.peek(None):
+        case KeywordToken("display"):
+            next(t)
+            return Display(parse_logic())
+        case _:
+            return parse_logic()
+
 
     def parse_if():
         match t.peek(None):
@@ -287,6 +330,50 @@ def parse(s: str) -> AST:
     return parse_display()
 
 
+    def parse_logic():
+    ast = parse_bitwise()
+    while True:
+        match t.peek(None):
+            case KeywordToken("and"):
+                next(t)
+                ast = BinOp("and", ast, parse_bitwise())
+            case KeywordToken("or"):
+                next(t)
+                ast = BinOp("or", ast, parse_bitwise())
+            case _:
+                return ast
+
+    def parse_bitwise():
+        ast = parse_shift()
+        while True:
+            match t.peek(None):
+                case OperatorToken("&"):
+                    next(t)
+                    ast = BinOp("&", ast, parse_shift())
+                case OperatorToken("|"):
+                    next(t)
+                    ast = BinOp("|", ast, parse_shift())
+                case OperatorToken("^"):
+                    next(t)
+                    ast = BinOp("^", ast, parse_shift())
+                case _:
+                    return ast
+    
+    def parse_shift():
+        ast = parse_brackets()
+        while True:
+            match t.peek(None):
+                case OperatorToken("<<"):
+                    next(t)
+                    ast = BinOp("<<", ast, parse_brackets())
+                case OperatorToken(">>"):
+                    next(t)
+                    ast = BinOp(">>", ast, parse_brackets())
+                case _:
+                    return ast
+
+
+
 if __name__ == "__main__":
     # expression=" (5-4)*5+ (8-2)/3"
     # print(parse(expression))
@@ -300,6 +387,14 @@ if __name__ == "__main__":
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
     expr = "display (3 *(3+1*(4-1)) /2) "
     exp_2 = "display ('hello peeps')"
+
+    
+    expr = "display (3 & 1 | 2 ^ 1)"  # Bitwise operations
+    e(parse(expr))
+    
+    expr = "display (3 < 4 and 5 > 2)"  # Logical operations
+    e(parse(expr))
+
     # t = peekable(lex(expr))
     # print(t.peek(None))
     # next(t)
