@@ -24,3 +24,5 @@
 - [ ]
 - [ ]
 - [ ]
+
+variable assignment, comparision(chained), compound assignment

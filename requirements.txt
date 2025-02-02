@@ -1,3 +1,2 @@
 more_itertools
-pre-commit
-pytest
+

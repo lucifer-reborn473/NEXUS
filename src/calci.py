@@ -1,20 +1,61 @@
 from dataclasses import dataclass
 from collections.abc import Iterator
 from more_itertools import peekable
-from tokens import keyword_tokens
-
-# from typing import Optional
+from typing import Optional, Any
+from tokens import (
+    keyword_tokens,
+    base_type_tokens,
+    top_level_operator_tokens,
+    base_operator_tokens,
+)
+from context import Context
 
 
 class AST:
+    """
+    Abstract Syntax Tree (AST) class.
+
+    This class represents the abstract syntax tree used in the compiler.
+    It serves as a base class for all nodes in the AST.
+    """
+
     pass
 
+class ABT: #unused for the time being
+    """
+    ABT (Abstract Binding Tree) class.
+
+    This class represents an abstract binding tree used in the compilation process.
+    It is designed to handle the structure and operations related to the binding of
+    variables and expressions in a compiler.
+    """
+    pass
+
+@dataclass
+class Binding(AST):
+    name: str
+    dtype: Optional[str]
+    value: AST
+
+        
+@dataclass
+class Variable(AST):
+    name: str
+    
+    def eval(self,context):
+        return context[self.name]
 
 @dataclass
 class BinOp(AST):
     op: str
     left: AST
     right: AST
+
+
+@dataclass
+class UnaryOp(AST):
+    op: str
+    val: AST
 
 
 @dataclass
@@ -26,8 +67,13 @@ class Number(AST):
 class String(AST):
     val: str
 
+@dataclass
+class Display(AST):
+    val: any
+
 
 def e(tree: AST) -> int:
+    context=Context()
     match tree:
         case Number(v):
             return int(v)
@@ -53,11 +99,21 @@ def e(tree: AST) -> int:
             return e(l) <= e(r)
         case BinOp(">=", l, r):
             return e(l) >= e(r)
+        case UnaryOp("~", val):
+            return ~e(val)
+        case UnaryOp("!", val):
+            return not e(val)
+        case UnaryOp("++", val):
+            return e(val) + 1
+        case UnaryOp("--", val):
+            return e(val) - 1
         case If(cond, sat, else_):
             return e(sat) if e(cond) else e(else_)
         case Display(val):
             return print(e(val))
-
+        case Binding(name, dtype, value):
+            context.add_variable(name,e(value),dtype)
+            return context #temporary return value -> will be removed later
 
 class Token:
     pass
@@ -84,8 +140,9 @@ class KeywordToken(Token):
 
 
 @dataclass
-class Display(AST):
-    val: any
+class TypeToken(Token):
+    t: str
+
 
 
 @dataclass
@@ -97,7 +154,8 @@ class If(AST):
 
 def lex(s: str) -> Iterator[Token]:
     i = 0
-    prev = None
+    prev_char = None
+    prev_token= None
     while True:
         while i < len(s) and s[i].isspace():
             i = i + 1
@@ -113,6 +171,8 @@ def lex(s: str) -> Iterator[Token]:
                 i = i + 1
             if t in keyword_tokens:
                 yield KeywordToken(t)
+            elif t in base_type_tokens:
+                yield TypeToken(t)
             else:
                 yield StringToken(t)
         elif s[i] == "'" or s[i] == '"':
@@ -129,7 +189,7 @@ def lex(s: str) -> Iterator[Token]:
 
         elif s[i].isdigit():
             t = s[i]
-            prev = s[i]
+            prev_char = s[i]
             i = i + 1
             while i < len(s) and s[i].isdigit():
                 t = t + s[i]
@@ -138,23 +198,29 @@ def lex(s: str) -> Iterator[Token]:
         else:
             match t := s[i]:
                 case "-":
-                    if prev is None or prev in "+-*/(":
-                        prev = s[i]
+                    if (
+                        prev_char is None or prev_char in "+-*/(<>!="
+                    ):  # check if it is a negative number
+                        prev_char = s[i]
                         i = i + 1
                         yield NumberToken("-" + s[i])
                         i = i + 1
-                    else:
-                        prev = s[i]
+                    else:  # check if it is a token
+                        prev_char = s[i]
                         i = i + 1
                         yield OperatorToken(t)
-                case "+" | "*" | "/" | "(" | ")" | "<" | ">" | "==" | "!=" | "<=" | ">=":
-                    prev = s[i]
+                case t if t in base_operator_tokens:
+                    prev_char = s[i]
                     i = i + 1
-                    yield OperatorToken(t)
+                    if i<len(s) and (t + s[i]) in top_level_operator_tokens:
+                        prev_char = s[i]
+                        i = i + 1
+                        yield OperatorToken(t + prev_char)
+                    else:
+                        yield (OperatorToken(t))
 
 
 def parse(s: str) -> AST:
-    from more_itertools import peekable
 
     t = peekable(lex(s))
 
@@ -165,13 +231,36 @@ def parse(s: str) -> AST:
         raise SyntaxError(f"Expected {what}")
 
     def parse_display():
-        match t.peek(None):
-            case KeywordToken("display"):
-                next(t)
-                return Display(parse_if())
-            case _:
-                return parse_if()
+        ast=parse_var()
+        while True:
+            match t.peek(None):
+                case KeywordToken("display"):
+                    next(t)
+                    ast=Display(parse_var())
+                case _:
+                    return ast
 
+    def parse_var():
+        ast=parse_if()
+        while True:
+            match t.peek(None):
+                case KeywordToken("var"):
+                    next(t)
+                    dtype=None
+                    if isinstance(t.peek(None), TypeToken):
+                        dtype= t.peek(None).t
+                        next(t)
+                    # print(t.peek(None))
+                    if isinstance(t.peek(None), StringToken):
+                        name = t.peek(None).s
+                        next(t)
+                    # print(t.peek(None))
+                    expect(OperatorToken("="))
+                    next(t)
+                    value = parse_var()
+                    ast=Binding(name, dtype, value)
+                case _:
+                    return ast
     def parse_if():
         match t.peek(None):
             case KeywordToken("if"):
@@ -187,34 +276,29 @@ def parse(s: str) -> AST:
                 return parse_cmp()
 
     def parse_cmp():
-        l = parse_sub()
-        match t.peek(None):
-            case OperatorToken("<"):
-                next(t)
-                r = parse_sub()
-                return BinOp("<", l, r)
-            case OperatorToken(">"):
-                next(t)
-                r = parse_sub()
-                return BinOp(">", l, r)
-            case OperatorToken("=="):
-                next(t)
-                r = parse_sub()
-                return BinOp("==", l, r)
-            case OperatorToken("!="):
-                next(t)
-                r = parse_sub()
-                return BinOp("!=", l, r)
-            case OperatorToken("<="):
-                next(t)
-                r = parse_sub()
-                return BinOp("<=", l, r)
-            case OperatorToken(">="):
-                next(t)
-                r = parse_sub()
-                return BinOp(">=", l, r)
-            case _:
-                return l
+        ast = parse_sub()
+        while True:
+            match t.peek(None):
+                case OperatorToken("<"):
+                    next(t)
+                    ast = BinOp("<", ast, parse_sub())
+                case OperatorToken(">"):
+                    next(t)
+                    ast = BinOp(">", ast, parse_sub())
+                case OperatorToken("=="):
+                    next(t)
+                    ast = BinOp("==", ast, parse_sub())
+                case OperatorToken("!="):
+                    next(t)
+                    ast = BinOp("!=", ast, parse_sub())
+                case OperatorToken("<="):
+                    next(t)
+                    ast = BinOp("<=", ast, parse_sub())
+                case OperatorToken(">="):
+                    next(t)
+                    ast = BinOp(">=", ast, parse_sub())
+                case _:
+                    return ast
 
     def parse_sub():
         ast = parse_add()
@@ -260,13 +344,13 @@ def parse(s: str) -> AST:
         match t.peek(None):
             case OperatorToken("("):
                 next(t)
-                ast = parse_sub()
+                ast = parse_display()
                 match t.peek(None):
                     case OperatorToken(")"):
                         next(t)
                         return ast
                     case _:
-                        raise SyntaxError("Expected ')'")
+                        raise SyntaxError(f"Expected ')' got {t.peek(None)}")
             case _:
                 return parse_string()
 
@@ -298,13 +382,19 @@ if __name__ == "__main__":
     # sample_exp="if 2 < 3 then 0 end"
     # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
-    expr = "display (3 *(3+1*(4-1)) /2) "
-    exp_2 = "display ('hello peeps')"
+    # expr = "display (3 *(3+1*(4-1)) /2) "
+    # expr = "display 0<= 1 >=2 "
+    expr = " display( var integer x= (2+ 1))"
+    compound_assignment= "display ( -3 < -2 <-1)"
+    for t in lex(expr):
+        print(t)
     # t = peekable(lex(expr))
     # print(t.peek(None))
     # next(t)
     # print(t.peek(None))
+    print("Parsed expression:")
     print(parse(expr))
+    print("Evaluated expression:")
     e(parse(expr))
     # loop <condition> then <statement> end
     # int32 x=2
