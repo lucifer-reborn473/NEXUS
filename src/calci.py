@@ -2,12 +2,7 @@ from dataclasses import dataclass
 from collections.abc import Iterator
 from more_itertools import peekable
 from typing import Optional, Any
-from tokens import (
-    keyword_tokens,
-    base_type_tokens,
-    top_level_operator_tokens,
-    base_operator_tokens,
-)
+from tokens import  *
 from context import Context
 
 
@@ -72,54 +67,68 @@ class Display(AST):
     val: any
 
 
-def e(tree: AST) -> int:
-    context=Context()
+@dataclass
+class CompoundAssignment(AST):
+    var_name: str
+    op: str
+    value: AST
+
+
+def e(tree: AST, context: Optional[Context] = None) -> Any:
+    if context is None:
+        context = Context()
     match tree:
         case Number(v):
             return int(v)
         case String(s):
             return s
         case BinOp("+", l, r):
-            return e(l) + e(r)
+            return e(l, context) + e(r, context)
         case BinOp("*", l, r):
-            return e(l) * e(r)
+            return e(l, context) * e(r, context)
         case BinOp("-", l, r):
-            return e(l) - e(r)
+            return e(l, context) - e(r, context)
         case BinOp("÷", l, r):
-            return e(l) / e(r)
+            return e(l,context) / e(r,context)
         case BinOp("/", l, r):
-            return e(l) / e(r)
+            return e(l, context) / e(r, context)
         case BinOp("<", l, r):
-            return e(l) < e(r)
+            return e(l, context) < e(r, context)
         case BinOp(">", l, r):
-            return e(l) > e(r)
+            return e(l, context) > e(r, context)
         case BinOp("==", l, r):
-            return e(l) == e(r)
+            return e(l, context) == e(r, context)
         case BinOp("!=", l, r):
-            return e(l) != e(r)
+            return e(l, context) != e(r, context)
         case BinOp("<=", l, r):
-            return e(l) <= e(r)
+            return e(l, context) <= e(r, context)
         case BinOp(">=", l, r):
-            return e(l) >= e(r)
+            return e(l, context) >= e(r, context)
+        case BinOp("%", l, r):
+            return e(l, context) % e(r, context)
         case UnaryOp("~", val):
-            return ~e(val)
+            return ~e(val, context)
         case UnaryOp("!", val):
-            return not e(val)
-        case UnaryOp("++", val):
-            return e(val) + 1
-        case UnaryOp("--", val):
-            return e(val) - 1
+            return not e(val, context)
+        case CompoundAssignment(var_name, op, value):
+            var_value = context.get_variable(var_name).value
+            context.update_variable(var_name, e(BinOp(op[0], Number(var_value), value), context))
+            return context  # temporary return value -> will be removed later
         case If(cond, sat, else_):
-            return e(sat) if e(cond) else e(else_)
+            return e(sat, context) if e(cond, context) else e(else_, context)
         case Display(val):
-            return print(e(val))
+            return print(e(val, context))
         case Binding(name, dtype, value):
-            context.add_variable(name,e(value),dtype)
-            return context #temporary return value -> will be removed later
+            context.add_variable(name, e(value, context), dtype)
+            return context  # temporary return value -> will be removed later
 
 class Token:
     pass
 
+
+@dataclass
+class VarToken(Token):
+    var_name : str
 
 @dataclass
 class NumberToken(Token):
@@ -176,7 +185,7 @@ def lex(s: str) -> Iterator[Token]:
             elif t in base_type_tokens:
                 yield TypeToken(t)
             else:
-                yield StringToken(t)
+                yield VarToken(t)
         elif s[i] == "'" or s[i] == '"':
             quote = s[i]
             i = i + 1
@@ -200,8 +209,11 @@ def lex(s: str) -> Iterator[Token]:
         else:
             match t := s[i]:
                 case "-":
-                    if (
-                        prev_char is None or prev_char in "+-*/(<>!="
+                    if (s[i+1]=="="):
+                        i=i+2
+                        yield OperatorToken("-=")
+                    elif (
+                        prev_char is None or prev_char in "+-*/(<>!=%"
                     ):  # check if it is a negative number
                         prev_char = s[i]
                         i = i + 1
@@ -230,7 +242,16 @@ def parse(s: str) -> AST:
         if t.peek(None) == what:
             next(t)
             return
-        raise SyntaxError(f"Expected {what}")
+        raise SyntaxError(f"Expected {what} got {t.peek(None)}")
+    
+    def expect_any(expected_tokens: list[Token]):
+        next_token = t.peek(None)  
+
+        if next_token.o in expected_tokens:
+            next(t)  
+            return
+        
+        raise SyntaxError(f"Expected one of {expected_tokens}, but got {next_token}")
 
     def parse_display():
         ast=parse_var()
@@ -241,9 +262,9 @@ def parse(s: str) -> AST:
                     ast=Display(parse_var())
                 case _:
                     return ast
-
-    def parse_var():
-        ast=parse_if()
+    
+    def parse_var(): #for var declaration
+        ast=parse_update_var()
         while True:
             match t.peek(None):
                 case KeywordToken("var"):
@@ -253,15 +274,30 @@ def parse(s: str) -> AST:
                         dtype= t.peek(None).t
                         next(t)
                     # print(t.peek(None))
-                    if isinstance(t.peek(None), StringToken):
-                        name = t.peek(None).s
-                        next(t)
+                    if isinstance(t.peek(None), VarToken):
+                        name = t.peek(None).var_name
+                        next(t) 
                     # print(t.peek(None))
                     expect(OperatorToken("="))
-                    next(t)
+                    # print(t.peek(None))
                     value = parse_var()
                     ast=Binding(name, dtype, value)
                 case _:
+                    return ast
+    def parse_update_var(): # for updating var
+        ast =parse_if()
+        while True:
+            match t.peek(None):
+                case VarToken(var_name):
+                    next(t)
+                    if isinstance(t.peek(None),OperatorToken) and t.peek(None).o in compound_assigners:
+                        op=t.peek(None).o
+                        next(t)
+                        value=parse_if()
+                        ast=CompoundAssignment(var_name,op,value)
+                    else:
+                        return ast
+                case _ :
                     return ast
     def parse_if():
         match t.peek(None):
@@ -323,12 +359,21 @@ def parse(s: str) -> AST:
                     return ast
 
     def parse_mul():
-        ast = parse_div_slash()
+        ast = parse_modulo()
         while True:
             match t.peek(None):
                 case OperatorToken("*"):
                     next(t)
-                    ast = BinOp("*", ast, parse_div_slash())
+                    ast = BinOp("*", ast, parse_modulo())
+                case _:
+                    return ast
+    def parse_modulo():
+        ast =parse_div_slash()
+        while True:
+            match t.peek(None):
+                case OperatorToken("%"):
+                    next(t)
+                    ast=BinOp("%",ast,parse_div_slash())
                 case _:
                     return ast
 
@@ -353,20 +398,21 @@ def parse(s: str) -> AST:
                     return ast
 
     def parse_brackets():
-        match t.peek(None):
-            case OperatorToken("("):
-                next(t)
-                ast = parse_display()
-                match t.peek(None):
-                    case OperatorToken(")"):
-                        next(t)
-                        return ast
-                    case _:
-                        raise SyntaxError(f"Expected ')' got {t.peek(None)}")
-            case _:
-                return parse_string()
+        while True:
+            match t.peek(None):
+                case OperatorToken("("):
+                    next(t)
+                    ast = parse_display()
+                    match t.peek(None):
+                        case OperatorToken(")"):
+                            next(t)
+                            return ast
+                        case _:
+                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
+                case _:
+                    return parse_string()
 
-    def parse_string():
+    def parse_string(): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
                 next(t)
@@ -374,7 +420,7 @@ def parse(s: str) -> AST:
             case _:
                 return parse_atom()
 
-    def parse_atom():
+    def parse_atom(): # while True may be included in future
         match t.peek(None):
             case NumberToken(v):
                 next(t)
@@ -394,10 +440,11 @@ if __name__ == "__main__":
     # sample_exp="if 2 < 3 then 0 end"
     # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
-    # expr = "display (3 *(3+1*(4-1)) /2) "
+    # expr = "display 2+1 "
     # expr = "display 0<= 1 >=2 "
-    expr = " display( var integer x= (2+ 1))"
-    compound_assignment= "display ( -3 < -2 <-1)"
+    context=Context()
+    expr = " display( var integer x= 3+ 7 -1)"
+    compound_assignment= "display (x-=2)"
     for t in lex(expr):
         print(t)
     # t = peekable(lex(expr))
@@ -407,6 +454,13 @@ if __name__ == "__main__":
     print("Parsed expression:")
     print(parse(expr))
     print("Evaluated expression:")
-    e(parse(expr))
+    e(parse(expr),context)
+    for t in lex(compound_assignment):
+        print(t)
+    print("Parsed expression:")
+    print(parse(compound_assignment))
+    print("Evaluated expression:")
+    e(parse(compound_assignment),context)
+
     # loop <condition> then <statement> end
     # int32 x=2

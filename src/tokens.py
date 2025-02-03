@@ -35,14 +35,25 @@ base_operator_tokens = (
     "<",
     ">",
     "=",
+    "%",
     "!",
 )
 
-top_level_operator_tokens = (
-    # "++", will be added later
+compound_assigners = (
+    "+=",
+    "*=",
+    "-=",
+    "/=",
+    "%=",
+)
+
+assignment = ("=",) + compound_assigners
+
+logical_compounds=(
     "==",
     "!=",
     "<=",
     ">=",
-    # "--", will be added later
 )
+
+top_level_operator_tokens =  compound_assigners + logical_compounds
