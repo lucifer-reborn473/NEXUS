@@ -1,5 +1,5 @@
 import pytest
-from ..src.calci import *
+from src.calci import *
 
 
 def test_basic_expression():
