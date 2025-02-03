@@ -88,6 +88,8 @@ def e(tree: AST, context: Optional[Context] = None) -> Any:
             return e(l, context) * e(r, context)
         case BinOp("-", l, r):
             return e(l, context) - e(r, context)
+        case BinOp("÷", l, r):
+            return e(l,context) / e(r,context)
         case BinOp("/", l, r):
             return e(l, context) / e(r, context)
         case BinOp("<", l, r):
@@ -366,22 +368,32 @@ def parse(s: str) -> AST:
                 case _:
                     return ast
     def parse_modulo():
-        ast =parse_div()
+        ast =parse_div_slash()
         while True:
             match t.peek(None):
                 case OperatorToken("%"):
                     next(t)
-                    ast=BinOp("%",ast,parse_div())
+                    ast=BinOp("%",ast,parse_div_slash())
                 case _:
                     return ast
 
-    def parse_div():
-        ast = parse_brackets()
+    def parse_div_slash():
+        ast = parse_div_dot()
         while True:
             match t.peek(None):
                 case OperatorToken("/"):
                     next(t)
-                    ast = BinOp("/", ast, parse_brackets())
+                    ast = BinOp("/", ast, parse_div_dot())
+                case _:
+                    return ast
+
+    def parse_div_dot():
+        ast = parse_brackets()
+        while True:
+            match t.peek(None):
+                case OperatorToken("÷"):
+                    next(t)
+                    ast = BinOp("÷", ast, parse_brackets())
                 case _:
                     return ast
 
