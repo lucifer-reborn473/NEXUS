@@ -256,7 +256,7 @@ def parse(s: str) -> AST:
                         next(t)
                     # print(t.peek(None))
                     expect(OperatorToken("="))
-                    next(t)
+                    # print(t.peek(None))
                     value = parse_var()
                     ast=Binding(name, dtype, value)
                 case _:
@@ -341,20 +341,21 @@ def parse(s: str) -> AST:
                     return ast
 
     def parse_brackets():
-        match t.peek(None):
-            case OperatorToken("("):
-                next(t)
-                ast = parse_display()
-                match t.peek(None):
-                    case OperatorToken(")"):
-                        next(t)
-                        return ast
-                    case _:
-                        raise SyntaxError(f"Expected ')' got {t.peek(None)}")
-            case _:
-                return parse_string()
+        while True:
+            match t.peek(None):
+                case OperatorToken("("):
+                    next(t)
+                    ast = parse_display()
+                    match t.peek(None):
+                        case OperatorToken(")"):
+                            next(t)
+                            return ast
+                        case _:
+                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
+                case _:
+                    return parse_string()
 
-    def parse_string():
+    def parse_string(): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
                 next(t)
@@ -362,7 +363,7 @@ def parse(s: str) -> AST:
             case _:
                 return parse_atom()
 
-    def parse_atom():
+    def parse_atom(): # while True may be included in future
         match t.peek(None):
             case NumberToken(v):
                 next(t)
@@ -382,9 +383,9 @@ if __name__ == "__main__":
     # sample_exp="if 2 < 3 then 0 end"
     # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
-    # expr = "display (3 *(3+1*(4-1)) /2) "
+    # expr = "display 2+1 "
     # expr = "display 0<= 1 >=2 "
-    expr = " display( var integer x= (2+ 1))"
+    expr = " display( var integer x= (2 + 1))"
     compound_assignment= "display ( -3 < -2 <-1)"
     for t in lex(expr):
         print(t)
