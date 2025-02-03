@@ -99,6 +99,8 @@ def e(tree: AST) -> int:
             return e(l) <= e(r)
         case BinOp(">=", l, r):
             return e(l) >= e(r)
+        case BinOp("%", l , r):
+            return e(l) % e(r)
         case UnaryOp("~", val):
             return ~e(val)
         case UnaryOp("!", val):
@@ -199,7 +201,7 @@ def lex(s: str) -> Iterator[Token]:
             match t := s[i]:
                 case "-":
                     if (
-                        prev_char is None or prev_char in "+-*/(<>!="
+                        prev_char is None or prev_char in "+-*/(<>!=%"
                     ):  # check if it is a negative number
                         prev_char = s[i]
                         i = i + 1
@@ -321,12 +323,21 @@ def parse(s: str) -> AST:
                     return ast
 
     def parse_mul():
-        ast = parse_div()
+        ast = parse_modulo()
         while True:
             match t.peek(None):
                 case OperatorToken("*"):
                     next(t)
-                    ast = BinOp("*", ast, parse_div())
+                    ast = BinOp("*", ast, parse_modulo())
+                case _:
+                    return ast
+    def parse_modulo():
+        ast =parse_div()
+        while True:
+            match t.peek(None):
+                case OperatorToken("%"):
+                    next(t)
+                    ast=BinOp("%",ast,parse_div())
                 case _:
                     return ast
 
@@ -385,7 +396,7 @@ if __name__ == "__main__":
     # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
     # expr = "display 2+1 "
     # expr = "display 0<= 1 >=2 "
-    expr = " display( var integer x= (2 + 1))"
+    expr = " display( var integer x= (2 + 1 + 5 % 2 ))"
     compound_assignment= "display ( -3 < -2 <-1)"
     for t in lex(expr):
         print(t)

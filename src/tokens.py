@@ -34,8 +34,11 @@ base_operator_tokens = (
     "<",
     ">",
     "=",
+    "%",
     "!",
 )
+
+assignment = ("=")
 
 top_level_operator_tokens = (
     # "++", will be added later
