@@ -206,6 +206,23 @@ def lex(s: str) -> Iterator[Token]:
                 t = t + s[i]
                 i = i + 1
             yield NumberToken(t)
+        
+        # Single-line and Inline comments: /~ ... ~/
+        elif s[i:i+2] == "/~":
+            i += 2  # skip "/~"
+            while i < len(s) and s[i:i+2] != "~/":
+                i += 1
+            i += 2  # skip "~/"
+            continue 
+
+        # Multi-line comments: /~ { ... } ~/
+        elif s[i:i+3] == "/~{":
+            i += 3  # skip "/~{"
+            while i < len(s) and s[i:i+3] != "}~/":
+                i += 1
+            i += 3  # skip "}~/"
+            continue 
+        
         else:
             match t := s[i]:
                 case "-":
