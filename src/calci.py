@@ -117,8 +117,19 @@ def lex(s: str) -> Iterator[Token]:
                     ):  # check if it is a negative number
                         prev_char = s[i]
                         i = i + 1
-                        yield NumberToken("-" + s[i])
-                        i = i + 1
+                        if s[i].isdigit():
+                            while i < len(s) and (s[i].isdigit() or s[i]=="."):
+                                t += s[i]
+                                i += 1
+                            yield NumberToken(t)
+                        elif s[i].isalpha():
+                            while i < len(s) and s[i].isalpha():
+                                t += s[i]
+                                i += 1
+                            # yield (-1 * varibleIdentifier) <= 3 tokens
+                            yield NumberToken("-1")
+                            yield OperatorToken("*")
+                            yield VarToken(t[1:]) # variable name
                     else:  # check if it is a token
                         prev_char = s[i]
                         i = i + 1
@@ -525,8 +536,8 @@ if __name__ == "__main__":
     # # loop <condition> then <statement> end
     # # int32 x=2
 
-    print("Rohit Testing:")
-
+    # ========================================================
+    # Loading the Program
     fileName = "sample-code.txt"
     try:
         with open(fileName, 'r') as file:
@@ -536,7 +547,15 @@ if __name__ == "__main__":
     except IOError:
         print("An error occurred while reading the file.")
     
+    def execute(prog):
+        for stmt in parse(prog).statements:
+            e(stmt)
+    # ========================================================
 
-    for stmt in parse(prog).statements:
-        e(stmt)
+    pprint(parse(prog)) # List[AST]
+    
+    print("Program Output: ")
+    execute(prog)
+
+
 
