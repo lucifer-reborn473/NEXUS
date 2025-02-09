@@ -1,130 +1,16 @@
 from dataclasses import dataclass
 from collections.abc import Iterator
 from more_itertools import peekable
-from typing import Optional, Any
+from typing import Optional, Any, List
 from tokens import  *
 from context import Context
+from pprint import pprint
 
-
-class AST:
-    """
-    Abstract Syntax Tree (AST) class.
-
-    This class represents the abstract syntax tree used in the compiler.
-    It serves as a base class for all nodes in the AST.
-    """
-
-    pass
-
-class ABT: #unused for the time being
-    """
-    ABT (Abstract Binding Tree) class.
-
-    This class represents an abstract binding tree used in the compilation process.
-    It is designed to handle the structure and operations related to the binding of
-    variables and expressions in a compiler.
-    """
-    pass
-
-@dataclass
-class Binding(AST):
-    name: str
-    dtype: Optional[str]
-    value: AST
-
-        
-@dataclass
-class Variable(AST):
-    name: str
-    
-    def eval(self,context):
-        return context[self.name]
-
-@dataclass
-class BinOp(AST):
-    op: str
-    left: AST
-    right: AST
-
-
-@dataclass
-class UnaryOp(AST):
-    op: str
-    val: AST
-
-
-@dataclass
-class Number(AST):
-    val: str
-
-
-@dataclass
-class String(AST):
-    val: str
-
-@dataclass
-class Display(AST):
-    val: any
-
-
-@dataclass
-class CompoundAssignment(AST):
-    var_name: str
-    op: str
-    value: AST
-
-
-def e(tree: AST, context: Optional[Context] = None) -> Any:
-    if context is None:
-        context = Context()
-    match tree:
-        case Number(v):
-            return int(v)
-        case String(s):
-            return s
-        case BinOp("+", l, r):
-            return e(l, context) + e(r, context)
-        case BinOp("*", l, r):
-            return e(l, context) * e(r, context)
-        case BinOp("-", l, r):
-            return e(l, context) - e(r, context)
-        case BinOp("÷", l, r):
-            return e(l,context) / e(r,context)
-        case BinOp("/", l, r):
-            return e(l, context) / e(r, context)
-        case BinOp("<", l, r):
-            return e(l, context) < e(r, context)
-        case BinOp(">", l, r):
-            return e(l, context) > e(r, context)
-        case BinOp("==", l, r):
-            return e(l, context) == e(r, context)
-        case BinOp("!=", l, r):
-            return e(l, context) != e(r, context)
-        case BinOp("<=", l, r):
-            return e(l, context) <= e(r, context)
-        case BinOp(">=", l, r):
-            return e(l, context) >= e(r, context)
-        case BinOp("%", l, r):
-            return e(l, context) % e(r, context)
-        case UnaryOp("~", val):
-            return ~e(val, context)
-        case UnaryOp("!", val):
-            return not e(val, context)
-        case CompoundAssignment(var_name, op, value):
-            var_value = context.get_variable(var_name).value
-            context.update_variable(var_name, e(BinOp(op[0], Number(var_value), value), context))
-            return context  # temporary return value -> will be removed later
-        case If(cond, sat, else_):
-            return e(sat, context) if e(cond, context) else e(else_, context)
-        case Display(val):
-            return print(e(val, context))
-        case Binding(name, dtype, value):
-            context.add_variable(name, e(value, context), dtype)
-            return context  # temporary return value -> will be removed later
+# ==========================================================================================
+# ==================================== LEXER ===============================================
 
 class Token:
     pass
-
 
 @dataclass
 class VarToken(Token):
@@ -134,33 +20,25 @@ class VarToken(Token):
 class NumberToken(Token):
     v: str
 
-
 @dataclass
 class OperatorToken(Token):
     o: str
-
 
 @dataclass
 class StringToken(Token):
     s: str
 
-
 @dataclass
 class KeywordToken(Token):
     w: str
-
 
 @dataclass
 class TypeToken(Token):
     t: str
 
-
-
 @dataclass
-class If(AST):
-    c: AST
-    t: AST
-    e: AST = None
+class SemicolonToken(Token):
+    pass
 
 
 def lex(s: str) -> Iterator[Token]:
@@ -173,8 +51,12 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
+        
+        if s[i]==";":
+            yield SemicolonToken()
+            i+=1
 
-        if s[i].isalpha():
+        elif s[i].isalpha():
             t = s[i]
             i = i + 1
             while i < len(s) and s[i].isalpha():
@@ -186,6 +68,7 @@ def lex(s: str) -> Iterator[Token]:
                 yield TypeToken(t)
             else:
                 yield VarToken(t)
+
         elif s[i] == "'" or s[i] == '"':
             quote = s[i]
             i = i + 1
@@ -251,7 +134,84 @@ def lex(s: str) -> Iterator[Token]:
                         yield (OperatorToken(t))
 
 
-def parse(s: str) -> AST:
+# ==========================================================================================
+# ================================= PARSER =================================================
+
+class AST:
+    """
+    Abstract Syntax Tree (AST) class.
+
+    This class represents the abstract syntax tree used in the compiler.
+    It serves as a base class for all nodes in the AST.
+    """
+
+    pass
+
+class ABT: #unused for the time being
+    """
+    ABT (Abstract Binding Tree) class.
+
+    This class represents an abstract binding tree used in the compilation process.
+    It is designed to handle the structure and operations related to the binding of
+    variables and expressions in a compiler.
+    """
+    pass
+
+@dataclass
+class Binding(AST):
+    name: str
+    dtype: Optional[str]
+    value: AST
+
+@dataclass
+class Variable(AST):
+    name: str
+
+@dataclass
+class BinOp(AST):
+    op: str
+    left: AST
+    right: AST
+
+
+@dataclass
+class UnaryOp(AST):
+    op: str
+    val: AST
+
+
+@dataclass
+class Number(AST):
+    val: str
+
+
+@dataclass
+class String(AST):
+    val: str
+
+@dataclass
+class Display(AST):
+    val: any
+
+
+@dataclass
+class CompoundAssignment(AST):
+    var_name: str
+    op: str
+    value: AST
+
+@dataclass
+class If(AST):
+    c: AST
+    t: AST
+    e: AST = None
+
+@dataclass
+class Statements:
+    statements: List[AST]
+
+
+def parse(s: str) -> List[AST]:
 
     t = peekable(lex(s))
 
@@ -263,24 +223,34 @@ def parse(s: str) -> AST:
     
     def expect_any(expected_tokens: list[Token]):
         next_token = t.peek(None)  
-
         if next_token.o in expected_tokens:
             next(t)  
             return
-        
         raise SyntaxError(f"Expected one of {expected_tokens}, but got {next_token}")
 
-    def parse_display():
+    def parse_program():
+        statements = []
+        while t.peek(None) is not None:
+            stmt = parse_display()      # Parse current statement
+            statements.append(stmt)     # collection of parsed statements
+
+        return Statements(statements)  # Return a list of parsed statements
+
+
+    def parse_display(): # display value/output
         ast=parse_var()
         while True:
             match t.peek(None):
                 case KeywordToken("display"):
                     next(t)
                     ast=Display(parse_var())
+                case SemicolonToken():
+                    next(t)
+                    return ast
                 case _:
                     return ast
     
-    def parse_var(): #for var declaration
+    def parse_var(): # for `var` declaration
         ast=parse_update_var()
         while True:
             match t.peek(None):
@@ -439,45 +409,134 @@ def parse(s: str) -> AST:
 
     def parse_atom(): # while True may be included in future
         match t.peek(None):
-            case NumberToken(v):
+            case NumberToken(n):
                 next(t)
-                return Number(v)
+                return Number(n)
+            case VarToken(v): # variable identifier
+                next(t)
+                return Variable(v)
 
-    return parse_display()
+    return parse_program()
 
+# ==========================================================================================
+# ================================= EVALUATOR ==============================================
+
+
+context = Context() # context as a global variable
+
+def e(tree: AST) -> Any:
+    match tree:
+        case Number(n):
+            return int(n)
+        case String(s):
+            return s
+        case Variable(v):
+            if context.has_variable(v):
+                return context.get_variable(v).value
+            else:
+                raise NameError(f"name '{v}' defined nhi hai")
+        
+        # Operators
+        case BinOp("+", l, r):
+            return e(l) + e(r)
+        case BinOp("*", l, r):
+            return e(l) * e(r)
+        case BinOp("-", l, r):
+            return e(l) - e(r)
+        case BinOp("÷", l, r):
+            return e(l) / e(r)
+        case BinOp("/", l, r):
+            return e(l) / e(r)
+        case BinOp("<", l, r):
+            return e(l) < e(r)
+        case BinOp(">", l, r):
+            return e(l) > e(r)
+        case BinOp("==", l, r):
+            return e(l) == e(r)
+        case BinOp("!=", l, r):
+            return e(l) != e(r)
+        case BinOp("<=", l, r):
+            return e(l) <= e(r)
+        case BinOp(">=", l, r):
+            return e(l) >= e(r)
+        case BinOp("%", l, r):
+            return e(l) % e(r)
+        
+        case UnaryOp("~", val):
+            return ~e(val)
+        case UnaryOp("!", val):
+            return not e(val)
+        
+        # Conditional
+        case If(cond, sat, else_):
+            return e(sat) if e(cond) else e(else_)
+        
+        # Display
+        case Display(val):
+            return print(e(val))
+        
+        # Variables (evaluates to value)
+        case CompoundAssignment(var_name, op, value):
+            var_value = context.get_variable(var_name).value
+            var_value_updated = e(BinOp(op[0], Number(var_value), value))
+            context.update_variable(var_name, var_value_updated)
+            # return context  # temporary return value -> will be removed later
+            return var_value_updated
+        
+        case Binding(name, dtype, value):
+            value = e(value)
+            context.add_variable(name, value, dtype)
+            return value
+            # return context  # temporary return value -> will be removed later
 
 if __name__ == "__main__":
-    # expression=" (5-4)*5+ (8-2)/3"
-    # print(parse(expression))
-    # print(e(parse(expression)))
-    # simple_exp=" 3 *(3+1*(4-1)) /2"
-    # simple_exp=" -3 + 7 + (2+8)/5 - (2*(4-3))"
-    # print(parse(simple_exp))
-    # print(e(parse(simple_exp)))
-    # sample_exp="if 2 < 3 then 0 end"
-    # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
-    # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
-    # expr = "display 2+1 "
-    # expr = "display 0<= 1 >=2 "
-    context=Context()
-    expr = " display( var integer x= 3+ 7 -1)"
-    compound_assignment= "display (x-=2)"
-    for t in lex(expr):
-        print(t)
-    # t = peekable(lex(expr))
-    # print(t.peek(None))
-    # next(t)
-    # print(t.peek(None))
-    print("Parsed expression:")
-    print(parse(expr))
-    print("Evaluated expression:")
-    e(parse(expr),context)
-    for t in lex(compound_assignment):
-        print(t)
-    print("Parsed expression:")
-    print(parse(compound_assignment))
-    print("Evaluated expression:")
-    e(parse(compound_assignment),context)
 
-    # loop <condition> then <statement> end
-    # int32 x=2
+    # # expression=" (5-4)*5+ (8-2)/3"
+    # # print(parse(expression))
+    # # print(e(parse(expression)))
+    # # simple_exp=" 3 *(3+1*(4-1)) /2"
+    # # simple_exp=" -3 + 7 + (2+8)/5 - (2*(4-3))"
+    # # print(parse(simple_exp))
+    # # print(e(parse(simple_exp)))
+    # # sample_exp="if 2 < 3 then 0 end"
+    # # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
+    # # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
+    # # expr = "display 2+1 "
+    # # expr = "display 0<= 1 >=2 "
+    # expr = " display( var integer x= 3+ 7 -1);"
+    # compound_assignment= "display (x-=2);"
+    # for t in lex(expr):
+    #     print(t)
+    # # t = peekable(lex(expr))
+    # # print(t.peek(None))
+    # # next(t)
+    # # print(t.peek(None))
+    # print("\nParsed expression:")
+    # print(parse(expr))
+    # print("\nEvaluated expression:")
+    # e(parse(expr),context)
+    # for t in lex(compound_assignment):
+    #     print(t)
+    # print("\nParsed expression:")
+    # print(parse(compound_assignment))
+    # print("\nEvaluated expression:")
+    # e(parse(compound_assignment),context)
+
+    # # loop <condition> then <statement> end
+    # # int32 x=2
+
+    print("Rohit Testing:")
+
+    fileName = "sample-code.txt"
+    try:
+        with open(fileName, 'r') as file:
+            prog = file.read()
+    except FileNotFoundError:
+        print(f"The file {fileName} was not found.")
+    except IOError:
+        print("An error occurred while reading the file.")
+    
+
+    for stmt in parse(prog).statements:
+        e(stmt)
+
