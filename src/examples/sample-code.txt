@@ -1,0 +1,13 @@
+while x < 10 do
+    display x;
+    x += 1;
+end
+
+if x == 10 then
+    display "Loop finished";
+end
+
+while true do
+    display "This will run indefinitely";
+    break;  # This break is just for demonstration; remove it for an infinite loop.
+end

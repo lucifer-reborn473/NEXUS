@@ -1,59 +1,38 @@
-"""
-This module defines tuples of keyword, base type, and base operator tokens used in the Our_Compiler project.
+from dataclasses import dataclass
 
-Attributes:
-    keyword_tokens (tuple): A tuple of keyword tokens.
-    base_type_tokens (tuple): A tuple of base type tokens.
-    base_operator_tokens (tuple): A tuple of base operator tokens.
-"""
+class Token:
+    pass
 
-keyword_tokens = (
-    "if",
-    "else",
-    "else if",
-    "then",
-    "end",
-    "display",
-    "loop",
-    "var",
-)
+@dataclass
+class VarToken(Token):
+    var_name: str
 
-base_type_tokens = (
-    "integer",
-    "decimal",
-    "uinteger",
-)
+@dataclass
+class NumberToken(Token):
+    v: str
 
-base_operator_tokens = (
-    "+",
-    "*",
-    "-",
-    "÷",
-    "/",
-    "(",
-    ")",
-    "<",
-    ">",
-    "=",
-    "%",
-    "!",
-)
+@dataclass
+class OperatorToken(Token):
+    o: str
 
-compound_assigners = (
-    "+=",
-    "*=",
-    "-=",
-    "/=",
-    "%=",
-)
+@dataclass
+class StringToken(Token):
+    s: str
 
-assignment = ("=",) + compound_assigners
+@dataclass
+class KeywordToken(Token):
+    w: str
 
-logical_compounds=(
-    "==",
-    "!=",
-    "<=",
-    ">=",
-)
+@dataclass
+class TypeToken(Token):
+    t: str
 
-top_level_operator_tokens =  compound_assigners + logical_compounds
+@dataclass
+class SemicolonToken(Token):
+    pass
+
+@dataclass
+class WhileToken(Token):
+    pass  # Token for the 'while' keyword
+
+# Add any additional tokens as needed for your compiler project.
