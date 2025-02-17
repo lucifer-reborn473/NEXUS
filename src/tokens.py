@@ -16,6 +16,7 @@ keyword_tokens = (
     "display",
     "loop",
     "var",
+    "func",
 )
 
 base_type_tokens = (

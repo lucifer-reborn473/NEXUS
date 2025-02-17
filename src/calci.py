@@ -40,6 +40,22 @@ class TypeToken(Token):
 class SemicolonToken(Token):
     pass
 
+@dataclass
+class CommaToken(Token):
+    pass
+
+@dataclass
+class ColonToken(Token):
+    pass
+
+@dataclass
+class LeftCurlyBracketToken(Token):
+    pass
+
+@dataclass
+class RightCurlyBracketToken(Token):
+    pass
+
 
 def lex(s: str) -> Iterator[Token]:
     i = 0
@@ -143,6 +159,18 @@ def lex(s: str) -> Iterator[Token]:
                         yield OperatorToken(t + prev_char)
                     else:
                         yield (OperatorToken(t))
+                case '{':
+                    i+=1
+                    yield LeftCurlyBracketToken()
+                case '}':
+                    i+=1
+                    yield RightCurlyBracketToken()
+                case ':':
+                    i+=1
+                    yield ColonToken()
+                case ',':
+                    i+=1
+                    yield CommaToken()
 
 
 # ==========================================================================================
@@ -221,6 +249,17 @@ class If(AST):
 class Statements:
     statements: List[AST]
 
+@dataclass
+class FuncDef(AST):
+    funcName: str
+    funcParams: List[Variable]  # list of variables
+    funcBody: AST               # assumed body is one-liner expression # will use {} for multiline
+
+@dataclass 
+class FuncCall(AST):
+    funcName: str               # function name as a string
+    funcArgs: List[AST]         
+
 
 def parse(s: str) -> List[AST]:
 
@@ -260,7 +299,7 @@ def parse(s: str) -> List[AST]:
                     return ast
                 case _:
                     return ast
-    
+
     def parse_var(): # for `var` declaration
         ast=parse_update_var()
         while True:
@@ -416,7 +455,66 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return String(s)
             case _:
-                return parse_atom()
+                return parse_func()
+
+    def parse_func(): # Function definition and Function call
+        ast = parse_atom()
+        while True:
+            match t.peek(None):
+                case KeywordToken("func"):
+                    next(t)
+                    
+                    if isinstance(t.peek(None), VarToken):
+                        funcName = t.peek(None)
+                        funcName = funcName.var_name
+                        next(t)
+                    else:
+                        print("Function name missing\nAborting")
+                        exit()
+
+                    expect(OperatorToken("("))
+
+                    # parse parameters
+                    params = []
+                    while isinstance(t.peek(None), VarToken):
+                        params.append(t.peek(None))
+                        next(t)
+                        if isinstance(t.peek(None), CommaToken):
+                            next(t) 
+                        else:
+                            expect(OperatorToken(")")) # parameter list end
+                            break    
+                    
+                    expect(ColonToken())
+
+                    # function body begins (one-liner expression)
+                    body = parse_var() 
+                    ast = FuncDef(funcName, params, body)
+                
+                # Function call
+                case OperatorToken("("): # denotes the identifier is not a variable but a function call
+                    # extract arguments
+                    funcName = ast.name
+                    funcArgs = []
+                    next(t)
+                    while True: 
+                        match t.peek(None):
+                            case StringToken(this_arg):
+                                funcArgs.append(String(this_arg))
+                                next(t)
+                            case NumberToken(this_arg):
+                                funcArgs.append(Number(this_arg))
+                                next(t)
+                            case CommaToken():
+                                next(t)
+                            case OperatorToken(")"):
+                                # function call ends
+                                ast = FuncCall(funcName, funcArgs)
+                                next(t)
+                                return ast
+
+                case _:
+                    return ast
 
     def parse_atom(): # while True may be included in future
         match t.peek(None):
@@ -447,6 +545,33 @@ def e(tree: AST) -> Any:
             else:
                 raise NameError(f"name '{v}' defined nhi hai")
         
+        case FuncDef(funcName, funcParams, funcBody):
+            # add function definition to context
+            dtype = None # kept None for now
+            context.add_variable(funcName, (funcParams, funcBody), dtype)
+
+        case FuncCall(funcName, funcArgs):
+            # evaluate the function call
+
+            """ 
+            Step 1: Extract function body
+            Step 2: Put argument values into context
+            Step 3: Evaluate the function body
+            Step 4: Pop the arg values from context
+            """ # Reference: Compiler Github page (Prof Balagopal Komarath)
+
+            (funcParams, funcBody) = context.get_variable(funcName).value   # Step 1
+            dtype = None
+            for i in range(len(funcParams)):
+                context.add_variable(funcParams[i].var_name, e(funcArgs[i]), dtype)     # Step 2
+            
+            ans = e(funcBody)                                               # Step 3
+
+            for i in range(len(funcParams)):
+                context.remove_variable(funcParams[i].var_name)                      # Step 4
+            
+            return ans
+    
         # Operators
         case BinOp("+", l, r):
             return e(l) + e(r)
@@ -557,7 +682,19 @@ if __name__ == "__main__":
 # display a+1;
 # """
 
+
+    prog2 = """
+var x = 2;
+var y = 2 * (-x + 5); /~ 6 ~/
+display y;
+"""
+
+    for t in lex(prog):
+        print(t)
+
+    print("------")
     pprint(parse(prog)) # List[AST]
-    
+
+    print("------")
     print("Program Output: ")
     execute(prog)
