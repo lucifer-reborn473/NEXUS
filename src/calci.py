@@ -51,7 +51,7 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
-        
+
         if s[i]==";":
             yield SemicolonToken()
             i+=1
@@ -89,14 +89,14 @@ def lex(s: str) -> Iterator[Token]:
                 t = t + s[i]
                 i = i + 1
             yield NumberToken(t)
-        
+
         # Single-line and Inline comments: /~ ... ~/
         elif s[i:i+2] == "/~":
             i += 2  # skip "/~"
             while i < len(s) and s[i:i+2] != "~/":
                 i += 1
             i += 2  # skip "~/"
-            continue 
+            continue
 
         # Multi-line comments: /~ { ... } ~/
         elif s[i:i+3] == "/~{":
@@ -104,8 +104,8 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i:i+3] != "}~/":
                 i += 1
             i += 3  # skip "}~/"
-            continue 
-        
+            continue
+
         else:
             match t := s[i]:
                 case "-":
@@ -231,11 +231,11 @@ def parse(s: str) -> List[AST]:
             next(t)
             return
         raise SyntaxError(f"Expected {what} got {t.peek(None)}")
-    
+
     def expect_any(expected_tokens: list[Token]):
-        next_token = t.peek(None)  
+        next_token = t.peek(None)
         if next_token.o in expected_tokens:
-            next(t)  
+            next(t)
             return
         raise SyntaxError(f"Expected one of {expected_tokens}, but got {next_token}")
 
@@ -260,7 +260,7 @@ def parse(s: str) -> List[AST]:
                     return ast
                 case _:
                     return ast
-    
+
     def parse_var(): # for `var` declaration
         ast=parse_update_var()
         while True:
@@ -274,7 +274,7 @@ def parse(s: str) -> List[AST]:
                     # print(t.peek(None))
                     if isinstance(t.peek(None), VarToken):
                         name = t.peek(None).var_name
-                        next(t) 
+                        next(t)
                     # print(t.peek(None))
                     expect(OperatorToken("="))
                     # print(t.peek(None))
@@ -297,7 +297,7 @@ def parse(s: str) -> List[AST]:
                         return ast
                 case _ :
                     return ast
-    
+
     def parse_if():
         match t.peek(None):
             case KeywordToken("if"):
@@ -347,7 +347,7 @@ def parse(s: str) -> List[AST]:
                     ast = BinOp("+", ast, parse_sub())
                 case _:
                     return ast
-    
+
     def parse_sub():
         ast = parse_mul()
         while True:
@@ -436,7 +436,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return parse_string()
 
-    def parse_string(): 
+    def parse_string():
         match t.peek(None):
             case StringToken(s):
                 next(t)
@@ -444,7 +444,7 @@ def parse(s: str) -> List[AST]:
             case _:
                 return parse_atom()
 
-    def parse_atom(): 
+    def parse_atom():
         match t.peek(None):
             case NumberToken(n):
                 next(t)
@@ -472,7 +472,7 @@ def e(tree: AST) -> Any:
                 return context.get_variable(v).value
             else:
                 raise NameError(f"name '{v}' defined nhi hai")
-        
+
         # Operators
         case BinOp("+", l, r):
             return e(l) + e(r)
@@ -498,7 +498,7 @@ def e(tree: AST) -> Any:
             return e(l) >= e(r)
         case BinOp("%", l, r):
             return e(l) % e(r)
-        
+
         case UnaryOp("~", val):
             return ~e(val)
         case UnaryOp("!", val):
@@ -507,15 +507,15 @@ def e(tree: AST) -> Any:
             return ord(e(val))
         case UnaryOp("char", val):
             return chr(e(val))
-        
+
         # Conditional
         case If(cond, sat, else_):
             return e(sat) if e(cond) else e(else_)
-        
+
         # Display
         case Display(val):
             return print(e(val))
-        
+
         # Variables (evaluates to value)
         case CompoundAssignment(var_name, op, value):
             var_value = context.get_variable(var_name).value
@@ -523,7 +523,7 @@ def e(tree: AST) -> Any:
             context.update_variable(var_name, var_value_updated)
             # return context  # temporary return value -> will be removed later
             return var_value_updated
-        
+
         case Binding(name, dtype, value):
             value = e(value)
             context.add_variable(name, value, dtype)
@@ -535,7 +535,7 @@ if __name__ == "__main__":
     # # expression=" (5-4)*5+ (8-2)/3"
     # # print(parse(expression))
     # # print(e(parse(expression)))
-    
+
     # # sample_exp="if 2 < 3 then 0 end"
     # # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
@@ -573,7 +573,7 @@ if __name__ == "__main__":
         print(f"The file {fileName} was not found.")
     except IOError:
         print("An error occurred while reading the file.")
-    
+
     def execute(prog):
         for stmt in parse(prog).statements:
             e(stmt)
@@ -588,13 +588,9 @@ display y;
 var z= ascii("A");
 display z;
 display char(66);
-display (5-3+2)
+display (5-3+2);
 display char (ascii('x') - ascii('a') + ascii ('A'));   """
     pprint(parse(prog)) # List[AST]
-    
+
     print("Program Output: ")
     execute(prog)
-
-
-
-
