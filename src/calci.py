@@ -283,7 +283,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_update_var(): # for updating var
-        ast =parse_ascii()
+        ast =parse_if()
         while True:
             match t.peek(None):
                 case VarToken(var_name):
@@ -291,36 +291,13 @@ def parse(s: str) -> List[AST]:
                     if isinstance(t.peek(None),OperatorToken) and t.peek(None).o in compound_assigners:
                         op=t.peek(None).o
                         next(t)
-                        value=parse_ascii()
+                        value=parse_if()
                         ast=CompoundAssignment(var_name,op,value)
                     else:
                         return ast
                 case _ :
                     return ast
-    def parse_ascii():
-        ast=parse_char()
-        while True:
-            match t.peek(None):
-                case KeywordToken("ascii"):
-                    next(t)
-                    expect(OperatorToken("("))
-                    value=parse_char()
-                    expect(OperatorToken(")"))
-                    ast=UnaryOp("ascii",value)
-                case _:
-                    return ast
-    def parse_char():
-        ast=parse_if()
-        while True:
-            match t.peek(None):
-                case KeywordToken("char"):
-                    next(t)
-                    expect(OperatorToken("("))
-                    value=parse_if()
-                    expect(OperatorToken(")"))
-                    ast=UnaryOp("char",value)
-                case _:
-                    return ast
+    
     def parse_if():
         match t.peek(None):
             case KeywordToken("if"):
@@ -336,47 +313,48 @@ def parse(s: str) -> List[AST]:
                 return parse_cmp()
 
     def parse_cmp():
-        ast = parse_sub()
+        ast = parse_add()
         while True:
             match t.peek(None):
                 case OperatorToken("<"):
                     next(t)
-                    ast = BinOp("<", ast, parse_sub())
+                    ast = BinOp("<", ast, parse_add())
                 case OperatorToken(">"):
                     next(t)
-                    ast = BinOp(">", ast, parse_sub())
+                    ast = BinOp(">", ast, parse_add())
                 case OperatorToken("=="):
                     next(t)
-                    ast = BinOp("==", ast, parse_sub())
+                    ast = BinOp("==", ast, parse_add())
                 case OperatorToken("!="):
                     next(t)
-                    ast = BinOp("!=", ast, parse_sub())
+                    ast = BinOp("!=", ast, parse_add())
                 case OperatorToken("<="):
                     next(t)
-                    ast = BinOp("<=", ast, parse_sub())
+                    ast = BinOp("<=", ast, parse_add())
                 case OperatorToken(">="):
                     next(t)
-                    ast = BinOp(">=", ast, parse_sub())
+                    ast = BinOp(">=", ast, parse_add())
                 case _:
                     return ast
 
-    def parse_sub():
-        ast = parse_add()
-        while True:
-            match t.peek(None):
-                case OperatorToken("-"):
-                    next(t)
-                    ast = BinOp("-", ast, parse_add())
-                case _:
-                    return ast
 
     def parse_add():
-        ast = parse_mul()
+        ast = parse_sub()
         while True:
             match t.peek(None):
                 case OperatorToken("+"):
                     next(t)
-                    ast = BinOp("+", ast, parse_mul())
+                    ast = BinOp("+", ast, parse_sub())
+                case _:
+                    return ast
+    
+    def parse_sub():
+        ast = parse_mul()
+        while True:
+            match t.peek(None):
+                case OperatorToken("-"):
+                    next(t)
+                    ast = BinOp("-", ast, parse_mul())
                 case _:
                     return ast
 
@@ -410,7 +388,7 @@ def parse(s: str) -> List[AST]:
                     return ast
 
     def parse_div_dot():
-        ast = parse_brackets()
+        ast = parse_char()
         while True:
             match t.peek(None):
                 case OperatorToken("÷"):
@@ -418,7 +396,31 @@ def parse(s: str) -> List[AST]:
                     ast = BinOp("÷", ast, parse_brackets())
                 case _:
                     return ast
+    def parse_char():
+        ast=parse_ascii()
+        while True:
+            match t.peek(None):
+                case KeywordToken("char"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value=parse_if()
+                    expect(OperatorToken(")"))
+                    ast=UnaryOp("char",value)
+                case _:
+                    return ast
 
+    def parse_ascii():
+        ast=parse_brackets()
+        while True:
+            match t.peek(None):
+                case KeywordToken("ascii"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value=parse_if()
+                    expect(OperatorToken(")"))
+                    ast=UnaryOp("ascii",value)
+                case _:
+                    return ast
     def parse_brackets():
         while True:
             match t.peek(None):
@@ -533,10 +535,7 @@ if __name__ == "__main__":
     # # expression=" (5-4)*5+ (8-2)/3"
     # # print(parse(expression))
     # # print(e(parse(expression)))
-    # # simple_exp=" 3 *(3+1*(4-1)) /2"
-    # # simple_exp=" -3 + 7 + (2+8)/5 - (2*(4-3))"
-    # # print(parse(simple_exp))
-    # # print(e(parse(simple_exp)))
+    
     # # sample_exp="if 2 < 3 then 0 end"
     # # print(parse("if 2 < 3 then 0+5 else 1*6 end"))
     # # print(e(parse("if 2 < 3 then 0+5 else 1*6 end")))
@@ -579,17 +578,23 @@ if __name__ == "__main__":
         for stmt in parse(prog).statements:
             e(stmt)
     # ========================================================
-
+    # simple_exp="""display (5-3 +2 -1) """
+    # # # simple_exp=" -3 + 7 + (2+8)/5 - (2*(4-3))"
+    # print(parse(simple_exp))
+    # execute(simple_exp)
     prog="""var x = 2;
 var y = 2 * (-x + 5); /~ 6 ~/
 display y;
 var z= ascii("A");
 display z;
-display char(66);"""
+display char(66);
+display (5-3+2)
+display char (ascii('x') - ascii('a') + ascii ('A'));   """
     pprint(parse(prog)) # List[AST]
     
     print("Program Output: ")
     execute(prog)
+
 
 
 
