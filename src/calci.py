@@ -586,10 +586,8 @@ display y;
 var z= ascii("A");
 display z;
 display char(66);"""
+
     pprint(parse(prog)) # List[AST]
     
     print("Program Output: ")
     execute(prog)
-
-
-
