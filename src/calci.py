@@ -552,10 +552,10 @@ if __name__ == "__main__":
             e(stmt)
     # ========================================================
 
-    prog = """
-var integer a = 2;
-display a+1;
-"""
+#     prog = """
+# var integer a = 2;
+# display a+1;
+# """
 
     pprint(parse(prog)) # List[AST]
     
