@@ -16,6 +16,8 @@ keyword_tokens = (
     "display",
     "loop",
     "var",
+    "ascii",
+    "char",
 )
 
 base_type_tokens = (

@@ -283,7 +283,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_update_var(): # for updating var
-        ast =parse_if()
+        ast =parse_ascii()
         while True:
             match t.peek(None):
                 case VarToken(var_name):
@@ -291,11 +291,35 @@ def parse(s: str) -> List[AST]:
                     if isinstance(t.peek(None),OperatorToken) and t.peek(None).o in compound_assigners:
                         op=t.peek(None).o
                         next(t)
-                        value=parse_if()
+                        value=parse_ascii()
                         ast=CompoundAssignment(var_name,op,value)
                     else:
                         return ast
                 case _ :
+                    return ast
+    def parse_ascii():
+        ast=parse_char()
+        while True:
+            match t.peek(None):
+                case KeywordToken("ascii"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value=parse_char()
+                    expect(OperatorToken(")"))
+                    ast=UnaryOp("ascii",value)
+                case _:
+                    return ast
+    def parse_char():
+        ast=parse_if()
+        while True:
+            match t.peek(None):
+                case KeywordToken("char"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value=parse_if()
+                    expect(OperatorToken(")"))
+                    ast=UnaryOp("char",value)
+                case _:
                     return ast
     def parse_if():
         match t.peek(None):
@@ -410,7 +434,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return parse_string()
 
-    def parse_string(): # while True may be included in future
+    def parse_string(): 
         match t.peek(None):
             case StringToken(s):
                 next(t)
@@ -418,7 +442,7 @@ def parse(s: str) -> List[AST]:
             case _:
                 return parse_atom()
 
-    def parse_atom(): # while True may be included in future
+    def parse_atom(): 
         match t.peek(None):
             case NumberToken(n):
                 next(t)
@@ -477,6 +501,10 @@ def e(tree: AST) -> Any:
             return ~e(val)
         case UnaryOp("!", val):
             return not e(val)
+        case UnaryOp("ascii", val):
+            return ord(e(val))
+        case UnaryOp("char", val):
+            return chr(e(val))
         
         # Conditional
         case If(cond, sat, else_):
@@ -552,6 +580,12 @@ if __name__ == "__main__":
             e(stmt)
     # ========================================================
 
+    prog="""var x = 2;
+var y = 2 * (-x + 5); /~ 6 ~/
+display y;
+var z= ascii("A");
+display z;
+display char(66);"""
     pprint(parse(prog)) # List[AST]
     
     print("Program Output: ")
