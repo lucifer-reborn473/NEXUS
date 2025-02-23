@@ -150,7 +150,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_update_var(): # for updating var
-        ast =parse_if()
+        ast =parse_logic()
         while True:
             match t.peek(None):
                 case VarToken(var_name):
@@ -158,12 +158,26 @@ def parse(s: str) -> List[AST]:
                     if isinstance(t.peek(None),OperatorToken) and t.peek(None).o in compound_assigners:
                         op=t.peek(None).o
                         next(t)
-                        value=parse_if()
+                        value=parse_logic()
                         ast=CompoundAssignment(var_name,op,value)
                     else:
                         return ast
                 case _ :
                     return ast
+                
+    def parse_logic():
+        ast = parse_if()
+        while True:
+            match t.peek(None):
+                case KeywordToken("and"):
+                    next(t)
+                    ast = BinOp("and", ast, parse_if())
+                case KeywordToken("or"):
+                    next(t)
+                    ast = BinOp("or", ast, parse_if())
+                case _:
+                    return ast
+
     def parse_if():
         match t.peek(None):
             case KeywordToken("if"):
@@ -347,7 +361,7 @@ def parse(s: str) -> List[AST]:
         ast = parse_atom()
         while True:
             match t.peek(None):
-                case KeywordToken("func"):
+                case KeywordToken("fn"):
                     next(t)
                     
                     if isinstance(t.peek(None), VarToken):
@@ -409,6 +423,11 @@ def parse(s: str) -> List[AST]:
                                 ast = FuncCall(funcName, funcArgs)
                                 next(t)
                                 return ast
+                            case _:
+                                # expect expression
+                                expr = parse_brackets()
+                                funcArgs.append(expr)
+                                
 
                 case _:
                     return ast

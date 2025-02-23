@@ -43,7 +43,7 @@ class SemicolonToken(Token):
 
 def lex(s: str) -> Iterator[Token]:
     i = 0
-    # prev_char = None
+    prev_char = None
     prev_token= None
     while True:
         while i < len(s) and s[i].isspace():
@@ -51,7 +51,7 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
-        
+          
         if s[i]==";":
             yield SemicolonToken()
             i+=1
@@ -93,7 +93,6 @@ def lex(s: str) -> Iterator[Token]:
                 t = t + s[i]
                 i = i + 1
             yield NumberToken(t)
-        
 
         # Single-line and Inline comments: /~ ... ~/
         elif s[i:i+2] == "/~":
@@ -109,8 +108,8 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i:i+3] != "}~/":
                 i += 1
             i += 3  # skip "}~/"
-            continue 
-        
+            continue
+            
         else:
             match t := s[i]:
                 case "-":
@@ -147,7 +146,7 @@ def lex(s: str) -> Iterator[Token]:
                             yield NumberToken("-1")
                             yield OperatorToken("*")
                             yield VarToken(t[1:]) # variable name (identifier)
-
+                            
                 case t if t in base_operator_tokens:
                     prev_char = s[i]
                     i = i + 1

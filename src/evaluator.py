@@ -34,14 +34,19 @@ def e(tree: AST) -> Any:
 
             (funcParams, funcBody) = context.get_variable(funcName).value               # Step 1
             dtype = None
-            for i in range(len(funcParams)):
-                context.add_variable(funcParams[i].var_name, e(funcArgs[i]), dtype)     # Step 2
+            param_values = {}
+            for i in range(len(funcParams)):                                            # Step 2
+                param_values[funcParams[i].var_name] = e(funcArgs[i]) 
+                context.add_variable(funcParams[i].var_name, param_values[funcParams[i].var_name], dtype)
             
             for stmt in funcBody.statements:                                            # Step 3
                 ans = e(stmt)
 
+            for param in funcParams:
+                context.remove_variable(param.var_name)                                 # Step 4
             for i in range(len(funcParams)):
                 context.remove_variable(funcParams[i].var_name)                         # Step 4
+
 
             return ans
     
@@ -178,21 +183,33 @@ if __name__ == "__main__":
 # """
 
     prog = """
-func fib(a): {
-    if (a==1 or a==2) then (1) else (fib(a-1) + fib(a-2)) end;
+    var a = 112910;
+    var isEven = if (a%2==0) then ("True") else ("False") end;
+    display isEven;
+""" #! Error (True considered as variable instead of Boolean)
+
+#     prog = """
+# var a = 2;
+# func foo(v): {
+#     v = v+2;
+# };
+# display foo(3);
+# display a;
+# """ #! infinite loop
+
+    prog = """
+fn fib(a): {
+    display "---";
+    display a;
+    if (a==1 or a==2) then (1) else (fib((a-1)) + fib((a-2))) end;
 };
-display fib(6);
-""" # Error
+display fib(15);
+""" #! Error in context/scoping
 
-    prog = """
-    var a = 19;
-    var isEven = if (a%2==0 or b==2) then (True) else (False) end;
-""" # Error
-
-    prog = """
-var a = 2 or 3;
-display a;
-""" # 2
+    """ nth-Fibonacci
+    1,2,3,4,5,6,7
+    1,1,2,3,5,8,13
+    """
 
     prog ="""
     var a= char (66);
@@ -202,7 +219,9 @@ display a;
     var c= char (ascii('x') + ascii (char(1)));
     display c;
 """
-
+    for t in lex(prog):
+        print(t)
+    
     # for t in lex(prog):
     #     print(t)
 
