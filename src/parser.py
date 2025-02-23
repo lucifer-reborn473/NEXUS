@@ -168,73 +168,101 @@ def parse(s: str) -> List[AST]:
         match t.peek(None):
             case KeywordToken("if"):
                 next(t)
-                cond = parse_brackets()
+                cond = parse_logic()
                 expect(KeywordToken("then"))
-                then = parse_brackets()
+                then = parse_logic()
                 expect(KeywordToken("else"))
-                else_ = parse_brackets()
+                else_ = parse_logic()
                 expect(KeywordToken("end"))
                 return If(cond, then, else_)
             case _:
                 return parse_cmp()
 
-    def parse_cmp():
-        ast = parse_logic()
-        while True:
-            match t.peek(None):
-                case OperatorToken("<"):
-                    next(t)
-                    ast = BinOp("<", ast, parse_logic())
-                case OperatorToken(">"):
-                    next(t)
-                    ast = BinOp(">", ast, parse_logic())
-                case OperatorToken("=="):
-                    next(t)
-                    ast = BinOp("==", ast, parse_logic())
-                case OperatorToken("!="):
-                    next(t)
-                    ast = BinOp("!=", ast, parse_logic())
-                case OperatorToken("<="):
-                    next(t)
-                    ast = BinOp("<=", ast, parse_logic())
-                case OperatorToken(">="):
-                    next(t)
-                    ast = BinOp(">=", ast, parse_logic())
-                case _:
-                    return ast
-                
     def parse_logic():
-        ast = parse_sub()
+        ast = parse_bitwise()
         while True:
             match t.peek(None):
                 case KeywordToken("and"):
                     next(t)
-                    ast = BinOp("and", ast, parse_sub())
+                    ast = BinOp("and", ast, parse_bitwise())
                 case KeywordToken("or"):
                     next(t)
-                    ast = BinOp("or", ast, parse_sub())
+                    ast = BinOp("or", ast, parse_bitwise())
                 case _:
                     return ast
-
-    def parse_sub():
+    def parse_bitwise():
+        ast = parse_cmp()
+        while True:
+            match t.peek(None):
+                case OperatorToken("&"):
+                    next(t)
+                    ast = BinOp("&", ast, parse_cmp())
+                case OperatorToken("|"):
+                    next(t)
+                    ast = BinOp("|", ast, parse_cmp())
+                case OperatorToken("^"):
+                    next(t)
+                    ast = BinOp("^", ast, parse_cmp())
+                case _:
+                    return ast
+    def parse_cmp():
+        ast = parse_shift()
+        while True:
+            match t.peek(None):
+                case OperatorToken("<"):
+                    next(t)
+                    ast = BinOp("<", ast, parse_shift())
+                case OperatorToken(">"):
+                    next(t)
+                    ast = BinOp(">", ast, parse_shift())
+                case OperatorToken("=="):
+                    next(t)
+                    ast = BinOp("==", ast, parse_shift())
+                case OperatorToken("!="):
+                    next(t)
+                    ast = BinOp("!=", ast, parse_shift())
+                case OperatorToken("<="):
+                    next(t)
+                    ast = BinOp("<=", ast, parse_shift())
+                case OperatorToken(">="):
+                    next(t)
+                    ast = BinOp(">=", ast, parse_shift())
+                case _:
+                    return ast
+                             
+    def parse_shift():
         ast = parse_add()
         while True:
             match t.peek(None):
-                case OperatorToken("-"):
+                case OperatorToken("<<"):
                     next(t)
-                    ast = BinOp("-", ast, parse_add())
+                    ast = BinOp("<<", ast, parse_add())
+                case OperatorToken(">>"):
+                    next(t)
+                    ast = BinOp(">>", ast, parse_add())
                 case _:
                     return ast
 
     def parse_add():
-        ast = parse_mul()
+        ast = parse_sub()
         while True:
             match t.peek(None):
                 case OperatorToken("+"):
                     next(t)
-                    ast = BinOp("+", ast, parse_mul())
+                    ast = BinOp("+", ast, parse_sub())
                 case _:
                     return ast
+                
+    def parse_sub():
+        ast = parse_mul()
+        while True:
+            match t.peek(None):
+                case OperatorToken("-"):
+                    next(t)
+                    ast = BinOp("-", ast, parse_mul())
+                case _:
+                    return ast
+
 
     def parse_mul():
         ast = parse_modulo()
