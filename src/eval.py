@@ -70,6 +70,24 @@ def e(tree: AST) -> Any:
             return e(l) >= e(r)
         case BinOp("%", l, r):
             return e(l) % e(r)
+        case BinOp("and", l, r):
+            return e(l) and e(r)
+        case BinOp("or", l, r):
+            return e(l) or e(r)
+        case BinOp("&", l, r):
+            return e(l) & e(r)
+        case BinOp("|", l, r):
+            return e(l) | e(r)
+        case BinOp("^", l, r):
+            return e(l) ^ e(r)
+        case BinOp("<<", l, r):
+            return e(l) << e(r)
+        case BinOp(">>", l, r):
+            return e(l) >> e(r)
+        case BinOp("not", l, _):  # Unary logical operator
+            return not e(l)
+        case BinOp("~", l, _):  # Unary bitwise operator
+            return ~e(l)
         
         case UnaryOp("~", val):
             return ~e(val)
@@ -167,13 +185,17 @@ display fib(6);
     var isEven = if (a%2==0 or b==2) then (True) else (False) end;
 """ # Error
 
+    prog = """
+var a = 2 or 3;
+display a;
+""" # 2
 
     # for t in lex(prog):
     #     print(t)
 
-    # print("------")
+    print("------")
     pprint(parse(prog)) # List[AST]
 
-    # print("------")
-    # print("Program Output: ")
-    # execute(prog)
+    print("------")
+    print("Program Output: ")
+    execute(prog)

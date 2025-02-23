@@ -16,7 +16,12 @@ keyword_tokens = (
     "display",
     "loop",
     "var",
+    "ascii",
+    "char",
     "func",
+    "or",
+    "and",
+    "proc",
 )
 
 base_type_tokens = (
@@ -50,11 +55,11 @@ compound_assigners = (
 
 assignment = ("=",) + compound_assigners
 
-logical_compounds=(
+logical_compounds = (
     "==",
     "!=",
     "<=",
     ">=",
 )
 
-top_level_operator_tokens =  compound_assigners + logical_compounds
+top_level_operator_tokens = compound_assigners + logical_compounds
