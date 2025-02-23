@@ -18,7 +18,7 @@ keyword_tokens = (
     "var",
     "ascii",
     "char",
-    "func",
+    "fn",
     "or",
     "and",
     "proc",

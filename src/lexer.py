@@ -104,7 +104,8 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i].isdigit():
                 t = t + s[i]
                 i = i + 1
-            yield NumberToken(t)
+            prevToken = NumberToken(t)
+            yield prevToken
         
 
         # Single-line and Inline comments: /~ ... ~/
@@ -139,7 +140,6 @@ def lex(s: str) -> Iterator[Token]:
 
                         if s[i].isdigit():
                             # unary negation / subtration on a number
-
                             # is prevToken is digit or alpha, means subtraction, else unary neg
                             if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or isinstance(prevToken, KeywordToken):
                                 # means subtraction from a number or variable
