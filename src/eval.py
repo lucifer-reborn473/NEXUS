@@ -93,6 +93,10 @@ def e(tree: AST) -> Any:
             return ~e(val)
         case UnaryOp("!", val):
             return not e(val)
+        case UnaryOp("ascii", val):
+            return ord(e(val))
+        case UnaryOp("char", val):
+            return chr(e(val))
         
         # Conditional
         case If(cond, sat, else_):
@@ -189,6 +193,15 @@ display fib(6);
 var a = 2 or 3;
 display a;
 """ # 2
+
+    prog ="""
+    var a= char (66);
+    display a;
+    var b= ascii("A");
+    display b;
+    var c= char (ascii('x') + ascii (char(1)));
+    display c;
+"""
 
     # for t in lex(prog):
     #     print(t)

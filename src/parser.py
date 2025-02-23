@@ -266,15 +266,32 @@ def parse(s: str) -> List[AST]:
                     return ast
 
     def parse_div_dot():
-        ast = parse_brackets()
+        ast = parse_ascii_char()
         while True:
             match t.peek(None):
                 case OperatorToken("÷"):
                     next(t)
-                    ast = BinOp("÷", ast, parse_brackets())
+                    ast = BinOp("÷", ast, parse_ascii_char())
                 case _:
                     return ast
-
+    def parse_ascii_char():
+        ast = parse_brackets()
+        while True:
+            match t.peek(None):
+                case KeywordToken("char"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value = parse_if()
+                    expect(OperatorToken(")"))
+                    ast = UnaryOp("char", value)
+                case KeywordToken("ascii"):
+                    next(t)
+                    expect(OperatorToken("("))
+                    value = parse_if()
+                    expect(OperatorToken(")"))
+                    ast = UnaryOp("ascii", value)
+                case _:
+                    return ast
     def parse_brackets():
         while True:
             match t.peek(None):
