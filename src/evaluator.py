@@ -44,6 +44,9 @@ def e(tree: AST) -> Any:
 
             for param in funcParams:
                 context.remove_variable(param.var_name)                                 # Step 4
+            for i in range(len(funcParams)):
+                context.remove_variable(funcParams[i].var_name)                         # Step 4
+
 
             return ans
     
@@ -95,6 +98,10 @@ def e(tree: AST) -> Any:
             return ~e(val)
         case UnaryOp("!", val):
             return not e(val)
+        case UnaryOp("ascii", val):
+            return ord(e(val))
+        case UnaryOp("char", val):
+            return chr(e(val))
         
         # Conditional
         case If(cond, sat, else_):
@@ -197,28 +204,26 @@ fn fib(a): {
     if (a==1 or a==2) then (1) else (fib((a-1)) + fib((a-2))) end;
 };
 display fib(15);
-""" # Error
+""" #! Error in context/scoping
 
-#     prog = """
-# fn fib(a): {
-#     var b = a-1;
-#     var c = a-2;
-#     display "---"
-#     display b;
-#     display c;
-#     if (a==1 or a==2) then (1) else (fib(b) + fib(c)) end;
-# };
-# display fib(3);
-# """ # Error
-
-
-    """
-    1,2,3,4,5,6,7,
+    """ nth-Fibonacci
+    1,2,3,4,5,6,7
     1,1,2,3,5,8,13
     """
 
+    prog ="""
+    var a= char (66);
+    display a;
+    var b= ascii("A");
+    display b;
+    var c= char (ascii('x') + ascii (char(1)));
+    display c;
+"""
     for t in lex(prog):
         print(t)
+    
+    # for t in lex(prog):
+    #     print(t)
 
     print("------")
     pprint(parse(prog)) # List[AST]

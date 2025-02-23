@@ -51,24 +51,27 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
-
+          
         if s[i]==";":
             yield SemicolonToken()
             i+=1
 
+        # variable or reserved keyword token
         elif s[i].isalpha():
-            t = s[i]
-            i = i + 1
+            t = ""
             while i < len(s) and s[i].isalpha():
-                t = t + s[i]
-                i = i + 1
+                t += s[i]
+                i += 1
             if t in keyword_tokens:
-                yield KeywordToken(t)
+                prevToken = KeywordToken(t)
+                yield prevToken
             elif t in base_type_tokens:
                 yield TypeToken(t)
             else:
-                yield VarToken(t)
+                prevToken = VarToken(t)
+                yield prevToken
 
+        # string token
         elif s[i] == "'" or s[i] == '"':
             quote = s[i]
             i = i + 1
@@ -81,6 +84,7 @@ def lex(s: str) -> Iterator[Token]:
             i = i + 1
             yield StringToken(t)
 
+        # positive integers
         elif s[i].isdigit():
             t = s[i]
             prev_char = s[i]
@@ -96,7 +100,7 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i:i+2] != "~/":
                 i += 1
             i += 2  # skip "~/"
-            continue
+            continue 
 
         # Multi-line comments: /~ { ... } ~/
         elif s[i:i+3] == "/~{":
@@ -105,44 +109,66 @@ def lex(s: str) -> Iterator[Token]:
                 i += 1
             i += 3  # skip "}~/"
             continue
-
+            
         else:
             match t := s[i]:
                 case "-":
                     if (s[i+1]=="="):
                         i=i+2
                         yield OperatorToken("-=")
-                    elif (
-                        prev_char is None or prev_char in "+-*/(<>!=%"
-                    ):  # check if it is a negative number
-                        prev_char = s[i]
+                    else:
+                        # prev_char = s[i]
                         i = i + 1
+                        # must be a number or a variable identifier
+                        # consume all spaces
+                        while i<len(s) and s[i].isspace():
+                            i+=1
+
                         if s[i].isdigit():
+                            # unary negation / subtration on a number
+
+                            # is prevToken is digit or alpha, means subtraction, else unary neg
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or isinstance(prevToken, KeywordToken):
+                                # means subtraction from a number or variable
+                                yield OperatorToken('+') # example: -3 => +(-3)
+
+                            # form the number
                             while i < len(s) and (s[i].isdigit() or s[i]=="."):
-                                t += s[i]
+                                t += s[i] # with the leading `-` sign
                                 i += 1
                             yield NumberToken(t)
+
+                        # unary negation on a variable
                         elif s[i].isalpha():
                             while i < len(s) and s[i].isalpha():
                                 t += s[i]
                                 i += 1
-                            # yield (-1 * varibleIdentifier) <= 3 tokens
                             yield NumberToken("-1")
                             yield OperatorToken("*")
-                            yield VarToken(t[1:]) # variable name
-                    else:  # check if it is a token
-                        prev_char = s[i]
-                        i = i + 1
-                        yield OperatorToken(t)
+                            yield VarToken(t[1:]) # variable name (identifier)
+                            
                 case t if t in base_operator_tokens:
                     prev_char = s[i]
                     i = i + 1
                     if i<len(s) and (t + s[i]) in top_level_operator_tokens:
                         prev_char = s[i]
                         i = i + 1
-                        yield OperatorToken(t + prev_char)
+                        prevToken = OperatorToken(t + prev_char)
                     else:
-                        yield (OperatorToken(t))
+                        prevToken = OperatorToken(t)
+                    yield prevToken
+                case '{':
+                    i+=1
+                    yield LeftCurlyBracketToken()
+                case '}':
+                    i+=1
+                    yield RightCurlyBracketToken()
+                case ':':
+                    i+=1
+                    yield ColonToken()
+                case ',':
+                    i+=1
+                    yield CommaToken()
 
 
 # ==========================================================================================
