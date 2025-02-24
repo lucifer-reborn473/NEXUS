@@ -41,10 +41,6 @@ class CommaToken(Token):
     pass
 
 @dataclass
-class ColonToken(Token):
-    pass
-
-@dataclass
 class LeftCurlyBracketToken(Token):
     pass
 
@@ -176,9 +172,6 @@ def lex(s: str) -> Iterator[Token]:
                 case '}':
                     i+=1
                     yield RightCurlyBracketToken()
-                case ':':
-                    i+=1
-                    yield ColonToken()
                 case ',':
                     i+=1
                     yield CommaToken()
