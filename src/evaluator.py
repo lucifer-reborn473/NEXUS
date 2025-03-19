@@ -1,5 +1,6 @@
 from parser import *
 from context import Context
+import copy
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
@@ -13,18 +14,15 @@ def e(tree: AST, tS) -> Any:
         case String(s):
             return s
         case Variable(v):
+            return tS.lookup(v)
             # if context.has_variable(v):
             #     return context.get_variable(v).value
             # else:
             #     raise NameError(f"name '{v}' defined nhi hai")
-
-            if v in tS.table:
-                return tS.table[v]
-            else:
-                raise NameError(f"name '{v}' defined nhi hai")
         
         case FuncDef(funcName, funcParams, funcBody, funcScope):
-            tS.table[funcName] = (funcParams, funcBody, funcScope)
+            # tS.table[funcName] = (funcParams, funcBody, funcScope)
+            return 
             # add function definition to context
             # dtype = None # kept None for now
             # context.add_variable(funcName, (funcParams, funcBody), dtype)
@@ -40,22 +38,26 @@ def e(tree: AST, tS) -> Any:
             """ 
 
             # (funcParams, funcBody) = context.get_variable(funcName).value                 # Step 1
-            (funcParams, funcBody, funcScope) = tS.table[funcName]
+            (funcParams, funcBody, funcScopeMain) = tS.lookup(funcName)
+            funcScope = funcScopeMain.copy_scope()
+
 
             for i in range(len(funcParams)):                                                # Step 2
                 # context.add_variable(funcParams[i].var_name, param_values[funcParams[i].var_name], dtype)
-                funcScope.table[funcParams[i].var_name] = e(funcArgs[i]) 
+                funcScope.table[funcParams[i]] = e(funcArgs[i], tS) 
 
 
             for stmt in funcBody.statements:                                                # Step 3
-                ans = e(stmt, funcScope)
+                ans = e(stmt, funcScope) #! every line in body is evaluated (always returns something)
 
             for i in range(len(funcParams)):
                 # context.remove_variable(param.var_name)                                   # Step 4
-                funcScope.table[funcParams[i].var_name] = None
+                funcScope.table[funcParams[i]] = None
 
-            return ans
-            # Operators
+            return ans # after returning ans 
+        
+
+        # Operators
         case BinOp("+", l, r):
             return e(l, tS) + e(r, tS)
         case BinOp("*", l, r):
@@ -106,28 +108,40 @@ def e(tree: AST, tS) -> Any:
             return ord(e(val, tS))
         case UnaryOp("char", val):
             return chr(e(val, tS))
+       
         # Conditional
         case If(cond, sat, else_):
             return e(sat, tS) if e(cond, tS) else e(else_, tS)
+
         # Display
         case Display(val):
+            return print(e(val, tS), end = "")
+       
+        case DisplayL(val):
             return print(e(val, tS))
-        # Variables (evaluates to value)
+
         case CompoundAssignment(var_name, op, value):
-            var_value = tS.table[var_name]
-            var_value_updated = e(BinOp(op[0], Number(var_value), value), tS)
-            tS.table[var_name] = var_value_updated
+            prev_val = tS.lookup(var_name)
+            new_val = e(BinOp(op[0], Number(prev_val), value), tS)
+            tS.find_and_update(var_name, new_val)
+            return new_val
             # var_value = context.get_variable(var_name).value
             # var_value_updated = e(BinOp(op[0], Number(var_value), value), tS)
             # context.update_variable(var_name, var_value_updated)
             # return context # temporary return value -> will be removed later
-            return var_value_updated
-        case Binding(name, dtype, value):
+            # # else raise error
+        
+        case VarBind(name, dtype, value):
             var_val = e(value, tS)
-            tS.table[name] = var_val
-            # context.add_variable(name, value, dtype)
+            tS.table[name] = var_val # binds in current scope
             return var_val
+            # context.add_variable(name, value, dtype)
             # return context # temporary return value -> will be removed later
+
+        case AssignToVar(var_name, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update(var_name, val_to_assign)
+            return val_to_assign
 
 if __name__ == "__main__":
 
@@ -177,78 +191,97 @@ if __name__ == "__main__":
         print("An error occurred while reading the file.")
     
     def execute(prog):
-        for stmt in parse(prog).statements:
-            e(stmt)
+        lines, tS = parse(prog)
+        for line in lines.statements:
+            e(line, tS)
     # ========================================================
 
-#     prog = """
-# var integer a = 2;
-# display a+1;
-# """
+
+    prog ="""
+var a= char (66);
+display a;
+var b= ascii("A");
+display b;
+var c= char (ascii('x') + ascii (char(1)));
+display c;
+""" # testing for char(), ascii()
 
     prog = """
-    var a = 112910;
-    var isEven = if (a%2==0) then ("True") else ("False") end;
-    display isEven;
-""" #! Error (True considered as variable instead of Boolean)
-
-#     prog = """
-# var a = 2;
-# func foo(v): {
-#     v = v+2;
-# };
-# display foo(3);
-# display a;
-# """ #! infinite loop
+var a = 112910;
+var isEven = if a%2==0 then True else False end;
+displayl isEven;
+""" #! Error (True being considered as variable instead of Boolean)
 
     prog = """
 fn fib(a) {
-    display "---";
-    display a;
-    if (a==1 or a==2) then (1) else (fib((a-1)) + fib((a-2))) end;
+    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
 };
-display fib(15);
-""" #! Error in context/scoping
+displayl "----";
+var x = 31;
+displayl x;
+displayl fib(x); 
+""" # works!
 
-    """ nth-Fibonacci
-    1,2,3,4,5,6,7
-    1,1,2,3,5,8,13
-    """
-
-    prog ="""
-    var a= char (66);
-    display a;
-    var b= ascii("A");
-    display b;
-    var c= char (ascii('x') + ascii (char(1)));
-    display c;
-"""
+    # Fibonacci calculator: https://www.calculatorsoup.com/calculators/discretemathematics/fibonacci-calculator.php
 
     prog = """
-var a = 20;
-fn foo(x) {
-    x+2;
-};
-display foo(a);
-""" # 22
+var x = 2;
+fn foo(){
+    var x = 300;
+    x;
+}
+fn bar(x){
+    x += 1000;
+    x;
+}
+fn baz(x){
+    if x<5 then foo() else bar(x) end;
+}
+
+displayl baz(4); /~ 300 ~/
+displayl baz(6); /~ 1006 ~/
+""" 
+
+    prog2 = """
+var x = 1000;
+fn bar() {
+    x;
+}
+fn foo() {
+    var x = 100;
+    bar();
+}
+displayl foo();
+""" #! prints None (should be 1000)
+
+    prog3 = """
+var x = 1000;
+fn foo() {
+    var x = 100;
+    fn bar() {
+        x;
+    }
+    bar();
+}
+displayl foo();
+""" #! prints None (should be 100)
 
 
-    for t in lex(prog):
-        print(t)
-    
     # for t in lex(prog):
     #     print(t)
 
+    parsed, gS = parse(prog)
+    
     print("------")
-    parsed, gS= parse(prog)
+    print("PARSED:")
     pprint(parsed)
-    pprint(gS.table)
-    # pprint(parsed.statements[2].funcScope.table)
-    # pprint(parse(prog)) # List[AST]
 
+    print("------")
+    print("TABLE:")
+    pprint(gS.table)
+    
     print("------")
     print("Program Output: ")
-    # execute(prog)
+    execute(prog)
 
-    print(e(parsed, gS))
 
