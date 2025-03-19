@@ -11,16 +11,24 @@ class SymbolTable:
         self.table = {}
         self.parent = parent  # enclosing scope
 
-    def define(self, name, value):
-        self.table[name] = value
+    def define(self, iden, value):
+        self.table[iden] = value
 
-    def lookup(self, name):
-        if name in self.table:
-            return self.table[name]
+    def lookup(self, iden):
+        if iden in self.table:
+            return self.table[iden]
         elif self.parent:  # check in parent (enclosing scope)
-            return self.parent.lookup(name)
+            return self.parent.lookup(iden)
         else:
-            raise NameError(f"Variable '{name}' nhi mila!")
+            raise NameError(f"Variable '{iden}' nhi mila!")
+        
+    def find_and_update(self, iden, val):
+        if iden in self.table:
+            self.table[iden] = val
+        elif self.parent:
+            self.parent.find_and_update(iden, val)
+        else:
+            raise NameError(f"Variable '{iden}' nhi mila!")
 
 class AST:
     """
@@ -43,14 +51,14 @@ class ABT: #unused for the time being
     pass
 
 @dataclass
-class Binding(AST):
-    name: str
+class VarBind(AST): # for variable binding
+    var_name: str
     dtype: Optional[str]
-    value: AST
+    val: AST
 
 @dataclass
 class Variable(AST):
-    name: str
+    var_name: str
 
 @dataclass
 class BinOp(AST):
@@ -73,13 +81,22 @@ class String(AST):
 
 @dataclass
 class Display(AST):
-    val: any
+    val: Any
+
+@dataclass
+class DisplayL(AST):
+    val: Any
 
 @dataclass
 class CompoundAssignment(AST):
     var_name: str
     op: str
-    value: AST
+    val: AST
+
+@dataclass
+class AssignToVar(AST): # through assignment operator
+    var_name: str
+    val: AST
 
 @dataclass
 class If(AST):
@@ -96,12 +113,12 @@ class FuncDef(AST):
     funcName: str
     funcParams: List[Variable]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
-    funcScope: Any
+    funcScope: Any              # static scoping (scope is tied to function definition and not its call)
 
 @dataclass 
 class FuncCall(AST):
     funcName: str               # function name as a string
-    funcArgs: List[AST]         
+    funcArgs: List[AST]         # takes a list of expressions
     
 # ==========================================================================================
 def parse(s: str) -> List[AST]:
@@ -128,12 +145,12 @@ def parse(s: str) -> List[AST]:
 
         statements = []
         while t.peek(None) is not None:
-            if isinstance(t.peek(None), RightCurlyBracketToken): # function body parsing done
+            if isinstance(t.peek(None), RightBraceToken):    # function body parsing done
                 break
-            stmt,thisScope = parse_display(thisScope)      # Parse current statement
-            statements.append(stmt)     # collection of parsed statements
+            stmt,thisScope = parse_display(thisScope)       # Parse current statement
+            statements.append(stmt)                         # collection of parsed statements
 
-        return (Statements(statements), thisScope)  # Return a list of parsed statements
+        return (Statements(statements), thisScope)          # Return a list of parsed statements + scope
 
 
     def parse_display(tS): # display value/output
@@ -143,6 +160,9 @@ def parse(s: str) -> List[AST]:
                 case KeywordToken("display"):
                     next(t)
                     ast = Display(parse_var(tS)[0])
+                case KeywordToken("displayl"):
+                    next(t)
+                    ast = DisplayL(parse_var(tS)[0])
                 case SemicolonToken():
                     next(t)
                     return ast, tS
@@ -159,61 +179,55 @@ def parse(s: str) -> List[AST]:
                     if isinstance(t.peek(None), TypeToken):
                         dtype= t.peek(None).t
                         next(t)
-                    # print(t.peek(None))
                     if isinstance(t.peek(None), VarToken):
                         name = t.peek(None).var_name
                         next(t) 
-                    # print(t.peek(None))
                     expect(OperatorToken("="))
-                    # print(t.peek(None))
                     value = parse_var(tS)[0]
-                    tS.table[name] = None # add to current scope
-                    ast = Binding(name, dtype, value)
+                    tS.table[name] = None # add to current scope (value added at runtime (evaluation))
+                    ast = VarBind(name, dtype, value)
                 case _:
                     return ast, tS
                 
     def parse_update_var(tS): # for updating var
-        ast =parse_logic(tS)
-        while True:
-            match t.peek(None):
-                case VarToken(var_name):
-                    next(t)
-                    if isinstance(t.peek(None),OperatorToken) and t.peek(None).o in compound_assigners:
-                        op=t.peek(None).o
-                        next(t)
-                        value=parse_logic(tS)
-                        ast=CompoundAssignment(var_name,op,value)
-                    else:
-                        return ast
-                case _ :
-                    return ast
-                
-    def parse_logic(tS):
         ast = parse_if(tS)
         while True:
             match t.peek(None):
-                case KeywordToken("and"):
+                case OperatorToken(op):
+                    var_name = ast.var_name
                     next(t)
-                    ast = BinOp("and", ast, parse_if(tS))
-                case KeywordToken("or"):
-                    next(t)
-                    ast = BinOp("or", ast, parse_if(tS))
+                    value = parse_var(tS)[0]
+                    ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else AssignToVar(var_name, value)
                 case _:
                     return ast
+
+
+                # case VarToken(var_name):
+                #     next(t)
+                #     if isinstance(t.peek(None),OperatorToken):
+                #         op = t.peek(None).o 
+                #         next(t)
+                #         value = parse_var(tS)[0]
+                #         ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else AssignToVar(var_name, value)
+                #     else:
+                #         return ast #! use?
+                # case _ :
+                #     return ast
 
     def parse_if(tS):
         match t.peek(None):
             case KeywordToken("if"):
                 next(t)
-                cond = parse_logic(tS)
+                # cond = parse_logic(tS)
+                cond = parse_var(tS)[0]
                 expect(KeywordToken("then"))
-                then = parse_logic(tS)
+                then = parse_var(tS)[0]
                 expect(KeywordToken("else"))
-                else_ = parse_logic(tS)
+                else_ = parse_var(tS)[0]
                 expect(KeywordToken("end"))
                 return If(cond, then, else_)
             case _:
-                return parse_cmp(tS)
+                return parse_logic(tS)
 
     def parse_logic(tS):
         ast = parse_bitwise(tS)
@@ -227,6 +241,7 @@ def parse(s: str) -> List[AST]:
                     ast = BinOp("or", ast, parse_bitwise(tS))
                 case _:
                     return ast
+
     def parse_bitwise(tS):
         ast = parse_cmp(tS)
         while True:
@@ -242,6 +257,7 @@ def parse(s: str) -> List[AST]:
                     ast = BinOp("^", ast, parse_cmp(tS))
                 case _:
                     return ast
+
     def parse_cmp(tS):
         ast = parse_shift(tS)
         while True:
@@ -340,37 +356,23 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_ascii_char(tS):
-        ast = parse_brackets(tS)
+        ast = parse_string(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("char"):
                     next(t)
-                    expect(OperatorToken("("))
+                    expect(LeftParenToken())
                     value = parse_if()
-                    expect(OperatorToken(")"))
+                    expect(RightParenToken())
                     ast = UnaryOp("char", value)
                 case KeywordToken("ascii"):
                     next(t)
-                    expect(OperatorToken("("))
+                    expect(LeftParenToken())
                     value = parse_if()
-                    expect(OperatorToken(")"))
+                    expect(RightParenToken())
                     ast = UnaryOp("ascii", value)
                 case _:
                     return ast
-    def parse_brackets(tS):
-        while True:
-            match t.peek(None):
-                case OperatorToken("("):
-                    next(t)
-                    ast = parse_display(tS)
-                    match t.peek(None):
-                        case OperatorToken(")"):
-                            next(t)
-                            return ast
-                        case _:
-                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
-                case _:
-                    return parse_string(tS)
 
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
@@ -381,88 +383,96 @@ def parse(s: str) -> List[AST]:
                 return parse_func(tS)
 
     def parse_func(tS): # Function definition and Function call
-        ast = parse_atom()
+        ast = parse_brackets(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("fn"): # function declaration
                     next(t)
                     
                     if isinstance(t.peek(None), VarToken):
-                        funcName = t.peek(None)
-                        funcName = funcName.var_name
+                        funcName = t.peek(None).var_name
                         next(t)
                     else:
                         print("Function name missing\nAborting")
                         exit()
 
-                    expect(OperatorToken("("))
+                    expect(LeftParenToken())
 
                     # parse parameters
                     params = []
                     while isinstance(t.peek(None), VarToken):
-                        params.append(t.peek(None))
+                        params.append(t.peek(None).var_name)
                         next(t)
                         if isinstance(t.peek(None), CommaToken):
                             next(t) 
                         else:
-                            expect(OperatorToken(")")) # parameter list end
+                            expect(RightParenToken()) # parameter list end
                             break    
                     
-                    expect(LeftCurlyBracketToken())
-                    # function body begins
-                    # body = parse_var()
-
-                    # bodyCode = []
-                    # while not isinstance(t.peek(None), RightCurlyBracketToken):
-                    #     stmt = parse_display()      # Parse current statement
-                    #     bodyCode.append(stmt)       # collection of parsed statements
-                    # body = Statements(bodyCode)     # list of parsed statements
-                    
+                    if len(params)==0:
+                        expect(RightParenToken()) # no parameters in the function declaration
 
                     tS_f = SymbolTable(tS) # Function Scope (with tS as parent scope)
 
-                    # add function params to scope (params contain variable tokens)
-                    for var_token in params:
-                        tS_f.table[var_token.var_name] = None
+                    # add function params to scope
+                    for var_name in params:
+                        tS_f.table[var_name] = None
+                    
+                    expect(LeftBraceToken()) # {
+                    # function body begins
+                    
+                    # body = parse_var()
+                    # bodyCode = []
+                    # while not isinstance(t.peek(None), RightBraceToken):
+                    #     stmt = parse_display()      # Parse current statement
+                    #     bodyCode.append(stmt)       # collection of parsed statements
+                    # body = Statements(bodyCode)     # list of parsed statements
 
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
                     ast = FuncDef(funcName, params, body, tS_f)
+                    tS.table[funcName] = (params, body, tS_f)
                 
                 # Function call
-                case OperatorToken("("): # denotes the identifier is not a variable but a function call
+                case LeftParenToken(): # denotes the identifier is not a variable but a function call
                     # extract arguments
-                    funcName = ast.name
+                    funcName = ast.var_name
                     funcArgs = []
                     next(t)
                     while True: 
                         match t.peek(None):
-                            case StringToken(this_arg):
-                                funcArgs.append(String(this_arg))
-                                next(t)
-                            case NumberToken(this_arg):
-                                funcArgs.append(Number(this_arg))
-                                next(t)
                             case CommaToken():
                                 next(t)
-                            case VarToken(varName):
-                                funcArgs.append(Variable(varName))
-                                next(t)
-                            case OperatorToken(")"):
+                            case RightParenToken():
                                 # function call ends
                                 ast = FuncCall(funcName, funcArgs)
                                 next(t)
                                 return ast
                             case _:
                                 # expect expression
-                                expr = parse_brackets()
+                                expr = parse_var(tS)[0]
                                 funcArgs.append(expr)
                 
                 case _:
                     return ast
                 # parse_func() ends here
 
-    def parse_atom(): # while True may be included in future
+    def parse_brackets(tS):
+        while True:
+            match t.peek(None):
+                case LeftParenToken():
+                    next(t)
+                    (ast, tS) = parse_display(tS)
+                    match t.peek(None):
+                        case RightParenToken():
+                            next(t)
+                            return ast
+                        case _:
+                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
+                case _:
+                    return parse_atom()
+
+    def parse_atom(): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):
                 next(t)
