@@ -29,6 +29,11 @@ class SymbolTable:
             self.parent.find_and_update(iden, val)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
+        
+    def copy_scope(self):
+        new_scope = SymbolTable(parent=self.parent)
+        new_scope.table = self.table.copy() 
+        return new_scope
 
 class AST:
     """
@@ -414,7 +419,7 @@ def parse(s: str) -> List[AST]:
 
                     tS_f = SymbolTable(tS) # Function Scope (with tS as parent scope)
 
-                    # add function params to scope
+                    # add param names to function scope
                     for var_name in params:
                         tS_f.table[var_name] = None
                     
