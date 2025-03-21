@@ -85,6 +85,10 @@ class String(AST):
     val: str
 
 @dataclass
+class Boolean(AST):
+    val: bool
+
+@dataclass
 class Display(AST):
     val: Any
 
@@ -97,6 +101,11 @@ class CompoundAssignment(AST):
     var_name: str
     op: str
     val: AST
+
+@dataclass
+class Loop(AST):
+    cond: AST
+    body: AST
 
 @dataclass
 class AssignToVar(AST): # through assignment operator
@@ -367,13 +376,13 @@ def parse(s: str) -> List[AST]:
                 case KeywordToken("char"):
                     next(t)
                     expect(LeftParenToken())
-                    value = parse_if()
+                    value = parse_if(tS)    
                     expect(RightParenToken())
                     ast = UnaryOp("char", value)
                 case KeywordToken("ascii"):
                     next(t)
                     expect(LeftParenToken())
-                    value = parse_if()
+                    value = parse_if(tS)
                     expect(RightParenToken())
                     ast = UnaryOp("ascii", value)
                 case _:
@@ -385,8 +394,14 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return String(s)
             case _:
-                return parse_func(tS)
-
+                return parse_boolean(tS)
+    def parse_boolean(tS):
+        match t.peek(None):
+            case BooleanToken(b):
+                next(t)
+                return Boolean(b=="True")
+            case _:
+                return parse_func(tS)       
     def parse_func(tS): # Function definition and Function call
         ast = parse_brackets(tS)
         while True:

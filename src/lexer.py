@@ -29,6 +29,10 @@ class KeywordToken(Token):
     kw_name: str
 
 @dataclass
+class BooleanToken(Token):
+    val: str
+
+@dataclass
 class TypeToken(Token):
     type_name: str
 
@@ -81,6 +85,8 @@ def lex(s: str) -> Iterator[Token]:
             if t in keyword_tokens:
                 prevToken = KeywordToken(t)
                 yield prevToken
+            elif t in boolean_tokens:
+                yield BooleanToken(t)
             elif t in base_type_tokens:
                 yield TypeToken(t)
             else:

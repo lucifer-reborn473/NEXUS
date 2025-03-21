@@ -13,6 +13,8 @@ def e(tree: AST, tS) -> Any:
             return int(n)
         case String(s):
             return s
+        case Boolean(b):
+            return b
         case Variable(v):
             return tS.lookup(v)
             # if context.has_variable(v):
@@ -199,15 +201,15 @@ if __name__ == "__main__":
 
     prog ="""
 var a= char (66);
-display a;
+displayl a;
 var b= ascii("A");
-display b;
+displayl b;
 var c= char (ascii('x') + ascii (char(1)));
-display c;
+displayl c;
 """ # testing for char(), ascii()
 
     prog = """
-var a = 112910;
+var a = 112911;
 var isEven = if a%2==0 then True else False end;
 displayl isEven;
 """ #! Error (True being considered as variable instead of Boolean)
@@ -217,7 +219,7 @@ fn fib(a) {
     if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
 };
 displayl "----";
-var x = 31;
+var x = 20;
 displayl x;
 displayl fib(x); 
 """ # works!

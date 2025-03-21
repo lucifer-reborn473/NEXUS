@@ -25,6 +25,11 @@ keyword_tokens = (
     "proc",
 )
 
+boolean_tokens = (
+    "True",
+    "False",
+)
+
 base_type_tokens = (
     "integer",
     "decimal",
