@@ -294,6 +294,13 @@ displayl foo();
     }
     """
 
+    prog = """
+    var x = 0;
+    while (x < 15) {
+        displayl(x);
+        x = x + 1;
+    }
+    """
 
     print("Running prog")
     execute(prog)

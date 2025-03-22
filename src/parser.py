@@ -190,11 +190,17 @@ def parse(s: str) -> List[AST]:
             case KeywordToken("while"):
                 next(t)  # Consume 'while'
                 expect(LeftParenToken())  # Expect '('
-                condition = parse_var(tS)[0]  # Parse the condition
+                
+                # Parse the condition
+                condition = parse_var(tS)[0]
                 expect(RightParenToken())  # Expect ')'
+                
+                # Parse the body
                 expect(LeftBraceToken())  # Expect '{'
-                body, tS = parse_program(tS)  # Parse the body
+                body, tS = parse_program(tS)  # Parse the body recursively
                 expect(RightBraceToken())  # Expect '}'
+                
+                # Return the parsed WhileLoop AST node
                 return WhileLoop(condition, body), tS
             case _:
                 raise SyntaxError("Invalid syntax for while loop")
