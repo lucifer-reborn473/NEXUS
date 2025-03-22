@@ -1,129 +1,155 @@
 from parser import *
+from context import Context
+import copy
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
 context = Context() # context as a global variable
 
-def e(tree: AST) -> Any:
+def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
             return int(n)
         case String(s):
             return s
+        case Boolean(b):
+            return b
         case Variable(v):
-            if context.has_variable(v):
-                return context.get_variable(v).value
-            else:
-                raise NameError(f"name '{v}' defined nhi hai")
+            return tS.lookup(v)
+            # if context.has_variable(v):
+            #     return context.get_variable(v).value
+            # else:
+            #     raise NameError(f"name '{v}' defined nhi hai")
         
-        case FuncDef(funcName, funcParams, funcBody):
+        case FuncDef(funcName, funcParams, funcBody, funcScope):
+            # tS.table[funcName] = (funcParams, funcBody, funcScope)
+            return 
             # add function definition to context
-            dtype = None # kept None for now
-            context.add_variable(funcName, (funcParams, funcBody), dtype)
+            # dtype = None # kept None for now
+            # context.add_variable(funcName, (funcParams, funcBody), dtype)
 
         case FuncCall(funcName, funcArgs):
             # evaluate the function call
 
             """ 
             Step 1: Extract function body
-            Step 2: Put argument values into context
+            Step 2: Put argument values into function's scope
             Step 3: Evaluate the function body
-            Step 4: Pop the arg values from context
-            """ # Reference: Compiler Github page (Prof Balagopal Komarath)
+            Step 4: Pop the arg values from the function's scope (don't delete the scope table)
+            """ 
 
-            (funcParams, funcBody) = context.get_variable(funcName).value               # Step 1
-            dtype = None
-            param_values = {}
-            for i in range(len(funcParams)):                                            # Step 2
-                param_values[funcParams[i].var_name] = e(funcArgs[i]) 
-                context.add_variable(funcParams[i].var_name, param_values[funcParams[i].var_name], dtype)
-            
-            for stmt in funcBody.statements:                                            # Step 3
-                ans = e(stmt)
+            # (funcParams, funcBody) = context.get_variable(funcName).value                 # Step 1
+            (funcParams, funcBody, funcScopeMain) = tS.lookup(funcName)
+            funcScope = funcScopeMain.copy_scope()
 
-            for param in funcParams:
-                context.remove_variable(param.var_name)                                 # Step 4
+
+            for i in range(len(funcParams)):                                                # Step 2
+                # context.add_variable(funcParams[i].var_name, param_values[funcParams[i].var_name], dtype)
+                funcScope.table[funcParams[i]] = e(funcArgs[i], tS) 
+
+
+            for stmt in funcBody.statements:                                                # Step 3
+                ans = e(stmt, funcScope) #! every line in body is evaluated (always returns something)
+
             for i in range(len(funcParams)):
-                context.remove_variable(funcParams[i].var_name)                         # Step 4
+                # context.remove_variable(param.var_name)                                   # Step 4
+                funcScope.table[funcParams[i]] = None
 
+            return ans # after returning ans 
+        
 
-            return ans
-    
         # Operators
         case BinOp("+", l, r):
-            return e(l) + e(r)
+            return e(l, tS) + e(r, tS)
         case BinOp("*", l, r):
-            return e(l) * e(r)
+            return e(l, tS) * e(r, tS)
         case BinOp("-", l, r):
-            return e(l) - e(r)
+            return e(l, tS) - e(r, tS)
         case BinOp("÷", l, r):
-            return e(l) / e(r)
+            return e(l, tS) / e(r, tS)
         case BinOp("/", l, r):
-            return e(l) / e(r)
+            return e(l, tS) / e(r, tS)
         case BinOp("<", l, r):
-            return e(l) < e(r)
+            return e(l, tS) < e(r, tS)
         case BinOp(">", l, r):
-            return e(l) > e(r)
+            return e(l, tS) > e(r, tS)
         case BinOp("==", l, r):
-            return e(l) == e(r)
+            return e(l, tS) == e(r, tS)
         case BinOp("!=", l, r):
-            return e(l) != e(r)
+            return e(l, tS) != e(r, tS)
         case BinOp("<=", l, r):
-            return e(l) <= e(r)
+            return e(l, tS) <= e(r, tS)
         case BinOp(">=", l, r):
-            return e(l) >= e(r)
+            return e(l, tS) >= e(r, tS)
         case BinOp("%", l, r):
-            return e(l) % e(r)
+            return e(l, tS) % e(r, tS)
         case BinOp("and", l, r):
-            return e(l) and e(r)
+            return e(l, tS) and e(r, tS)
         case BinOp("or", l, r):
-            return e(l) or e(r)
+            return e(l, tS) or e(r, tS)
         case BinOp("&", l, r):
-            return e(l) & e(r)
+            return e(l, tS) & e(r, tS)
         case BinOp("|", l, r):
-            return e(l) | e(r)
+            return e(l, tS) | e(r, tS)
         case BinOp("^", l, r):
-            return e(l) ^ e(r)
+            return e(l, tS) ^ e(r, tS)
         case BinOp("<<", l, r):
-            return e(l) << e(r)
+            return e(l, tS) << e(r, tS)
         case BinOp(">>", l, r):
-            return e(l) >> e(r)
-        case BinOp("not", l, _):  # Unary logical operator
-            return not e(l)
-        case BinOp("~", l, _):  # Unary bitwise operator
-            return ~e(l)
-        
+            return e(l, tS) >> e(r, tS)
+        case BinOp("not", l, _): # Unary logical operator
+            return not e(l, tS)
+        case BinOp("~", l, _): # Unary bitwise operator
+            return ~e(l, tS)
         case UnaryOp("~", val):
-            return ~e(val)
+            return ~e(val, tS)
         case UnaryOp("!", val):
-            return not e(val)
+            return not e(val, tS)
         case UnaryOp("ascii", val):
-            return ord(e(val))
+            return ord(e(val, tS))
         case UnaryOp("char", val):
-            return chr(e(val))
-        
+            return chr(e(val, tS))
+       
         # Conditional
         case If(cond, sat, else_):
-            return e(sat) if e(cond) else e(else_)
-        
+            return e(sat, tS) if e(cond, tS) else e(else_, tS)
+
         # Display
         case Display(val):
-            return print(e(val))
-        
-        # Variables (evaluates to value)
+            return print(e(val, tS), end = "")
+       
+        case DisplayL(val):
+            return print(e(val, tS))
+
         case CompoundAssignment(var_name, op, value):
-            var_value = context.get_variable(var_name).value
-            var_value_updated = e(BinOp(op[0], Number(var_value), value))
-            context.update_variable(var_name, var_value_updated)
-            # return context  # temporary return value -> will be removed later
-            return var_value_updated
+            prev_val = tS.lookup(var_name)
+            new_val = e(BinOp(op[0], Number(prev_val), value), tS)
+            tS.find_and_update(var_name, new_val)
+            return new_val
+            # var_value = context.get_variable(var_name).value
+            # var_value_updated = e(BinOp(op[0], Number(var_value), value), tS)
+            # context.update_variable(var_name, var_value_updated)
+            # return context # temporary return value -> will be removed later
+            # # else raise error
         
-        case Binding(name, dtype, value):
-            value = e(value)
-            context.add_variable(name, value, dtype)
-            return value
-            # return context  # temporary return value -> will be removed later
+        case VarBind(name, dtype, value):
+            var_val = e(value, tS)
+            tS.table[name] = var_val # binds in current scope
+            return var_val
+            # context.add_variable(name, value, dtype)
+            # return context # temporary return value -> will be removed later
+
+        case BindArray(xname,atype,val):
+            all_vals= list(map(lambda x: e(x,tS),val))
+            tS.table[xname]=all_vals
+            return all_vals
+        case Array(xname,index):
+            return tS.table[xname][e(index,tS)]
+        case AssignToVar(var_name, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update(var_name, val_to_assign)
+            return val_to_assign
 
 if __name__ == "__main__":
 
@@ -173,61 +199,105 @@ if __name__ == "__main__":
         print("An error occurred while reading the file.")
     
     def execute(prog):
-        for stmt in parse(prog).statements:
-            e(stmt)
+        lines, tS = parse(prog)
+        for line in lines.statements:
+            e(line, tS)
     # ========================================================
 
-#     prog = """
-# var integer a = 2;
-# display a+1;
-# """
-
-    prog = """
-    var a = 112910;
-    var isEven = if (a%2==0) then ("True") else ("False") end;
-    display isEven;
-""" #! Error (True considered as variable instead of Boolean)
-
-#     prog = """
-# var a = 2;
-# func foo(v): {
-#     v = v+2;
-# };
-# display foo(3);
-# display a;
-# """ #! infinite loop
-
-    prog = """
-fn fib(a): {
-    display "---";
-    display a;
-    if (a==1 or a==2) then (1) else (fib((a-1)) + fib((a-2))) end;
-};
-display fib(15);
-""" #! Error in context/scoping
-
-    """ nth-Fibonacci
-    1,2,3,4,5,6,7
-    1,1,2,3,5,8,13
-    """
 
     prog ="""
-    var a= char (66);
-    display a;
-    var b= ascii("A");
-    display b;
-    var c= char (ascii('x') + ascii (char(1)));
-    display c;
+var a= char (66);
+displayl a;
+var b= ascii("A");
+displayl b;
+var c= char (ascii('x') + ascii (char(1)));
+displayl c;
+""" # testing for char(), ascii()
+
+    prog_y = """
+var a = 112911;
+var isEven = if a%2==0 then True else False end;
+displayl isEven;
+""" #! Error (True being considered as variable instead of Boolean)
+
+    prog = """
+fn fib(a) {
+    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+};
+displayl "----";
+var x = 20;
+displayl x;
+displayl fib(x); 
+""" # works!
+
+    # Fibonacci calculator: https://www.calculatorsoup.com/calculators/discretemathematics/fibonacci-calculator.php
+
+    prog = """
+var x = 2;
+fn foo(){
+    var x = 300;
+    x;
+}
+fn bar(x){
+    x += 1000;
+    x;
+}
+fn baz(x){
+    if x<5 then foo() else bar(x) end;
+}
+
+displayl baz(4); /~ 300 ~/
+displayl baz(6); /~ 1006 ~/
+""" 
+
+    prog2 = """
+var x = 1000;
+fn bar() {
+    x;
+}
+fn foo() {
+    var x = 100;
+    bar();
+}
+displayl foo();
+""" #! prints None (should be 1000)
+
+    prog3 = """
+var x = 1000;
+fn foo() {
+    var x = 100;
+    fn bar() {
+        x;
+    }
+    bar();
+}
+displayl foo();
+""" #! prints None (should be 100)
+
+    prog4 = """
+    array integer a = [1, 2, 3, 4, 5];
+    array b= [2,4,6,8,10];
+    displayl a[2]; 
+    var c= a[2]+b[2];
+    displayl c;
+    c=3;
+    displayl c;
+    displayl a;
 """
-    for t in lex(prog):
+    for t in lex(prog4):
         print(t)
-    
-    # for t in lex(prog):
-    #     print(t)
+
+    parsed, gS = parse(prog4)
+    print("------")
+    print("PARSED:")
+    pprint(parsed)
 
     print("------")
-    pprint(parse(prog)) # List[AST]
-
+    print("TABLE:")
+    pprint(gS.table)
+    
     print("------")
     print("Program Output: ")
-    execute(prog)
+    execute(prog4)
+
+

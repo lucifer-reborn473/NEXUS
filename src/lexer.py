@@ -18,7 +18,7 @@ class NumberToken(Token):
 
 @dataclass
 class OperatorToken(Token):
-    val: str
+    o: str
 
 @dataclass
 class StringToken(Token):
@@ -26,11 +26,19 @@ class StringToken(Token):
 
 @dataclass
 class KeywordToken(Token):
+    kw_name: str
+
+@dataclass
+class BooleanToken(Token):
     val: str
 
 @dataclass
+class BreakToken(Token):
+    pass
+
+@dataclass
 class TypeToken(Token):
-    val: str
+    type_name: str
 
 @dataclass
 class SemicolonToken(Token):
@@ -41,15 +49,27 @@ class CommaToken(Token):
     pass
 
 @dataclass
-class ColonToken(Token):
+class LeftBraceToken(Token):
     pass
 
 @dataclass
-class LeftCurlyBracketToken(Token):
+class LeftSquareToken(Token):
     pass
 
 @dataclass
-class RightCurlyBracketToken(Token):
+class RightSquareToken(Token):
+    pass
+
+@dataclass
+class RightBraceToken(Token):
+    pass
+
+@dataclass
+class LeftParenToken(Token):
+    pass
+
+@dataclass
+class RightParenToken(Token):
     pass
 
 # ======================================================================================================
@@ -77,6 +97,10 @@ def lex(s: str) -> Iterator[Token]:
             if t in keyword_tokens:
                 prevToken = KeywordToken(t)
                 yield prevToken
+            elif t=="break":
+                yield BreakToken()
+            elif t in boolean_tokens:
+                yield BooleanToken(t)
             elif t in base_type_tokens:
                 yield TypeToken(t)
             else:
@@ -172,13 +196,22 @@ def lex(s: str) -> Iterator[Token]:
                     yield prevToken
                 case '{':
                     i+=1
-                    yield LeftCurlyBracketToken()
+                    yield LeftBraceToken()
                 case '}':
                     i+=1
-                    yield RightCurlyBracketToken()
-                case ':':
+                    yield RightBraceToken()
+                case '(':
                     i+=1
-                    yield ColonToken()
+                    yield LeftParenToken()
+                case ')':
+                    i+=1
+                    yield RightParenToken()
+                case '[':
+                    i+=1
+                    yield LeftSquareToken()
+                case ']':
+                    i+=1
+                    yield RightSquareToken()
                 case ',':
                     i+=1
                     yield CommaToken()

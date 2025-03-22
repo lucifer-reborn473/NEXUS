@@ -14,6 +14,7 @@ keyword_tokens = (
     "then",
     "end",
     "display",
+    "displayl",
     "loop",
     "var",
     "ascii",
@@ -22,6 +23,13 @@ keyword_tokens = (
     "or",
     "and",
     "proc",
+    "array",
+    "return",
+)
+
+boolean_tokens = (
+    "True",
+    "False",
 )
 
 base_type_tokens = (
@@ -36,8 +44,6 @@ base_operator_tokens = (
     "-",
     "÷",
     "/",
-    "(",
-    ")",
     "<",
     ">",
     "=",
