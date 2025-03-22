@@ -144,6 +144,21 @@ def e(tree: AST, tS) -> Any:
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
             return val_to_assign
+        
+
+        # Loops
+        case WhileLoop(cond, body):
+            while e(cond, tS):  # Evaluate the condition
+                for stmt in body.statements:  # Execute the body
+                    e(stmt, tS)
+
+        case ForLoop(init, cond, incr, body):
+            e(init, tS)  # Initialize the loop variable
+            while e(cond, tS):  # Evaluate the condition
+                for stmt in body.statements:  # Execute the body
+                    e(stmt, tS)
+                e(incr, tS)  # Increment the loop variable
+
 
 if __name__ == "__main__":
 
@@ -272,6 +287,16 @@ displayl foo();
     # for t in lex(prog):
     #     print(t)
 
+
+    prog = """
+    for (var i = 0; i < 10; i = i + 1) {
+        display(i);
+    }
+    """
+
+
+    print("Running prog")
+    execute(prog)
     parsed, gS = parse(prog)
     
     print("------")

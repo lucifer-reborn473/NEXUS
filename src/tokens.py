@@ -15,7 +15,10 @@ keyword_tokens = (
     "end",
     "display",
     "displayl",
-    "loop",
+    # "loop",
+    "while",
+    "for",
+    
     "var",
     "ascii",
     "char",
