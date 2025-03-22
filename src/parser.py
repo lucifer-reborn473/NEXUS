@@ -77,6 +77,16 @@ class UnaryOp(AST):
     val: AST
 
 @dataclass
+class BindArray(AST):
+    xname: str
+    atype: str
+    val: List[AST]
+@dataclass
+class Array(AST):
+    xname: str
+    index: int
+
+@dataclass
 class Number(AST):
     val: str
 
@@ -95,6 +105,10 @@ class Display(AST):
 @dataclass
 class DisplayL(AST):
     val: Any
+
+@dataclass
+class Break(AST):
+    pass
 
 @dataclass
 class CompoundAssignment(AST):
@@ -370,7 +384,7 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_ascii_char(tS):
-        ast = parse_string(tS)
+        ast = parse_array(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("char"):
@@ -387,7 +401,28 @@ def parse(s: str) -> List[AST]:
                     ast = UnaryOp("ascii", value)
                 case _:
                     return ast
-
+    def parse_array(tS):
+        match t.peek(None):
+            case KeywordToken("array"):
+                next(t)
+                elements = []
+                atype=None
+                if (isinstance(t.peek(None), TypeToken)):
+                    atype = t.peek(None).type_name
+                    next(t)
+                if (isinstance(t.peek(None), VarToken)):
+                    xname = t.peek(None).var_name
+                    next(t)
+                expect(OperatorToken("="))
+                expect(LeftSquareToken())
+                while not isinstance(t.peek(None), RightSquareToken):
+                    elements.append(parse_string(tS))
+                    if isinstance(t.peek(None), CommaToken):
+                        next(t)
+                expect(RightSquareToken())
+                return BindArray(xname,atype,elements)
+            case _:
+                return parse_string(tS)
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
@@ -401,7 +436,23 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return Boolean(b=="True")
             case _:
-                return parse_func(tS)       
+                return loop_parse(tS)
+    def loop_parse(tS):
+        ast=parse_func(tS)
+        while True:
+            match t.peek(None):
+                case KeywordToken("loop"):
+                    next(t) # loop keyword detected move to next token
+                    cond=None
+                    if (t.peek(None) == LeftParenToken()): # loop condition starts
+                        next(t)
+                        cond=parse_logic(tS)[0]
+                        expect(RightParenToken())
+                    expect (LeftBraceToken()) # loop body starts
+                    body = parse_var(tS)[0] # temporary 
+                    ast=Loop(cond,body)
+                case _:
+                    return ast       
     def parse_func(tS): # Function definition and Function call
         ast = parse_brackets(tS)
         while True:
@@ -499,7 +550,15 @@ def parse(s: str) -> List[AST]:
                 return Number(n)
             case VarToken(v): # variable identifier
                 next(t)
+                if (isinstance(t.peek(None), LeftSquareToken)): # probable array access
+                    next(t)
+                    index=parse_atom()
+                    expect(RightSquareToken())
+                    return Array(v,index)
                 return Variable(v)
+            case BreakToken():
+                next(t)
+                return Break()
 
     return parse_program()
 

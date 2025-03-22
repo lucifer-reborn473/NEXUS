@@ -33,6 +33,10 @@ class BooleanToken(Token):
     val: str
 
 @dataclass
+class BreakToken(Token):
+    pass
+
+@dataclass
 class TypeToken(Token):
     type_name: str
 
@@ -46,6 +50,14 @@ class CommaToken(Token):
 
 @dataclass
 class LeftBraceToken(Token):
+    pass
+
+@dataclass
+class LeftSquareToken(Token):
+    pass
+
+@dataclass
+class RightSquareToken(Token):
     pass
 
 @dataclass
@@ -85,6 +97,8 @@ def lex(s: str) -> Iterator[Token]:
             if t in keyword_tokens:
                 prevToken = KeywordToken(t)
                 yield prevToken
+            elif t=="break":
+                yield BreakToken()
             elif t in boolean_tokens:
                 yield BooleanToken(t)
             elif t in base_type_tokens:
@@ -192,6 +206,12 @@ def lex(s: str) -> Iterator[Token]:
                 case ')':
                     i+=1
                     yield RightParenToken()
+                case '[':
+                    i+=1
+                    yield LeftSquareToken()
+                case ']':
+                    i+=1
+                    yield RightSquareToken()
                 case ',':
                     i+=1
                     yield CommaToken()
