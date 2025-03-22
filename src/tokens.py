@@ -26,6 +26,8 @@ keyword_tokens = (
     "or",
     "and",
     "proc",
+    "array",
+    "return",
 )
 
 boolean_tokens = (

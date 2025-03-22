@@ -140,6 +140,12 @@ def e(tree: AST, tS) -> Any:
             # context.add_variable(name, value, dtype)
             # return context # temporary return value -> will be removed later
 
+        case BindArray(xname,atype,val):
+            all_vals= list(map(lambda x: e(x,tS),val))
+            tS.table[xname]=all_vals
+            return all_vals
+        case Array(xname,index):
+            return tS.table[xname][e(index,tS)]
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
@@ -223,7 +229,7 @@ var c= char (ascii('x') + ascii (char(1)));
 displayl c;
 """ # testing for char(), ascii()
 
-    prog = """
+    prog_y = """
 var a = 112911;
 var isEven = if a%2==0 then True else False end;
 displayl isEven;
@@ -302,10 +308,37 @@ displayl foo();
     }
     """
 
-    print("Running prog")
-    execute(prog)
-    parsed, gS = parse(prog)
-    
+#     print("Running prog")
+#     execute(prog)
+#     parsed, gS = parse(prog)
+#     print("------")
+#     print("PARSED:")
+#     pprint(parsed)
+
+#     print("------")
+#     print("TABLE:")
+#     pprint(gS.table)
+
+#     print("------")
+#     print("Program Output: ")
+#     execute(prog)
+
+
+
+    prog4 = """
+    array integer a = [1, 2, 3, 4, 5];
+    array b= [2,4,6,8,10];
+    displayl a[2]; 
+    var c= a[2]+b[2];
+    displayl c;
+    c=3;
+    displayl c;
+    displayl a;
+"""
+    for t in lex(prog4):
+        print(t)
+
+    parsed, gS = parse(prog4)
     print("------")
     print("PARSED:")
     pprint(parsed)
@@ -316,6 +349,6 @@ displayl foo();
     
     print("------")
     print("Program Output: ")
-    execute(prog)
+    execute(prog4)
 
 
