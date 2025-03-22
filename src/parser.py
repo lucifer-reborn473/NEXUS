@@ -116,9 +116,21 @@ class CompoundAssignment(AST):
     op: str
     val: AST
 
+# @dataclass
+# class Loop(AST):
+#     cond: AST
+#     body: AST
+
 @dataclass
-class Loop(AST):
-    cond: AST
+class WhileLoop(AST):
+    condition: AST 
+    body: AST
+
+@dataclass
+class ForLoop(AST):
+    initialization: AST 
+    condition: AST
+    increment: AST
     body: AST
 
 @dataclass
@@ -181,7 +193,68 @@ def parse(s: str) -> List[AST]:
         return (Statements(statements), thisScope)          # Return a list of parsed statements + scope
 
 
-    def parse_display(tS): # display value/output
+
+
+    def parse_while(tS):
+        """
+        Parse a while loop.
+        Syntax: while (condition) { statements }
+        """
+        match t.peek(None):
+            case KeywordToken("while"):
+                next(t)  # Consume 'while'
+                expect(LeftParenToken())  # Expect '('
+                
+                # Parse the condition
+                condition = parse_var(tS)[0]
+                expect(RightParenToken())  # Expect ')'
+                
+                # Parse the body
+                expect(LeftBraceToken())  # Expect '{'
+                body, tS = parse_program(tS)  # Parse the body recursively
+                expect(RightBraceToken())  # Expect '}'
+                
+                # Return the parsed WhileLoop AST node
+                return WhileLoop(condition, body), tS
+            case _:
+                raise SyntaxError("Invalid syntax for while loop")
+
+
+    def parse_for(tS):
+        """
+        Parse a for loop.
+        Syntax: for (initialization; condition; increment) { statements }
+        """
+        match t.peek(None):
+            case KeywordToken("for"):
+                next(t)  # Consume 'for'
+                expect(LeftParenToken())  # Expect '('
+                
+                # Parse initialization
+                initialization, tS = parse_var(tS)
+                expect(SemicolonToken())  # Expect ';'
+                
+                # Parse condition
+                condition = parse_var(tS)[0]
+                expect(SemicolonToken())  # Expect ';'
+                
+                # Parse increment
+                increment, tS = parse_var(tS)
+                expect(RightParenToken())  # Expect ')'
+                
+                # Parse body
+                expect(LeftBraceToken())  # Expect '{'
+                body, tS = parse_program(tS)  # Parse the body recursively
+                expect(RightBraceToken())  # Expect '}'
+                
+                # Return the parsed ForLoop AST node
+                return ForLoop(initialization, condition, increment, body), tS
+            case _:
+                raise SyntaxError("Invalid syntax for for loop")
+
+
+
+    def parse_display(tS):  # display value/output
         (ast, tS) = parse_var(tS)
         while True:
             match t.peek(None):
@@ -194,6 +267,10 @@ def parse(s: str) -> List[AST]:
                 case SemicolonToken():
                     next(t)
                     return ast, tS
+                case KeywordToken("while"):
+                    ast, tS = parse_while(tS)  # Parse while loop
+                case KeywordToken("for"):
+                    ast, tS = parse_for(tS)  # Parse for loop
                 case _:
                     return ast, tS
 
