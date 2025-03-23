@@ -112,8 +112,20 @@ def e(tree: AST, tS) -> Any:
             return chr(e(val, tS))
        
         # Conditional
-        case If(cond, sat, else_):
-            return e(sat, tS) if e(cond, tS) else e(else_, tS)
+        # case If(cond, sat, else_):
+        #     return e(sat, tS) if e(cond, tS) else e(else_, tS)
+        
+        case Statements(statements):
+            result = None
+            for stmt in statements:
+                result = e(stmt, tS)
+            return result
+
+        case If(cond, then_expr, else_expr):
+            if e(cond, tS):
+                return e(then_expr, tS)
+            else:
+                return e(else_expr, tS) if else_expr is not None else None
 
         # Display
         case Display(val):
@@ -204,7 +216,7 @@ if __name__ == "__main__":
 
     # ========================================================
     # Loading the Program
-    fileName = "/Users/husain/Library/CloudStorage/OneDrive-iitgn.ac.in/semester_8/compilers/loops/Our_Compiler/src/sample-code.txt"
+    fileName = "src/sample-code.txt"
     try:
         with open(fileName, 'r') as file:
             prog_fin = file.read()
