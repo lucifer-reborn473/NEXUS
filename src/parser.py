@@ -314,15 +314,36 @@ def parse(s: str) -> List[AST]:
     def parse_if(tS):
         match t.peek(None):
             case KeywordToken("if"):
-                next(t)
-                # cond = parse_logic(tS)
-                cond = parse_var(tS)[0]
+                next(t)  # consume "if"
+                # Parse condition (using parse_var; you could also use parse_logic)
+                cond = parse_logic(tS)
                 expect(KeywordToken("then"))
-                then = parse_var(tS)[0]
-                expect(KeywordToken("else"))
-                else_ = parse_var(tS)[0]
+                
+                if isinstance(t.peek(None), LeftBraceToken):
+                    next(t)  
+                    then_expr, tS = parse_program(tS)
+                    expect(RightBraceToken())  # expect matching '}'
+                else:
+                    if isinstance(t.peek(None), KeywordToken) and t.peek(None).kw_name in ["display", "displayl"]:
+                        then_expr, tS = parse_display(tS)
+                    else:
+                        then_expr = parse_logic(tS)
+                # Parse optional else clause:
+                if isinstance(t.peek(None), KeywordToken) and t.peek(None).kw_name == "else":
+                    next(t)  
+                    if isinstance(t.peek(None), LeftBraceToken):
+                        next(t)  
+                        else_expr, tS = parse_program(tS)
+                        expect(RightBraceToken())
+                    else:
+                        if isinstance(t.peek(None), KeywordToken) and t.peek(None).kw_name in ["display", "displayl"]:
+                            else_expr, tS = parse_display(tS)
+                        else:
+                            else_expr = parse_logic(tS)
+                else:
+                    else_expr = None
                 expect(KeywordToken("end"))
-                return If(cond, then, else_)
+                return If(cond, then_expr, else_expr)
             case _:
                 return parse_logic(tS)
 
