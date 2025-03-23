@@ -310,9 +310,7 @@ def parse(s: str) -> List[AST]:
         match t.peek(None):
             case KeywordToken("if"):
                 next(t)
-                
                 tS_cond = SymbolTable(tS)
-
                 cond = parse_var(tS_cond)[0]
                 expect(KeywordToken("then"))
                 
