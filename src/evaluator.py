@@ -204,10 +204,10 @@ if __name__ == "__main__":
 
     # ========================================================
     # Loading the Program
-    fileName = "sample-code.txt"
+    fileName = "/Users/husain/Library/CloudStorage/OneDrive-iitgn.ac.in/semester_8/compilers/loops/Our_Compiler/src/sample-code.txt"
     try:
         with open(fileName, 'r') as file:
-            prog = file.read()
+            prog_fin = file.read()
     except FileNotFoundError:
         print(f"The file {fileName} was not found.")
     except IOError:
@@ -294,19 +294,15 @@ displayl foo();
     #     print(t)
 
 
-    prog = """
-    for (var i = 0; i < 10; i = i + 1) {
-        display(i);
-    }
-    """
 
-    prog = """
-    var x = 0;
-    while (x < 15) {
-        displayl(x);
-        x = x + 1;
-    }
-    """
+
+    # prog = """
+    # var x = 0;
+    # while (x < 15) {
+    #     displayl(x);
+    #     x = x + 1;
+    # }
+    # """
 
 #     print("Running prog")
 #     execute(prog)
@@ -325,20 +321,20 @@ displayl foo();
 
 
 
-    prog4 = """
-    array integer a = [1, 2, 3, 4, 5];
-    array b= [2,4,6,8,10];
-    displayl a[2]; 
-    var c= a[2]+b[2];
-    displayl c;
-    c=3;
-    displayl c;
-    displayl a;
-"""
-    for t in lex(prog4):
-        print(t)
+#     prog4 = """
+#     array integer a = [1, 2, 3, 4, 5];
+#     array b= [2,4,6,8,10];
+#     displayl a[2]; 
+#     var c= a[2]+b[2];
+#     displayl c;
+#     c=3;
+#     displayl c;
+#     displayl a;
+# """
+#     for t in lex(prog4):
+#         print(t)
 
-    parsed, gS = parse(prog4)
+    parsed, gS = parse(prog_fin)
     print("------")
     print("PARSED:")
     pprint(parsed)
@@ -349,6 +345,6 @@ displayl foo();
     
     print("------")
     print("Program Output: ")
-    execute(prog4)
+    execute(prog_fin)
 
 
