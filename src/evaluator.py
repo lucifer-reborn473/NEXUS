@@ -98,9 +98,20 @@ def e(tree: AST, tS) -> Any:
 
             return ans  # after returning ans
 
+        case Statements(statements):
+            result = None
+            for stmt in statements:
+                result = e(stmt, tS)
+            return result
+
         # Conditional
-        case If(cond, sat, else_):
-            return e(sat, tS) if e(cond, tS) else e(else_, tS)
+        case If(cond, then_body, else_body, tS_cond):
+            ans = None
+            if e(cond, tS_cond):
+                ans = e(then_body, tS_cond)
+            elif else_body is not None:
+                ans = e(else_body, tS_cond)
+            return ans
 
         # Display
         case Display(val):
@@ -132,17 +143,17 @@ def e(tree: AST, tS) -> Any:
             return val_to_assign
 
         # Loops
-        case WhileLoop(cond, body):
-            while e(cond, tS):  # Evaluate the condition
-                for stmt in body.statements:  # Execute the body
-                    e(stmt, tS)
+        case WhileLoop(cond, body, tS_while):
+            while e(cond, tS_while):
+                for stmt in body.statements:
+                    e(stmt, tS_while)
 
-        case ForLoop(init, cond, incr, body):
-            e(init, tS)  # Initialize the loop variable
-            while e(cond, tS):  # Evaluate the condition
-                for stmt in body.statements:  # Execute the body
-                    e(stmt, tS)
-                e(incr, tS)  # Increment the loop variable
+        case ForLoop(init, cond, incr, body, tS_for):
+            e(init, tS_for)  
+            while e(cond, tS_for):  
+                for stmt in body.statements:  
+                    e(stmt, tS_for)
+                e(incr, tS_for)
 
 
 if __name__ == "__main__":
@@ -155,7 +166,7 @@ if __name__ == "__main__":
 
     # ========================================================
     # Loading the Program
-    fileName = "/Users/husain/Library/CloudStorage/OneDrive-iitgn.ac.in/semester_8/compilers/loops/Our_Compiler/src/sample-code.txt"
+    fileName = "sample-code.txt"
     try:
         with open(fileName, "r") as file:
             prog_fin = file.read()
@@ -171,36 +182,29 @@ if __name__ == "__main__":
 
     # ========================================================
 
-    prog2 = """
-var a = "g-";
-fnrec foo(x, i){
-    if i==1 then var a = "l-" else "dummy" end;
-    display x; display ", ";
-    displayl i;
-    if x==1 then "k" else a + foo(x-1, i+1) end;
-}
-displayl foo(5,1);
-"""
-
     prog = """
 fn foo(i){
     if i==1 then var a = 2 else 5 end;
+    a = 42;
 }
 displayl foo(2);
-"""  #! why does funcScope contain `a`?
+"""  #! (for Rohit) no error since funcScope contain `a` (why?)
 
     prog2 = """
 fn foo(i){
     if i==1 then a = 2 else 5 end;
+    a = 42;
 }
 displayl foo(2);
-"""  #! here funcScope does not contain `a`
+"""  #! (for Rohit) error since funcScope does not contain `a` 
 
-    prog = """
+    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]   
+
+    prog3 = """
 var a = 2;
 var a = 100;
 displayl a;
-"""  #! should throw error
+"""  #! (for Rohit) should throw error
 
     #! check for redeclaration of function
 
@@ -208,14 +212,14 @@ displayl a;
 
     #! how arrays passed/returned from functions
 
-    prog = """
+    prog4 = """
 displayl 2
 displayl 3
 """  #! why only 3 printed (should be syntax error due to missing semicolons)
 
-    #! add nil datatype (uninitialised variables, function return)
+    #! add nil datatype for function returns
 
-    prog = """
+    prog5 = """
 var a = 2++3;
 displayl a;
 """  #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
@@ -228,18 +232,16 @@ displayl a;
 
     #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
 
-    #! runs a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
 
+    prog = """
+var a = (if 2<3 then 10 else 100 end) + 6;
+displayl a;
+""" #! error without brackets (even if 6 comes first)
+
+
+    # =======================================
     # parsed, gS = parse(prog)
-
-    # print("------")
-    # print("PARSED:")
-    # pprint(parsed)
-
-    # print("------")
-    # print("TABLE:")
-    # pprint(gS.table)
-
     # print("------")
     # print("Program Output: ")
     execute(prog)
