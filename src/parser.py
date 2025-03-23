@@ -128,6 +128,7 @@ class FuncDef(AST):
     funcParams: List[Variable]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
     funcScope: Any              # static scoping (scope is tied to function definition and not its call)
+    isRec: bool                 # recursive or not
 
 @dataclass 
 class FuncCall(AST):
@@ -406,7 +407,12 @@ def parse(s: str) -> List[AST]:
         ast = parse_brackets(tS)
         while True:
             match t.peek(None):
-                case KeywordToken("fn"): # function declaration
+                case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
+                    if t.peek(None).kw_name == "fnrec":
+                        isRec = True
+                    else:
+                        isRec = False
+
                     next(t)
                     
                     if isinstance(t.peek(None), VarToken):
@@ -450,8 +456,8 @@ def parse(s: str) -> List[AST]:
 
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
-                    ast = FuncDef(funcName, params, body, tS_f)
-                    tS.table[funcName] = (params, body, tS_f)
+                    ast = FuncDef(funcName, params, body, tS_f, isRec)
+                    tS.table[funcName] = (params, body, tS_f, isRec)
                 
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call
