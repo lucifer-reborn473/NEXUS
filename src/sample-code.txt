@@ -1,12 +1,11 @@
-for (var i = 0; i < 2; i = i + 1) {
-    for(var j=0;j<4;j=j+1){
-        display(i);
-        displayl(j);
-    }
+fn loopFunction(n) {
+    var i = 0;
+    while (i < n) {
+        displayl(i);
+        i = i + 1;
+    };
+};
 
-    for(var j=0;j<4;j=j+1){
-        display(i);
-        displayl(j);
-    }
-    /~displayl("----");~/
-}
+var x = 5;
+displayl("Calling loopFunction with x=5");
+loopFunction(x);

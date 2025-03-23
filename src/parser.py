@@ -504,23 +504,23 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return Boolean(b=="True")
             case _:
-                return loop_parse(tS)
-    def loop_parse(tS):
-        ast=parse_func(tS)
-        while True:
-            match t.peek(None):
-                case KeywordToken("loop"):
-                    next(t) # loop keyword detected move to next token
-                    cond=None
-                    if (t.peek(None) == LeftParenToken()): # loop condition starts
-                        next(t)
-                        cond=parse_logic(tS)[0]
-                        expect(RightParenToken())
-                    expect (LeftBraceToken()) # loop body starts
-                    body = parse_var(tS)[0] # temporary 
-                    ast=Loop(cond,body)
-                case _:
-                    return ast       
+                return parse_func(tS)
+    # def loop_parse(tS):
+        # ast=parse_func(tS)
+        # while True:
+        #     match t.peek(None):
+        #         case KeywordToken("loop"):
+        #             next(t) # loop keyword detected move to next token
+        #             cond=None
+        #             if (t.peek(None) == LeftParenToken()): # loop condition starts
+        #                 next(t)
+        #                 cond=parse_logic(tS)[0]
+        #                 expect(RightParenToken())
+        #             expect (LeftBraceToken()) # loop body starts
+        #             body = parse_var(tS)[0] # temporary 
+        #             ast=Loop(cond,body)
+        #         case _:
+        #             return ast       
     def parse_func(tS): # Function definition and Function call
         ast = parse_brackets(tS)
         while True:
