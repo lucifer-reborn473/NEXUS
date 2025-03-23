@@ -84,7 +84,6 @@ def e(tree: AST, tS) -> Any:
             (funcParams, funcBody, funcScopeMain, isRec) = tS.lookup(funcName)              # Step 1
             funcScope = funcScopeMain.copy_scope() if isRec else funcScopeMain
 
-
             for i in range(len(funcParams)):                                                # Step 2
                 funcScope.table[funcParams[i]] = e(funcArgs[i], tS) 
 
@@ -149,16 +148,75 @@ if __name__ == "__main__":
             e(line, tS)
     # ========================================================
 
-    parsed, gS = parse(prog)
-    
-    print("------")
-    print("PARSED:")
-    pprint(parsed)
+    prog2 = """
+var a = "g-";
+fnrec foo(x, i){
+    if i==1 then var a = "l-" else "dummy" end;
+    display x; display ", ";
+    displayl i;
+    if x==1 then "k" else a + foo(x-1, i+1) end;
+}
+displayl foo(5,1);
+"""
 
-    print("------")
-    print("TABLE:")
-    pprint(gS.table)
+    prog = """
+fn foo(i){
+    if i==1 then var a = 2 else 5 end;
+}
+displayl foo(2);
+""" #! why does funcScope contain `a`?
+
+    prog2 = """
+fn foo(i){
+    if i==1 then a = 2 else 5 end;
+}
+displayl foo(2);
+""" #! here funcScope does not contain `a`
+
+    prog = """
+var a = 2;
+var a = 100;
+displayl a;
+""" #! should throw error
+
+    #! check for redeclaration of function
+
+    #! are arrays mutable?
+
+    #! how arrays passed/returned from functions
+
+    prog = """
+displayl 2
+displayl 3
+""" #! why only 3 printed (should be syntax error due to missing semicolons)
+
+    #! add nil datatype (uninitialised variables, function return)
+
+    prog = """
+var a = 2++3;
+displayl a;
+""" #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
+
+#     prog = """
+# var a = 2^3
+# """ #! infinite loop
+
+    #! array features in Project doc
+
+    #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
+
+    #! runs a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+
+    # parsed, gS = parse(prog)
     
-    print("------")
-    print("Program Output: ")
+    # print("------")
+    # print("PARSED:")
+    # pprint(parsed)
+
+    # print("------")
+    # print("TABLE:")
+    # pprint(gS.table)
+    
+    # print("------")
+    # print("Program Output: ")
     execute(prog)
