@@ -31,7 +31,10 @@ from pprint import pprint
     a[2] = a[2] + a[1];
     a[8-6-1] = a[0] * a[3];
     displayl a;
-    """, "[5, 100, 25, 20]")
+    array b=[20,11];
+    a=b;
+    displayl a;
+    """, "[5, 100, 25, 20]\n[20, 11]"),
 
 ])
 def test_array_operations(code, expected_output, capfd):
