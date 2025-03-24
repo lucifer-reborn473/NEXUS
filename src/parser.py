@@ -730,7 +730,50 @@ def parse(s: str) -> List[AST]:
                             ast=AssigntoArr(v,index,value)
                         else:
                             ast= CallArr(v, index)
-
+                    
+                    elif (isinstance(t.peek(None),DotToken)): # Array functions
+                        next(t)
+                        match t.peek(None):
+                            case KeywordToken("PushFront"):
+                                next(t)
+                                expect(LeftParenToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=PushFront(v,val)
+                            case KeywordToken("PushBack"):
+                                next(t)
+                                expect(LeftParenToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=PushBack(v,val)
+                            case KeywordToken("PopFront"):
+                                next(t)
+                                ast=PopFront(v)
+                            case KeywordToken("PopBack"):
+                                next(t)
+                                ast=PopBack(v)
+                            case KeywordToken("Length"):
+                                next(t)
+                                ast=GetLength(v)
+                            case KeywordToken("Clear"):
+                                next(t)
+                                ast=ClearArray(v)
+                            case KeywordToken("Insert"):
+                                next(t)
+                                expect(LeftParenToken())
+                                index = parse_var(tS)[0]
+                                expect(CommaToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=InsertAt(v,index,val)    
+                            case KeywordToken("Remove"):
+                                next(t)
+                                expect(LeftParenToken())
+                                index = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=RemoveAt(v,index)
+                            case _:
+                                return ast
                     else:
                         ast=Variable(v)
                 case _:

@@ -41,3 +41,42 @@ def test_array_operations(code, expected_output, capfd):
     execute(code)
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
+
+import pytest
+
+@pytest.mark.parametrize("code, expected_output", [
+    ("""
+    array a = [1,2,3,4,5];
+    a.PushFront(0);
+    displayl a;
+    a.PushBack(6);
+    displayl a;
+    displayl a.PopFront;
+    displayl a;
+    displayl a.PopBack;
+    displayl a;
+    displayl a.Length;
+    a.Insert(3, 10);
+    displayl a;
+    a.Remove(1);
+    displayl a;
+    a.Clear;
+    displayl a;
+    displayl a.Length;
+    """, 
+    """[0, 1, 2, 3, 4, 5]
+[0, 1, 2, 3, 4, 5, 6]
+0
+[1, 2, 3, 4, 5, 6]
+6
+[1, 2, 3, 4, 5]
+5
+[1, 2, 3, 10, 4, 5]
+[1, 3, 10, 4, 5]
+[]
+0""")
+])
+def test_array_functions(code, expected_output, capfd):
+    execute(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
