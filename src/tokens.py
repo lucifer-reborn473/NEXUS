@@ -53,6 +53,7 @@ base_operator_tokens = (
     "=",
     "%",
     "!",
+    "^",
 )
 
 compound_assigners = (
