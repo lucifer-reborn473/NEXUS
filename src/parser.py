@@ -187,6 +187,14 @@ class ForLoop(AST):
     forScope: Any
 
 @dataclass
+class BreakOn(AST):
+    pass
+
+@dataclass
+class MoveOn(AST):
+    pass
+
+@dataclass
 class AssignToVar(AST): # through assignment operator
     var_name: str
     val: AST
@@ -787,8 +795,15 @@ def parse(s: str) -> List[AST]:
             case BreakToken():
                 next(t)
                 return Break()
+            case BreakOnToken():
+                next(t)
+                return BreakOn()
+            case MoveOnToken():
+                next(t)
+                return MoveOn()
 
     return parse_program()
+
 
 
 if __name__ == "__main__":

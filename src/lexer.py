@@ -75,6 +75,15 @@ class LeftParenToken(Token):
 class RightParenToken(Token):
     pass
 
+@dataclass
+class BreakOnToken(Token):
+    pass
+
+@dataclass
+class MoveOnToken(Token):
+    pass
+
+
 # ======================================================================================================
 def lex(s: str) -> Iterator[Token]:
     i = 0
@@ -106,6 +115,11 @@ def lex(s: str) -> Iterator[Token]:
                 yield BooleanToken(t)
             elif t in base_type_tokens:
                 yield TypeToken(t)
+            elif t == "breakon":
+                yield BreakOnToken()
+            elif t == "moveon":
+                yield MoveOnToken()
+
             else:
                 prevToken = VarToken(t)
                 yield prevToken
