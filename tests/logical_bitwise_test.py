@@ -38,5 +38,7 @@ def test_bitwise_operations(expression, expected, capfd):
     assert captured.out.strip() == expected
 
 if __name__ =="__main__":
-    code = "display 3^1;"
+    code = "displayl (-4+3);"
+    print(list(lex(code)))
+    print(parse(code))
     execute(code)

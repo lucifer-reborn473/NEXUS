@@ -86,7 +86,7 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
-        
+
         if s[i]==";":
             yield SemicolonToken()
             i+=1
@@ -133,7 +133,7 @@ def lex(s: str) -> Iterator[Token]:
                 i = i + 1
             prevToken = NumberToken(t)
             yield prevToken
-        
+
 
         # Single-line and Inline comments: /~ ... ~/
         elif s[i:i+2] == "/~":
@@ -141,7 +141,7 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i:i+2] != "~/":
                 i += 1
             i += 2  # skip "~/"
-            continue 
+            continue
 
         # Multi-line comments: /~ { ... } ~/
         elif s[i:i+3] == "/~{":
@@ -149,8 +149,8 @@ def lex(s: str) -> Iterator[Token]:
             while i < len(s) and s[i:i+3] != "}~/":
                 i += 1
             i += 3  # skip "}~/"
-            continue 
-        
+            continue
+
         else:
             match t := s[i]:
                 case "-":
@@ -168,7 +168,7 @@ def lex(s: str) -> Iterator[Token]:
                         if s[i].isdigit():
                             # unary negation / subtration on a number
                             # is prevToken is digit or alpha, means subtraction, else unary neg
-                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken):
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
                                 # means subtraction from a number or variable
                                 yield OperatorToken('+') # example: -3 => +(-3)
 
@@ -221,4 +221,3 @@ def lex(s: str) -> Iterator[Token]:
                 case '.':
                     i+=1
                     yield DotToken()
-
