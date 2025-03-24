@@ -335,10 +335,10 @@ displayl foo();
     displayl c;
     displayl a;
 """
-    for t in lex(prog4):
+    for t in lex(prog):
         print(t)
 
-    parsed, gS = parse(prog4)
+    parsed, gS = parse(prog)
     print("------")
     print("PARSED:")
     pprint(parsed)
@@ -349,6 +349,6 @@ displayl foo();
     
     print("------")
     print("Program Output: ")
-    execute(prog4)
+    execute(prog)
 
 
