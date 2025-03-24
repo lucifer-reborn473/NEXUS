@@ -21,6 +21,9 @@ class OperatorToken(Token):
     o: str
 
 @dataclass
+class DotToken(Token):
+    pass
+@dataclass
 class StringToken(Token):
     val: str
 
@@ -72,6 +75,15 @@ class LeftParenToken(Token):
 class RightParenToken(Token):
     pass
 
+@dataclass
+class BreakOnToken(Token):
+    pass
+
+@dataclass
+class MoveOnToken(Token):
+    pass
+
+
 # ======================================================================================================
 def lex(s: str) -> Iterator[Token]:
     i = 0
@@ -83,7 +95,7 @@ def lex(s: str) -> Iterator[Token]:
 
         if i >= len(s):
             return
-        
+
         if s[i]==";":
             yield SemicolonToken()
             i+=1
@@ -103,6 +115,11 @@ def lex(s: str) -> Iterator[Token]:
                 yield BooleanToken(t)
             elif t in base_type_tokens:
                 yield TypeToken(t)
+            elif t == "breakon":
+                yield BreakOnToken()
+            elif t == "moveon":
+                yield MoveOnToken()
+
             else:
                 prevToken = VarToken(t)
                 yield prevToken
@@ -146,7 +163,7 @@ def lex(s: str) -> Iterator[Token]:
             #! check for correct comment syntax
             i += 2  # skip "~/"
             continue 
-        
+       
         else:
             match t := s[i]:
                 case "-":
@@ -164,7 +181,7 @@ def lex(s: str) -> Iterator[Token]:
                         if s[i].isdigit():
                             # unary negation / subtration on a number
                             # is prevToken is digit or alpha, means subtraction, else unary neg
-                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or isinstance(prevToken, KeywordToken):
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
                                 # means subtraction from a number or variable
                                 yield OperatorToken('+') # example: -3 => +(-3)
 
@@ -183,7 +200,7 @@ def lex(s: str) -> Iterator[Token]:
                             yield OperatorToken("*")
                             yield VarToken(t[1:]) # variable name (identifier)
 
-                case t if t in base_operator_tokens:
+                case t if t in (base_operator_tokens+bitwise_ops):
                     prev_char = s[i]
                     i = i + 1
                     if i<len(s) and (t + s[i]) in top_level_operator_tokens:
@@ -214,5 +231,6 @@ def lex(s: str) -> Iterator[Token]:
                 case ',':
                     i+=1
                     yield CommaToken()
-
-
+                case '.':
+                    i+=1
+                    yield DotToken()

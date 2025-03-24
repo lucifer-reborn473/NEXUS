@@ -29,6 +29,8 @@ def e(tree: AST, tS) -> Any:
             return e(l, tS) / e(r, tS)
         case BinOp("/", l, r):
             return e(l, tS) / e(r, tS)
+        case BinOp("^", l, r):
+            return e(l, tS) ** e(r, tS)
         case BinOp("<", l, r):
             return e(l, tS) < e(r, tS)
         case BinOp(">", l, r):
@@ -63,6 +65,8 @@ def e(tree: AST, tS) -> Any:
             return ~e(l, tS)
         case UnaryOp("~", val):
             return ~e(val, tS)
+        case UnaryOp("not", val):
+            return not e(val, tS)
         case UnaryOp("!", val):
             return not e(val, tS)
         case UnaryOp("ascii", val):
@@ -131,30 +135,122 @@ def e(tree: AST, tS) -> Any:
             var_val = e(value, tS)
             tS.table[name] = var_val  # binds in current scope
             return var_val
+        case PushFront(arr_name, value):
+            arr= tS.lookup(arr_name)
+            arr.insert(0, e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
 
+        case PushBack(arr_name, value):
+            arr = tS.lookup(arr_name)
+            arr.append(e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case PopFront(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop(0)
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
+
+        case PopBack(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop()
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
+
+        case GetLength(arr_name):
+            return len(tS.lookup(arr_name))
+
+        case ClearArray(arr_name):
+            arr = tS.lookup(arr_name)
+            arr.clear()
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case InsertAt(arr_name, index, value):
+            arr = tS.lookup(arr_name)
+            arr.insert(e(index, tS), e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case RemoveAt(arr_name, index):
+            arr = tS.lookup(arr_name)
+            if 0 <= e(index, tS) < len(arr):
+                value = arr.pop(e(index, tS))
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
         case BindArray(xname, atype, val):
             all_vals = list(map(lambda x: e(x, tS), val))
             tS.table[xname] = all_vals
             return all_vals
-        case Array(xname, index):
-            return tS.table[xname][e(index, tS)]
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
             return val_to_assign
 
+        case CallArr(xname, index):
+            return tS.lookup(xname)[e(index, tS)]
+        
+        case AssigntoArr(xname, index, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
+            return val_to_assign
         # Loops
+        # case WhileLoop(cond, body, tS_while):
+        #     while e(cond, tS_while):
+        #         for stmt in body.statements:
+        #             e(stmt, tS_while)
+
+        # case ForLoop(init, cond, incr, body, tS_for):
+        #     e(init, tS_for)  
+        #     while e(cond, tS_for):  
+        #         for stmt in body.statements:  
+        #             e(stmt, tS_for)
+        #         e(incr, tS_for)
+
+                
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
+                loop_should_break = False
                 for stmt in body.statements:
-                    e(stmt, tS_while)
+                    result = e(stmt, tS_while)
+                    if isinstance(result, BreakOn):
+                        loop_should_break = True
+                        break  
+                    elif isinstance(result, MoveOn):
+                        break
+                if loop_should_break:
+                    break
 
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
-            while e(cond, tS_for):
-                for stmt in body.statements:  
-                    e(stmt, tS_for)
+                loop_should_break = False
+                for stmt in body.statements:
+                    result = e(stmt, tS_for)
+                    if isinstance(result, BreakOn):
+                        loop_should_break = True
+                        break
+                    elif isinstance(result, MoveOn):
+                        break
+                if loop_should_break:
+                    break
                 e(incr, tS_for)
+
+        case BreakOn():
+            return BreakOn()
+
+        case MoveOn():
+            return MoveOn()
+
 
 
 if __name__ == "__main__":
@@ -203,4 +299,5 @@ if __name__ == "__main__":
     pprint(parsed)
     # print("------")
     # print("Program Output: ")
+
     execute(prog)

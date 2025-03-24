@@ -27,7 +27,14 @@ class SymbolTable:
             return True
         else:
             return False        
-
+    
+    def find_and_update_arr(self,iden,index,val):
+        if iden in self.table:
+            self.table[iden][index]=val
+        elif self.parent:
+            self.parent.find_and_update_arr(iden,index,val)
+        else:
+            raise NameError(f"Variable '{iden}' nhi mila!")
     def find_and_update(self, iden, val):
         if iden in self.table:
             self.table[iden] = val
@@ -87,10 +94,59 @@ class BindArray(AST):
     xname: str
     atype: str
     val: List[AST]
+
 @dataclass
-class Array(AST):
+class CallArr(AST):
     xname: str
-    index: int
+    index: AST
+
+@dataclass
+class PushFront(AST):
+    xname: str
+    val: AST
+
+@dataclass
+class PushBack(AST):
+    xname: str
+    val: AST
+
+@dataclass
+class PopFront(AST):
+    xname: str
+
+@dataclass
+class PopBack(AST):
+    xname: str
+
+@dataclass
+class AssigntoArr(AST):
+    xname: str
+    index: AST
+    val: AST
+
+@dataclass
+class AssignFullArray(AST):
+    xname: str
+    val: List[AST]
+
+@dataclass
+class InsertAt(AST):
+    xname: str
+    index: AST
+    val: AST
+
+@dataclass
+class RemoveAt(AST):
+    xname: str
+    index: AST
+
+@dataclass
+class GetLength(AST):
+    xname: str
+
+@dataclass
+class ClearArray(AST):
+    xname: str
 
 @dataclass
 class Number(AST):
@@ -135,6 +191,14 @@ class ForLoop(AST):
     increment: AST
     body: AST
     forScope: Any
+
+@dataclass
+class BreakOn(AST):
+    pass
+
+@dataclass
+class MoveOn(AST):
+    pass
 
 @dataclass
 class AssignToVar(AST): # through assignment operator
@@ -273,7 +337,7 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     dtype=None
                     if isinstance(t.peek(None), TypeToken):
-                        dtype= t.peek(None).t
+                        dtype= t.peek(None).type_name
                         next(t)
                     if isinstance(t.peek(None), VarToken):
                         name = t.peek(None).var_name
@@ -322,9 +386,7 @@ def parse(s: str) -> List[AST]:
         match t.peek(None):
             case KeywordToken("if"):
                 next(t)
-                
                 tS_cond = SymbolTable(tS)
-
                 cond = parse_var(tS_cond)[0]
                 expect(KeywordToken("then"))
                 
@@ -364,6 +426,9 @@ def parse(s: str) -> List[AST]:
                 case KeywordToken("or"):
                     next(t)
                     ast = BinOp("or", ast, parse_bitwise(tS))
+                case KeywordToken("not"):
+                    next(t)
+                    ast = UnaryOp("not", parse_bitwise(tS))
                 case _:
                     return ast
 
@@ -380,6 +445,9 @@ def parse(s: str) -> List[AST]:
                 case OperatorToken("^"):
                     next(t)
                     ast = BinOp("^", ast, parse_cmp(tS))
+                case OperatorToken("~"):
+                    next(t)
+                    ast = UnaryOp("~", parse_cmp(tS))
                 case _:
                     return ast
 
@@ -472,16 +540,35 @@ def parse(s: str) -> List[AST]:
                     return ast
 
     def parse_div_dot(tS):
-        ast = parse_ascii_char(tS)
+        ast = parse_exp(tS)
         while True:
             match t.peek(None):
                 case OperatorToken("÷"):
                     next(t)
-                    ast = BinOp("÷", ast, parse_ascii_char(tS))
+                    ast = BinOp("÷", ast, parse_exp(tS))
                 case _:
                     return ast
+                
+    def parse_exp(tS):
+        ast = parse_ascii_char(tS)
+        while True:
+            match t.peek(None):
+                case OperatorToken("^"):
+                    next(t)
+                    ast = BinOp("^", ast, parse_ascii_char(tS))
+                case _:
+                    return ast
+    def parse_exp(tS):
+        ast = parse_ascii_char(tS)
+        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
+            next(t)
+            right = parse_exp(tS)
+            ast = BinOp("^", ast, right)
+        return ast
+
+                
     def parse_ascii_char(tS):
-        ast = parse_array(tS)
+        ast = parse_array_var(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("char"):
@@ -498,28 +585,30 @@ def parse(s: str) -> List[AST]:
                     ast = UnaryOp("ascii", value)
                 case _:
                     return ast
-    def parse_array(tS):
-        match t.peek(None):
-            case KeywordToken("array"):
-                next(t)
-                elements = []
-                atype=None
-                if (isinstance(t.peek(None), TypeToken)):
-                    atype = t.peek(None).type_name
+    def parse_array_var(tS):
+        ast=parse_string(tS)
+        while True:
+            match t.peek(None):
+                case KeywordToken("array"): #array declaration
                     next(t)
-                if (isinstance(t.peek(None), VarToken)):
-                    xname = t.peek(None).var_name
-                    next(t)
-                expect(OperatorToken("="))
-                expect(LeftSquareToken())
-                while not isinstance(t.peek(None), RightSquareToken):
-                    elements.append(parse_string(tS))
-                    if isinstance(t.peek(None), CommaToken):
+                    elements = []
+                    atype=None
+                    if (isinstance(t.peek(None), TypeToken)):
+                        atype = t.peek(None).type_name
                         next(t)
-                expect(RightSquareToken())
-                return BindArray(xname,atype,elements)
-            case _:
-                return parse_string(tS)
+                    if (isinstance(t.peek(None), VarToken)):
+                        xname = t.peek(None).var_name
+                        next(t)
+                    expect(OperatorToken("="))
+                    expect(LeftSquareToken())
+                    while not isinstance(t.peek(None), RightSquareToken):
+                        elements.append(parse_string(tS))
+                        if isinstance(t.peek(None), CommaToken):
+                            next(t)
+                    expect(RightSquareToken())
+                    return BindArray(xname,atype,elements)
+                case _:
+                    return ast
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
@@ -647,26 +736,90 @@ def parse(s: str) -> List[AST]:
                         case _:
                             raise SyntaxError(f"Expected ')' got {t.peek(None)}")
                 case _:
-                    return parse_atom(tS)
+                    return parse_vartokens(tS)
 
+    def parse_vartokens(tS):
+        ast=parse_atom(tS)
+        while True:
+            match t.peek(None):
+                case VarToken(v):
+                    next(t)
+                    if isinstance(t.peek(None), LeftSquareToken): #call an element inside array
+                        next(t)
+                        index = parse_var(tS)[0]
+                        expect(RightSquareToken())
+                        if (isinstance(t.peek(None),OperatorToken) and t.peek(None).o == "="): # assigning a new value
+                            next(t)
+                            value=parse_var(tS)[0]
+                            ast=AssigntoArr(v,index,value)
+                        else:
+                            ast= CallArr(v, index)
+                    
+                    elif (isinstance(t.peek(None),DotToken)): # Array functions
+                        next(t)
+                        match t.peek(None):
+                            case KeywordToken("PushFront"):
+                                next(t)
+                                expect(LeftParenToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=PushFront(v,val)
+                            case KeywordToken("PushBack"):
+                                next(t)
+                                expect(LeftParenToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=PushBack(v,val)
+                            case KeywordToken("PopFront"):
+                                next(t)
+                                ast=PopFront(v)
+                            case KeywordToken("PopBack"):
+                                next(t)
+                                ast=PopBack(v)
+                            case KeywordToken("Length"):
+                                next(t)
+                                ast=GetLength(v)
+                            case KeywordToken("Clear"):
+                                next(t)
+                                ast=ClearArray(v)
+                            case KeywordToken("Insert"):
+                                next(t)
+                                expect(LeftParenToken())
+                                index = parse_var(tS)[0]
+                                expect(CommaToken())
+                                val = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=InsertAt(v,index,val)    
+                            case KeywordToken("Remove"):
+                                next(t)
+                                expect(LeftParenToken())
+                                index = parse_var(tS)[0]
+                                expect(RightParenToken())
+                                ast=RemoveAt(v,index)
+                            case _:
+                                return ast
+                    else:
+                        ast=Variable(v)
+                case _:
+                    return ast
+                
     def parse_atom(tS): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):
                 next(t)
                 return Number(n)
-            case VarToken(v): # variable identifier
-                next(t)
-                if (isinstance(t.peek(None), LeftSquareToken)): # probable array access
-                    next(t)
-                    index=parse_var(tS)[0]
-                    expect(RightSquareToken())
-                    return Array(v,index)
-                return Variable(v)
             case BreakToken():
                 next(t)
                 return Break()
+            case BreakOnToken():
+                next(t)
+                return BreakOn()
+            case MoveOnToken():
+                next(t)
+                return MoveOn()
 
     return parse_program()
+
 
 
 if __name__ == "__main__":

@@ -18,13 +18,21 @@ keyword_tokens = (
     # "loop",
     "while",
     "for",
-    
+    "PushFront",
+    "PushBack",
+    "PopFront",
+    "PopBack",
+    "Length",
+    "Clear",
+    "Insert",
+    "Remove",
     "var",
     "ascii",
     "char",
     "fn",
     "fnrec",
     "or",
+    "not",
     "and",
     "proc",
     "array",
@@ -56,6 +64,7 @@ base_operator_tokens = (
     "=",
     "%",
     "!",
+    "^",
 )
 
 compound_assigners = (
@@ -64,6 +73,18 @@ compound_assigners = (
     "-=",
     "/=",
     "%=",
+)
+
+bitwise_ops=(
+    "&",
+    "|",
+    "^",
+    "~",
+)
+
+shift_ops=(
+    "<<",
+    ">>",
 )
 
 assignment = ("=",) + compound_assigners
@@ -75,4 +96,4 @@ logical_compounds = (
     ">=",
 )
 
-top_level_operator_tokens = compound_assigners + logical_compounds
+top_level_operator_tokens = compound_assigners + logical_compounds +shift_ops
