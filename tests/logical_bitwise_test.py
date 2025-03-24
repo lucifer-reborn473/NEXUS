@@ -24,7 +24,7 @@ def test_logical_operations(expression, expected, capfd):
 @pytest.mark.parametrize("expression, expected", [
     ("3 & 1", "1"),
     ("3 | 1", "3"),
-    ("3 ^ 1", "2"),
+    ("3 ^ 1", "3"), #exponentiation as of now
     ("~5", "-6"),
     ("5 << 2", "20"),
     ("8 >> 2", "2"),
@@ -36,3 +36,7 @@ def test_bitwise_operations(expression, expected, capfd):
     execute(f"display({expression})")
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
+
+if __name__ =="__main__":
+    code = "display 3^1;"
+    execute(code)

@@ -21,6 +21,9 @@ class OperatorToken(Token):
     o: str
 
 @dataclass
+class DotToken(Token):
+    pass
+@dataclass
 class StringToken(Token):
     val: str
 
@@ -215,5 +218,7 @@ def lex(s: str) -> Iterator[Token]:
                 case ',':
                     i+=1
                     yield CommaToken()
-
+                case '.':
+                    i+=1
+                    yield DotToken()
 

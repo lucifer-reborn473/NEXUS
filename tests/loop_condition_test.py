@@ -17,6 +17,19 @@ def test_conditional_expressions(expression, expected, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
 
+def test_for_loop_sum(capfd):
+    code2 = """
+    var integer sum=0;
+    for (var i=1;i<10;i+=1){
+        sum+=i;
+    };
+    displayl sum;
+    display "done";
+    """
+    execute(code2)
+    captured = capfd.readouterr()
+    assert "45" in captured.out
+    assert "done" in captured.out
 
 def test_loop_function(capfd):
     prog = """fn loopFunction(n) {
@@ -98,7 +111,6 @@ if __name__ =="__main__":
         x=x-1;
     };
 """
-    execute(prog)
     
 
     
