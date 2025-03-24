@@ -23,6 +23,7 @@ keyword_tokens = (
     "ascii",
     "char",
     "fn",
+    "fnrec",
     "or",
     "and",
     "proc",

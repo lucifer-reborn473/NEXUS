@@ -116,15 +116,11 @@ class CompoundAssignment(AST):
     op: str
     val: AST
 
-# @dataclass
-# class Loop(AST):
-#     cond: AST
-#     body: AST
-
 @dataclass
 class WhileLoop(AST):
     condition: AST 
     body: AST
+    whileScope: Any
 
 @dataclass
 class ForLoop(AST):
@@ -132,6 +128,7 @@ class ForLoop(AST):
     condition: AST
     increment: AST
     body: AST
+    forScope: Any
 
 @dataclass
 class AssignToVar(AST): # through assignment operator
@@ -141,8 +138,9 @@ class AssignToVar(AST): # through assignment operator
 @dataclass
 class If(AST):
     c: AST
-    t: AST
-    e: AST = None
+    t: Any
+    e: Any
+    condScope: Any
 
 @dataclass
 class Statements:
@@ -154,6 +152,7 @@ class FuncDef(AST):
     funcParams: List[Variable]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
     funcScope: Any              # static scoping (scope is tied to function definition and not its call)
+    isRec: bool                 # recursive or not
 
 @dataclass 
 class FuncCall(AST):
@@ -187,11 +186,17 @@ def parse(s: str) -> List[AST]:
         while t.peek(None) is not None:
             if isinstance(t.peek(None), RightBraceToken):    # function body parsing done
                 break
-            stmt,thisScope = parse_display(thisScope)       # Parse current statement
+            match t.peek(None):
+                case KeywordToken("while"):
+                    stmt, thisScope = parse_while(thisScope)
+                case KeywordToken("for"):
+                    stmt, thisScope = parse_for(thisScope)
+                case _:
+                    stmt, thisScope = parse_display(thisScope)
+
             statements.append(stmt)                         # collection of parsed statements
 
-        return (Statements(statements), thisScope)          # Return a list of parsed statements + scope
-
+        return Statements(statements), thisScope          # Return a list of parsed statements + scope
 
 
 
@@ -202,23 +207,17 @@ def parse(s: str) -> List[AST]:
         """
         match t.peek(None):
             case KeywordToken("while"):
-                next(t)  # Consume 'while'
-                expect(LeftParenToken())  # Expect '('
-                
-                # Parse the condition
-                condition = parse_var(tS)[0]
-                expect(RightParenToken())  # Expect ')'
-                
-                # Parse the body
-                expect(LeftBraceToken())  # Expect '{'
-                body, tS = parse_program(tS)  # Parse the body recursively
-                expect(RightBraceToken())  # Expect '}'
-                
-                # Return the parsed WhileLoop AST node
-                return WhileLoop(condition, body), tS
+                next(t)
+                expect(LeftParenToken()) 
+                tS_while = SymbolTable(tS)
+                condition = parse_var(tS_while)[0]
+                expect(RightParenToken()) 
+                expect(LeftBraceToken()) 
+                body, tS_while = parse_program(tS_while)  
+                expect(RightBraceToken()) 
+                return WhileLoop(condition, body, tS_while), tS
             case _:
                 raise SyntaxError("Invalid syntax for while loop")
-
 
     def parse_for(tS):
         """
@@ -227,31 +226,21 @@ def parse(s: str) -> List[AST]:
         """
         match t.peek(None):
             case KeywordToken("for"):
-                next(t)  # Consume 'for'
-                expect(LeftParenToken())  # Expect '('
-                
-                # Parse initialization
-                initialization, tS = parse_var(tS)
-                expect(SemicolonToken())  # Expect ';'
-                
-                # Parse condition
-                condition = parse_var(tS)[0]
-                expect(SemicolonToken())  # Expect ';'
-                
-                # Parse increment
-                increment, tS = parse_var(tS)
-                expect(RightParenToken())  # Expect ')'
-                
-                # Parse body
-                expect(LeftBraceToken())  # Expect '{'
-                body, tS = parse_program(tS)  # Parse the body recursively
-                expect(RightBraceToken())  # Expect '}'
-                
-                # Return the parsed ForLoop AST node
-                return ForLoop(initialization, condition, increment, body), tS
+                next(t)
+                expect(LeftParenToken())
+                tS_for = SymbolTable(tS) # new scope for tS
+                initialization, tS_for = parse_var(tS_for)
+                expect(SemicolonToken())
+                condition = parse_var(tS_for)[0]
+                expect(SemicolonToken())
+                increment, tS_for = parse_var(tS_for)
+                expect(RightParenToken())
+                expect(LeftBraceToken())
+                body, tS_for = parse_program(tS_for)
+                expect(RightBraceToken())
+                return ForLoop(initialization, condition, increment, body, tS_for), tS # no change in tS
             case _:
                 raise SyntaxError("Invalid syntax for for loop")
-
 
 
     def parse_display(tS):  # display value/output
@@ -267,10 +256,6 @@ def parse(s: str) -> List[AST]:
                 case SemicolonToken():
                     next(t)
                     return ast, tS
-                case KeywordToken("while"):
-                    ast, tS = parse_while(tS)  # Parse while loop
-                case KeywordToken("for"):
-                    ast, tS = parse_for(tS)  # Parse for loop
                 case _:
                     return ast, tS
 
@@ -287,8 +272,11 @@ def parse(s: str) -> List[AST]:
                     if isinstance(t.peek(None), VarToken):
                         name = t.peek(None).var_name
                         next(t) 
-                    expect(OperatorToken("="))
-                    value = parse_var(tS)[0]
+                    if isinstance(t.peek(None), SemicolonToken):
+                        value = None
+                    else:
+                        expect(OperatorToken("="))
+                        value = parse_var(tS)[0]
                     tS.table[name] = None # add to current scope (value added at runtime (evaluation))
                     ast = VarBind(name, dtype, value)
                 case _:
@@ -306,7 +294,6 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
 
-
                 # case VarToken(var_name):
                 #     next(t)
                 #     if isinstance(t.peek(None),OperatorToken):
@@ -323,14 +310,33 @@ def parse(s: str) -> List[AST]:
         match t.peek(None):
             case KeywordToken("if"):
                 next(t)
-                # cond = parse_logic(tS)
-                cond = parse_var(tS)[0]
+                tS_cond = SymbolTable(tS)
+                cond = parse_var(tS_cond)[0]
                 expect(KeywordToken("then"))
-                then = parse_var(tS)[0]
-                expect(KeywordToken("else"))
-                else_ = parse_var(tS)[0]
+                
+                if isinstance(t.peek(None), LeftBraceToken):
+                    next(t)  
+                    then_body, tS_cond = parse_program(tS_cond)
+                    expect(RightBraceToken()) 
+                else:
+                    then_body = parse_display(tS_cond)[0]
+
+                # Optional else
+                if not (isinstance(t.peek(None), KeywordToken) and t.peek(None).kw_name == "else"):
+                    else_body = None
+                else:
+                    next(t)  
+                    if isinstance(t.peek(None), LeftBraceToken):
+                        next(t)  
+                        else_body, tS_cond = parse_program(tS_cond)
+                        expect(RightBraceToken())
+                    else:
+                        else_body = parse_display(tS_cond)[0]
+                
+                # `end` is a must
                 expect(KeywordToken("end"))
-                return If(cond, then, else_)
+
+                return If(cond, then_body, else_body, tS_cond)
             case _:
                 return parse_logic(tS)
 
@@ -513,28 +519,33 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return Boolean(b=="True")
             case _:
-                return loop_parse(tS)
-    def loop_parse(tS):
-        ast=parse_func(tS)
-        while True:
-            match t.peek(None):
-                case KeywordToken("loop"):
-                    next(t) # loop keyword detected move to next token
-                    cond=None
-                    if (t.peek(None) == LeftParenToken()): # loop condition starts
-                        next(t)
-                        cond=parse_logic(tS)[0]
-                        expect(RightParenToken())
-                    expect (LeftBraceToken()) # loop body starts
-                    body = parse_var(tS)[0] # temporary 
-                    ast=Loop(cond,body)
-                case _:
-                    return ast       
+                return parse_func(tS)
+    # def loop_parse(tS):
+        # ast=parse_func(tS)
+        # while True:
+        #     match t.peek(None):
+        #         case KeywordToken("loop"):
+        #             next(t) # loop keyword detected move to next token
+        #             cond=None
+        #             if (t.peek(None) == LeftParenToken()): # loop condition starts
+        #                 next(t)
+        #                 cond=parse_logic(tS)[0]
+        #                 expect(RightParenToken())
+        #             expect (LeftBraceToken()) # loop body starts
+        #             body = parse_var(tS)[0] # temporary 
+        #             ast=Loop(cond,body)
+        #         case _:
+        #             return ast       
     def parse_func(tS): # Function definition and Function call
         ast = parse_brackets(tS)
         while True:
             match t.peek(None):
-                case KeywordToken("fn"): # function declaration
+                case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
+                    if t.peek(None).kw_name == "fnrec":
+                        isRec = True
+                    else:
+                        isRec = False
+
                     next(t)
                     
                     if isinstance(t.peek(None), VarToken):
@@ -578,8 +589,8 @@ def parse(s: str) -> List[AST]:
 
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
-                    ast = FuncDef(funcName, params, body, tS_f)
-                    tS.table[funcName] = (params, body, tS_f)
+                    ast = FuncDef(funcName, params, body, tS_f, isRec)
+                    tS.table[funcName] = (params, body, tS_f, isRec)
                 
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call
@@ -618,9 +629,9 @@ def parse(s: str) -> List[AST]:
                         case _:
                             raise SyntaxError(f"Expected ')' got {t.peek(None)}")
                 case _:
-                    return parse_atom()
+                    return parse_atom(tS)
 
-    def parse_atom(): #! while True may be included in future
+    def parse_atom(tS): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):
                 next(t)
@@ -629,7 +640,7 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 if (isinstance(t.peek(None), LeftSquareToken)): # probable array access
                     next(t)
-                    index=parse_atom()
+                    index=parse_var(tS)[0]
                     expect(RightSquareToken())
                     return Array(v,index)
                 return Variable(v)

@@ -1,8 +1,53 @@
-func foo(a,b): a*2 + b;
-display foo(2,3); /~7~/
-var x = 2;
-var y = 2 * (-x + 5); /~ 6 ~/
-display y;
-var z= ascii("A");
-display z;
+var x = 0;
+displayl if x > 5 then 
+            { 
+                if x > 8 
+                then 
+                    displayl "greater than 8"; end; 
+            } 
+        else { 
+            displayl "less than 5";
+            displayl "not greater than 5";
+         } end;
+/~===============================~/
 
+fn loopFunction(n) {
+    var i = 0;
+    while (i < n) {
+        displayl(i);
+        i = i + 1;
+    };
+};
+
+var x = 5;
+displayl("Calling loopFunction with x=5");
+loopFunction(x);
+
+/~===============================~/
+
+var a= char (66);
+displayl a;
+var b= ascii("A");
+displayl b;
+var c= char (ascii('x') + ascii (char(1)));
+displayl c;
+
+/~===============================~/
+
+var a = 112911;
+var isEven = if a%2==0 then True else False end;
+displayl isEven;
+
+/~===============================~/
+displayl "Fibonacci:";
+
+fn fib(a) {
+    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+};
+displayl "----";
+var x = 20;
+displayl x;
+displayl fib(x); 
+/~ Fibonacci calculator: https://www.calculatorsoup.com/calculators/discretemathematics/fibonacci-calculator.php ~/
+
+/~===============================~/
