@@ -21,6 +21,12 @@ class SymbolTable:
             return self.parent.lookup(iden)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
+        
+    def inScope(self, iden):
+        if iden in self.table:
+            return True
+        else:
+            return False        
     
     def find_and_update_arr(self,iden,index,val):
         if iden in self.table:
@@ -335,11 +341,17 @@ def parse(s: str) -> List[AST]:
                         next(t)
                     if isinstance(t.peek(None), VarToken):
                         name = t.peek(None).var_name
+                        if tS.inScope(name):
+                            print(f"Error! Variable `{name}` is already declared. Can't declare again.")
+                            exit()
                         next(t) 
                     if isinstance(t.peek(None), SemicolonToken):
                         value = None
                     else:
                         expect(OperatorToken("="))
+                        if isinstance(t.peek(None), SemicolonToken):
+                            print(f"Syntax Error! Used `;` after `=` for identifier `{name}`")
+                            exit()
                         value = parse_var(tS)[0]
                     tS.table[name] = None # add to current scope (value added at runtime (evaluation))
                     ast = VarBind(name, dtype, value)
@@ -644,6 +656,10 @@ def parse(s: str) -> List[AST]:
                         next(t)
                     else:
                         print("Function name missing\nAborting")
+                        exit()
+
+                    if tS.inScope(funcName):
+                        print(f"Error! Multiple declaration of function `{funcName}()` in the same scope (not allowed)")
                         exit()
 
                     expect(LeftParenToken())

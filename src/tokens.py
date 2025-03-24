@@ -37,6 +37,9 @@ keyword_tokens = (
     "proc",
     "array",
     "return",
+    "breakout",
+    "moveon"
+    "loopon"
 )
 
 boolean_tokens = (

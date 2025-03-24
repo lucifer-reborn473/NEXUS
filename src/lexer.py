@@ -130,8 +130,8 @@ def lex(s: str) -> Iterator[Token]:
             i = i + 1
             t = ""
             while i < len(s) and s[i] != quote:
-                t = t + s[i]
-                i = i + 1
+                t += s[i]
+                i += 1
             if i >= len(s):
                 raise SyntaxError(f"Expected {quote}")
             i = i + 1
@@ -147,24 +147,23 @@ def lex(s: str) -> Iterator[Token]:
                 i = i + 1
             prevToken = NumberToken(t)
             yield prevToken
+        
+        # Single-line comment />
+        elif s[i:i+2] == "/>":
+            i += 2  # skip "/~"
+            while i < len(s) and s[i]!='\n':
+                i += 1
+            continue 
 
-
-        # Single-line and Inline comments: /~ ... ~/
+        # Inline and Multi-line comments: /~ ... ~/
         elif s[i:i+2] == "/~":
             i += 2  # skip "/~"
-            while i < len(s) and s[i:i+2] != "~/":
+            while i<len(s)-1 and s[i:i+2] != "~/":
                 i += 1
+            #! check for correct comment syntax
             i += 2  # skip "~/"
-            continue
-
-        # Multi-line comments: /~ { ... } ~/
-        elif s[i:i+3] == "/~{":
-            i += 3  # skip "/~{"
-            while i < len(s) and s[i:i+3] != "}~/":
-                i += 1
-            i += 3  # skip "}~/"
-            continue
-
+            continue 
+       
         else:
             match t := s[i]:
                 case "-":
