@@ -65,6 +65,8 @@ def e(tree: AST, tS) -> Any:
             return ~e(l, tS)
         case UnaryOp("~", val):
             return ~e(val, tS)
+        case UnaryOp("not", val):
+            return not e(val, tS)
         case UnaryOp("!", val):
             return not e(val, tS)
         case UnaryOp("ascii", val):
@@ -132,18 +134,75 @@ def e(tree: AST, tS) -> Any:
             var_val = e(value, tS)
             tS.table[name] = var_val  # binds in current scope
             return var_val
+        case PushFront(arr_name, value):
+            arr= tS.lookup(arr_name)
+            arr.insert(0, e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
 
+        case PushBack(arr_name, value):
+            arr = tS.lookup(arr_name)
+            arr.append(e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case PopFront(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop(0)
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
+
+        case PopBack(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop()
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
+
+        case GetLength(arr_name):
+            return len(tS.lookup(arr_name))
+
+        case ClearArray(arr_name):
+            arr = tS.lookup(arr_name)
+            arr.clear()
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case InsertAt(arr_name, index, value):
+            arr = tS.lookup(arr_name)
+            arr.insert(e(index, tS), e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case RemoveAt(arr_name, index):
+            arr = tS.lookup(arr_name)
+            if 0 <= e(index, tS) < len(arr):
+                value = arr.pop(e(index, tS))
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
         case BindArray(xname, atype, val):
             all_vals = list(map(lambda x: e(x, tS), val))
             tS.table[xname] = all_vals
             return all_vals
-        case Array(xname, index):
-            return tS.table[xname][e(index, tS)]
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
             return val_to_assign
 
+        case CallArr(xname, index):
+            return tS.lookup(xname)[e(index, tS)]
+        
+        case AssigntoArr(xname, index, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
+            return val_to_assign
         # Loops
         # case WhileLoop(cond, body, tS_while):
         #     while e(cond, tS_while):
@@ -234,9 +293,9 @@ fn foo(i){
     a = 42;
 }
 displayl foo(2);
-"""  #! (for Rohit) error since funcScope does not contain `a` 
+"""  #! (for Rohit) error since funcScope does not contain `a`
 
-    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]   
+    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
 
     prog3 = """
 var a = 2;
