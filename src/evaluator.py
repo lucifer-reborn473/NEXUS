@@ -233,6 +233,7 @@ def e(tree: AST, tS) -> Any:
 
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
+            while e(cond, tS_for):
                 loop_should_break = False
                 for stmt in body.statements:
                     result = e(stmt, tS_for)
