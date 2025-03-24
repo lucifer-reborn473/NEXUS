@@ -1,3 +1,69 @@
+var a= char (66);
+displayl a;
+var b= ascii("A");
+displayl b;
+var c= char (ascii('x') + ascii (char(1)));
+displayl c;
+
+/~ CONDITIONALS====================================================================~/
+
+var a = 112911;
+var isEven = if a%2==0 then True else False end;
+displayl isEven;
+
+/~===============~/
+
+displayl if then 2 else end;
+
+/~===============~/
+
+fn foo() {
+    if 2==2 then {
+        42; 
+    }
+    else {
+
+    } end;
+}
+displayl foo(); /> prints 42 
+
+/~===============~/
+
+if 2==2 then {
+    fn foo(){displayl "haha";}
+    foo();
+} else {
+    displayl 9;
+} end;
+/> foo(); <- will error
+
+/~ FUNCTIONS =====================================================================~/
+displayl "Fibonacci:";
+
+fn fib(a) {
+    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+};
+displayl "----";
+var x = 20;
+displayl x;
+displayl fib(x); 
+/~ Fibonacci calculator: https://www.calculatorsoup.com/calculators/discretemathematics/fibonacci-calculator.php ~/
+
+/~ LOOPS =========================================================================~/
+
+for(var i=3; i; i-=1){
+    displayl i;
+}
+
+/~===============~/
+
+for(var i=0; i<10; i+=1){
+    displayl i;
+    i += 3;
+} /~ i changed as: `0, 3, `4, 7, `8, 11, 12 => printed 0,4,8 ~/
+
+/~===============~/
+
 fn loopFunction(n) {
     var i = 0;
     while (i < n) {
@@ -10,31 +76,12 @@ var x = 5;
 displayl("Calling loopFunction with x=5");
 loopFunction(x);
 
-/~===============================~/
+/~===============~/
 
-var a= char (66);
-displayl a;
-var b= ascii("A");
-displayl b;
-var c= char (ascii('x') + ascii (char(1)));
-displayl c;
-
-/~===============================~/
-
-var a = 112911;
-var isEven = if a%2==0 then True else False end;
-displayl isEven;
-
-/~===============================~/
-displayl "Fibonacci:";
-
-fn fib(a) {
-    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
-};
-displayl "----";
-var x = 20;
-displayl x;
-displayl fib(x); 
-/~ Fibonacci calculator: https://www.calculatorsoup.com/calculators/discretemathematics/fibonacci-calculator.php ~/
-
-/~===============================~/
+var u = 100;
+for(var u=0; u<3; u+=1){
+    var b = 2;
+    displayl b;
+}
+displayl 179;
+displayl u;
