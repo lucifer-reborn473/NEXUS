@@ -369,6 +369,9 @@ def parse(s: str) -> List[AST]:
                 case OperatorToken("^"):
                     next(t)
                     ast = BinOp("^", ast, parse_cmp(tS))
+                case OperatorToken("~"):
+                    next(t)
+                    ast = UnaryOp("~", parse_cmp(tS))
                 case _:
                     return ast
 

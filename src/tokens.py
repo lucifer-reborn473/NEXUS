@@ -64,6 +64,18 @@ compound_assigners = (
     "%=",
 )
 
+bitwise_ops=(
+    "&",
+    "|",
+    "^",
+    "~",
+)
+
+shift_ops=(
+    "<<",
+    ">>",
+)
+
 assignment = ("=",) + compound_assigners
 
 logical_compounds = (
@@ -73,4 +85,4 @@ logical_compounds = (
     ">=",
 )
 
-top_level_operator_tokens = compound_assigners + logical_compounds
+top_level_operator_tokens = compound_assigners + logical_compounds +shift_ops

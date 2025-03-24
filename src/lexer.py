@@ -184,7 +184,7 @@ def lex(s: str) -> Iterator[Token]:
                             yield OperatorToken("*")
                             yield VarToken(t[1:]) # variable name (identifier)
 
-                case t if t in base_operator_tokens:
+                case t if t in (base_operator_tokens+bitwise_ops):
                     prev_char = s[i]
                     i = i + 1
                     if i<len(s) and (t + s[i]) in top_level_operator_tokens:
