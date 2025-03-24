@@ -480,7 +480,6 @@ def parse(s: str) -> List[AST]:
         ast = parse_ascii_char(tS)
         if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
             next(t)
-            # Here we recursively call parse_exp to ensure right associativity.
             right = parse_exp(tS)
             ast = BinOp("^", ast, right)
         return ast
