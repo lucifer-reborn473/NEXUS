@@ -165,7 +165,7 @@ def lex(s: str) -> Iterator[Token]:
                         if s[i].isdigit():
                             # unary negation / subtration on a number
                             # is prevToken is digit or alpha, means subtraction, else unary neg
-                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or isinstance(prevToken, KeywordToken):
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken):
                                 # means subtraction from a number or variable
                                 yield OperatorToken('+') # example: -3 => +(-3)
 

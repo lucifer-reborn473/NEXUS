@@ -25,6 +25,7 @@ keyword_tokens = (
     "fn",
     "fnrec",
     "or",
+    "not",
     "and",
     "proc",
     "array",

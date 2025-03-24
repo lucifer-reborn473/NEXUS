@@ -350,6 +350,9 @@ def parse(s: str) -> List[AST]:
                 case KeywordToken("or"):
                     next(t)
                     ast = BinOp("or", ast, parse_bitwise(tS))
+                case KeywordToken("not"):
+                    next(t)
+                    ast = UnaryOp("not", parse_bitwise(tS))
                 case _:
                     return ast
 

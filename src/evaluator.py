@@ -63,6 +63,8 @@ def e(tree: AST, tS) -> Any:
             return ~e(l, tS)
         case UnaryOp("~", val):
             return ~e(val, tS)
+        case UnaryOp("not", val):
+            return not e(val, tS)
         case UnaryOp("!", val):
             return not e(val, tS)
         case UnaryOp("ascii", val):
@@ -149,12 +151,16 @@ def e(tree: AST, tS) -> Any:
                     e(stmt, tS_while)
 
         case ForLoop(init, cond, incr, body, tS_for):
-            e(init, tS_for)  
-            while e(cond, tS_for):  
-                for stmt in body.statements:  
+            e(init, tS_for)
+            while e(cond, tS_for):
+                for stmt in body.statements:
                     e(stmt, tS_for)
                 e(incr, tS_for)
 
+def execute(prog):
+        lines, tS = parse(prog)
+        for line in lines.statements:
+            e(line, tS)
 
 if __name__ == "__main__":
 
@@ -196,9 +202,9 @@ fn foo(i){
     a = 42;
 }
 displayl foo(2);
-"""  #! (for Rohit) error since funcScope does not contain `a` 
+"""  #! (for Rohit) error since funcScope does not contain `a`
 
-    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]   
+    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
 
     prog3 = """
 var a = 2;
