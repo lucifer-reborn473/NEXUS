@@ -249,7 +249,7 @@ displayl "boo"
     
     
     prog = """
-    var a = 2^3;
+    var a = 2^3^2;
     displayl a;
     """ #! infinite loop
     parsed, gS = parse(prog)
