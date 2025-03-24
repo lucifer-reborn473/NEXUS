@@ -458,14 +458,34 @@ def parse(s: str) -> List[AST]:
                     return ast
 
     def parse_div_dot(tS):
-        ast = parse_ascii_char(tS)
+        ast = parse_exp(tS)
         while True:
             match t.peek(None):
                 case OperatorToken("÷"):
                     next(t)
-                    ast = BinOp("÷", ast, parse_ascii_char(tS))
+                    ast = BinOp("÷", ast, parse_exp(tS))
                 case _:
                     return ast
+                
+    def parse_exp(tS):
+        ast = parse_ascii_char(tS)
+        while True:
+            match t.peek(None):
+                case OperatorToken("^"):
+                    next(t)
+                    ast = BinOp("^", ast, parse_ascii_char(tS))
+                case _:
+                    return ast
+    def parse_exp(tS):
+        ast = parse_ascii_char(tS)
+        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
+            next(t)
+            # Here we recursively call parse_exp to ensure right associativity.
+            right = parse_exp(tS)
+            ast = BinOp("^", ast, right)
+        return ast
+
+                
     def parse_ascii_char(tS):
         ast = parse_array(tS)
         while True:

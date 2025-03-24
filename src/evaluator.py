@@ -29,6 +29,8 @@ def e(tree: AST, tS) -> Any:
             return e(l, tS) / e(r, tS)
         case BinOp("/", l, r):
             return e(l, tS) / e(r, tS)
+        case BinOp("^", l, r):
+            return e(l, tS) ** e(r, tS)
         case BinOp("<", l, r):
             return e(l, tS) < e(r, tS)
         case BinOp(">", l, r):
@@ -208,14 +210,14 @@ displayl a;
 
     #! check for redeclaration of function
 
-    #! are arrays mutable?
+    #! are arrays mutable? => can be done but not done yet, since we are storing as python lists
 
     #! how arrays passed/returned from functions
 
     prog4 = """
 displayl 2
 displayl 3
-"""  #! why only 3 printed (should be syntax error due to missing semicolons)
+"""  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
 
     #! add nil datatype for function returns
 
@@ -235,13 +237,25 @@ displayl a;
     #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
 
     prog = """
-var a = (if 2<3 then 10 else 100 end) + 6;
+var a = if 2==2 then 5 else 6 end;
 displayl a;
+displayl "hi"
+displayl "boo"
+
 """ #! error without brackets (even if 6 comes first)
 
 
     # =======================================
-    # parsed, gS = parse(prog)
-    # print("------")
-    # print("Program Output: ")
+    
+    
+    prog = """
+    var a = 2^3^2;
+    displayl a;
+    """ #! infinite loop
+    parsed, gS = parse(prog)
+    
+    print("Parsed Output: ")
+    pprint(parsed)
+    print("------")
+    print("Program Output: ")
     execute(prog)
