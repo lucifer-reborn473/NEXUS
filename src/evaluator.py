@@ -139,13 +139,18 @@ def e(tree: AST, tS) -> Any:
             all_vals = list(map(lambda x: e(x, tS), val))
             tS.table[xname] = all_vals
             return all_vals
-        case Array(xname, index):
-            return tS.table[xname][e(index, tS)]
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
             return val_to_assign
 
+        case CallArr(xname, index):
+            return tS.lookup(xname)[e(index, tS)]
+        
+        case AssigntoArr(xname, index, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
+            return val_to_assign
         # Loops
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
