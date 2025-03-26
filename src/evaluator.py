@@ -251,7 +251,10 @@ def e(tree: AST, tS) -> Any:
 
         case MoveOn():
             return MoveOn()
-
+def execute(prog):
+        lines, tS = parse(prog)
+        for line in lines.statements:
+            e(line, tS)
 
 
 if __name__ == "__main__":
@@ -294,7 +297,16 @@ if __name__ == "__main__":
 
     # =======================================
 
-    prog = """"""
+    prog = """
+    
+var i = 0;
+while (i < 5) {
+    i = i + 1;
+    if i == 2 then moveon end;
+    /~ if i == 4 then breakon end;~/
+    displayl i;
+}
+    """
 
     parsed, gS = parse(prog)
     pprint(parsed)
