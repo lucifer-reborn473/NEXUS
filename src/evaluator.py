@@ -291,17 +291,17 @@ displayl 3
 
 
     #! add nil datatype for function returns
-=======
+
     prog = """
     
-var i = 0;
-while (i < 5) {
-    i = i + 1;
-    if i == 2 then moveon end;
-    /~ if i == 4 then breakon end;~/
-    displayl i;
-}
-    """
+    var i = 0;
+    while (i < 5) {
+        i = i + 1;
+        if i == 2 then moveon end;
+        /~ if i == 4 then breakon end;~/
+        displayl i;
+    }
+        """
 
 
     prog5 = """
