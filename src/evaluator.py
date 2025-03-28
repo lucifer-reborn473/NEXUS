@@ -212,9 +212,16 @@ def e(tree: AST, tS) -> Any:
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
             while e(cond, tS_for):
+                loop_should_break = False
                 for stmt in body.statements:
                     e(stmt, tS_for)
                 e(incr, tS_for)
+
+        case BreakOn():
+            return BreakOn()
+
+        case MoveOn():
+            return MoveOn()
 
 def execute(prog):
         lines, tS = parse(prog)
@@ -282,7 +289,20 @@ displayl 2
 displayl 3
 """  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
 
+
     #! add nil datatype for function returns
+=======
+    prog = """
+    
+var i = 0;
+while (i < 5) {
+    i = i + 1;
+    if i == 2 then moveon end;
+    /~ if i == 4 then breakon end;~/
+    displayl i;
+}
+    """
+
 
     prog5 = """
 var a = 2++3;
