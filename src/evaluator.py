@@ -92,7 +92,6 @@ def e(tree: AST, tS) -> Any:
             for i in range(len(funcParams)):  # Step 2
                 funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
 
-            ans = None
             for stmt in funcBody.statements:  # Step 3
                 ans = e(
                     stmt, funcScope
@@ -205,45 +204,17 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
             return val_to_assign
         # Loops
-        # case WhileLoop(cond, body, tS_while):
-        #     while e(cond, tS_while):
-        #         for stmt in body.statements:
-        #             e(stmt, tS_while)
-
-        # case ForLoop(init, cond, incr, body, tS_for):
-        #     e(init, tS_for)  
-        #     while e(cond, tS_for):  
-        #         for stmt in body.statements:  
-        #             e(stmt, tS_for)
-        #         e(incr, tS_for)
-
-                
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
-                loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_while)
-                    if isinstance(result, BreakOn):
-                        loop_should_break = True
-                        break  
-                    elif isinstance(result, MoveOn):
-                        break
-                if loop_should_break:
-                    break
+                    e(stmt, tS_while)
 
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
             while e(cond, tS_for):
                 loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_for)
-                    if isinstance(result, BreakOn):
-                        loop_should_break = True
-                        break
-                    elif isinstance(result, MoveOn):
-                        break
-                if loop_should_break:
-                    break
+                    e(stmt, tS_for)
                 e(incr, tS_for)
 
         case BreakOn():
@@ -251,11 +222,11 @@ def e(tree: AST, tS) -> Any:
 
         case MoveOn():
             return MoveOn()
+
 def execute(prog):
         lines, tS = parse(prog)
         for line in lines.statements:
             e(line, tS)
-
 
 if __name__ == "__main__":
 
@@ -283,20 +254,44 @@ if __name__ == "__main__":
 
     # ========================================================
 
-    #! Visual separator for numbers (example: var x = 1_000_000 or 1`000`000)
-    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+    prog = """
+fn foo(i){
+    if i==1 then var a = 2 else 5 end;
+    a = 42;
+}
+displayl foo(2);
+"""  #! (for Rohit) no error since funcScope contain `a` (why?)
 
-    #! Arrays
-        #! how arrays passed/returned from functions
-        #! array features in Project doc
-        #! array, string slicing
+    prog2 = """
+fn foo(i){
+    if i==1 then a = 2 else 5 end;
+    a = 42;
+}
+displayl foo(2);
+"""  #! (for Rohit) error since funcScope does not contain `a`
 
     #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
-    
-    #! `mydef` as keyword for struct
 
-    # =======================================
+    prog3 = """
+var a = 2;
+var a = 100;
+displayl a;
+"""  #! (for Rohit) should throw error
 
+    #! check for redeclaration of function
+
+    #! are arrays mutable? => can be done but not done yet, since we are storing as python lists
+
+    #! how arrays passed/returned from functions
+
+    prog4 = """
+displayl 2
+displayl 3
+"""  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
+
+
+    #! add nil datatype for function returns
+=======
     prog = """
     
 var i = 0;
@@ -308,9 +303,42 @@ while (i < 5) {
 }
     """
 
-    parsed, gS = parse(prog)
-    pprint(parsed)
-    # print("------")
-    # print("Program Output: ")
 
+    prog5 = """
+var a = 2++3;
+displayl a;
+"""  #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
+
+    #     prog = """
+    # var a = 2^3
+    # """ #! infinite loop
+
+    #! array features in Project doc
+
+    #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
+
+    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+
+    prog = """
+var a = if 2==2 then 5 else 6 end;
+displayl a;
+displayl "hi"
+displayl "boo"
+
+""" #! error without brackets (even if 6 comes first)
+
+
+    # =======================================
+    
+    
+    prog = """
+    var a = 2^3^2;
+    displayl a;
+    """ #! infinite loop
+    parsed, gS = parse(prog)
+    
+    print("Parsed Output: ")
+    pprint(parsed)
+    print("------")
+    print("Program Output: ")
     execute(prog)
