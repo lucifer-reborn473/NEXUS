@@ -1,3 +1,12 @@
 pre-commit
 pytest
 pytest-cov
+setuptools
+wheel
+pytest-cov
+PyYAML
+typing_extensions
+ruff
+isort
+mypy
+black
