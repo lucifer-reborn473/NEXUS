@@ -289,34 +289,46 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast, tS
 
-    def parse_var(tS): # for `var` declaration
+    def parse_var(tS):  # for `var` declaration
+        def parse_dtype_and_name():
+            """Parse the data type and variable name."""
+            dtype = None
+            if isinstance(t.peek(None), TypeToken):
+                dtype = t.peek(None).type_name
+                next(t)
+            if isinstance(t.peek(None), VarToken):
+                name = t.peek(None).var_name
+                if tS.inScope(name):
+                    print(f"Error! Variable `{name}` is already declared. Can't declare again.")
+                    exit()
+                next(t)
+                return dtype, name
+            else:
+                print("Syntax Error! Expected a variable name.")
+                exit()
+
+        def parse_value():
+            """Parse the value of the variable."""
+            if isinstance(t.peek(None), SemicolonToken):
+                return None
+            expect(OperatorToken("="))
+            if isinstance(t.peek(None), SemicolonToken):
+                print(f"Syntax Error! Used `;` after `=` for identifier `{name}`")
+                exit()
+            return parse_var(tS)[0]
+
         ast = parse_update_var(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("var"):
                     next(t)
-                    dtype=None
-                    if isinstance(t.peek(None), TypeToken):
-                        dtype= t.peek(None).type_name
-                        next(t)
-                    if isinstance(t.peek(None), VarToken):
-                        name = t.peek(None).var_name
-                        if tS.inScope(name):
-                            print(f"Error! Variable `{name}` is already declared. Can't declare again.")
-                            exit()
-                        next(t) 
-                    if isinstance(t.peek(None), SemicolonToken):
-                        value = None
-                    else:
-                        expect(OperatorToken("="))
-                        if isinstance(t.peek(None), SemicolonToken):
-                            print(f"Syntax Error! Used `;` after `=` for identifier `{name}`")
-                            exit()
-                        value = parse_var(tS)[0]
-                    tS.table[name] = None # add to current scope (value added at runtime (evaluation))
+                    dtype, name = parse_dtype_and_name()
+                    value = parse_value()
+                    tS.table[name] = None  # Add to current scope (value added at runtime)
                     ast = VarBind(name, dtype, value)
                 case _:
                     return ast, tS
+
                 
     def parse_update_var(tS): # for updating var
         ast = parse_if(tS)
@@ -700,7 +712,9 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return parse_vartokens(tS)
 
-    def parse_vartokens(tS):
+    def call_vartoks(tS): #handles all calls related to vartokens
+        pass
+    def parse_vartokens(tS): #will be discarded
         ast=parse_atom(tS)
         while True:
             match t.peek(None):
