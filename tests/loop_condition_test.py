@@ -41,7 +41,7 @@ def test_loop_function(capfd):
     };
     var x = 5;
     displayl("Calling loopFunction with x=5");
-    loopFunction(x);
+    loopFunction(x); 
     """
     execute(prog)
     captured = capfd.readouterr()
@@ -111,6 +111,18 @@ if __name__ =="__main__":
         x=x-1;
     };
 """
-    
+    prog="""fn loopFunction(n) {
+        var i = 0;
+        while (i < n) {
+            displayl(i);
+            i = i + 1;
+        };
+    };
+    var x = 5;
+    displayl("Calling loopFunction with x=5");
+    loopFunction(x);"""
+
+    print(parse(prog))
+    print(execute(prog))
 
     

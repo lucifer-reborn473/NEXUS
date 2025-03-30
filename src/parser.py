@@ -2,51 +2,11 @@ from more_itertools import peekable
 from typing import Optional, Any, List
 from pprint import pprint
 from lexer import *
+from scope import SymbolTable, SymbolCategory
 
 # ==========================================================================================
 # ==================================== PARSER ==============================================
 
-class SymbolTable:
-    def __init__(self, parent=None):
-        self.table = {}
-        self.parent = parent  # enclosing scope
-
-    def define(self, iden, value):
-        self.table[iden] = value
-
-    def lookup(self, iden):
-        if iden in self.table:
-            return self.table[iden]
-        elif self.parent:  # check in parent (enclosing scope)
-            return self.parent.lookup(iden)
-        else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
-        
-    def inScope(self, iden):
-        if iden in self.table:
-            return True
-        else:
-            return False        
-    
-    def find_and_update_arr(self,iden,index,val):
-        if iden in self.table:
-            self.table[iden][index]=val
-        elif self.parent:
-            self.parent.find_and_update_arr(iden,index,val)
-        else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
-    def find_and_update(self, iden, val):
-        if iden in self.table:
-            self.table[iden] = val
-        elif self.parent:
-            self.parent.find_and_update(iden, val)
-        else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
-        
-    def copy_scope(self):
-        new_scope = SymbolTable(parent=self.parent)
-        new_scope.table = self.table.copy() 
-        return new_scope
 
 class AST:
     """
@@ -682,7 +642,8 @@ def parse(s: str) -> List[AST]:
 
                     # add param names to function scope
                     for var_name in params:
-                        tS_f.table[var_name] = None
+                        # tS_f.table[var_name] = None
+                        tS_f.define(var_name,None,SymbolCategory.VARIABLE)
                     
                     expect(LeftBraceToken()) # {
                     # function body begins
@@ -697,7 +658,8 @@ def parse(s: str) -> List[AST]:
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
                     ast = FuncDef(funcName, params, body, tS_f, isRec)
-                    tS.table[funcName] = (params, body, tS_f, isRec)
+                    # tS.table[funcName] = (params, body, tS_f, isRec)
+                    # tS.define(funcName,(params,body,tS_f,isRec),SymbolCategory.FUNCTION)
                 
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call

@@ -1,11 +1,10 @@
 from parser import *
-from context import Context
+from scope import SymbolCategory, SymbolTable
 import copy
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
-context = Context()  # context as a global variable
 
 
 def e(tree: AST, tS) -> Any:
@@ -74,23 +73,26 @@ def e(tree: AST, tS) -> Any:
         case UnaryOp("char", val):
             return chr(e(val, tS))
 
-        case FuncDef(funcName, funcParams, funcBody, funcScope):
-            # tS.table[funcName] = (funcParams, funcBody, funcScope)
+        case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
+            tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
 
         case FuncCall(funcName, funcArgs):
-            # evaluate the function call
             """
             Step 1: Extract function body
             Step 2: Put argument values into function's scope
             Step 3: Evaluate the function body
             Step 4: Pop the arg values from the function's scope (don't delete the scope table)
             """
-            (funcParams, funcBody, funcScopeMain, isRec) = tS.lookup(funcName)  # Step 1
+            funcData = tS.lookup(funcName)  # Step 1
+            if not isinstance(funcData, tuple) or len(funcData) != 4:
+                raise ValueError(f"Function {funcName} is not defined correctly.")
+            (funcParams, funcBody, funcScopeMain, isRec) = funcData
             funcScope = funcScopeMain.copy_scope() if isRec else funcScopeMain
 
             for i in range(len(funcParams)):  # Step 2
-                funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
+                # funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
+                funcScope.define(funcParams[i], e(funcArgs[i], tS),SymbolCategory.VARIABLE)
 
             for stmt in funcBody.statements:  # Step 3
                 ans = e(
@@ -132,7 +134,7 @@ def e(tree: AST, tS) -> Any:
 
         case VarBind(name, dtype, value):
             var_val = e(value, tS)
-            tS.table[name] = var_val  # binds in current scope
+            tS.define(name,var_val,SymbolCategory.VARIABLE)# binds in current scope
             return var_val
         case PushFront(arr_name, value):
             arr= tS.lookup(arr_name)
@@ -190,6 +192,7 @@ def e(tree: AST, tS) -> Any:
         case BindArray(xname, atype, val):
             all_vals = list(map(lambda x: e(x, tS), val))
             tS.table[xname] = all_vals
+            tS.define(xname,all_vals,SymbolCategory.ARRAY)
             return all_vals
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)

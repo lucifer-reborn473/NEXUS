@@ -43,11 +43,13 @@ To-implement:
 ## Data Structures
 
 ### Arrays
+
     - numpy format
 
 ### Hashmaps
- - similar to pandas (pandas operations)
- - 
+
+- similar to pandas (pandas operations)
+- Reading and writing files
 
 ### Classes / Structs  [To be implemented]
 
@@ -56,9 +58,11 @@ To-implement:
 ## Test Coverage
 
 ## Benchmarking
+
     - Show runtime
-    
-## Syntax coloring 
+
+## Syntax coloring
+
     - develop extension based file
     - .exe file can be downloaded and configured
     - dockerfile making
