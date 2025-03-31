@@ -77,7 +77,77 @@ def test_conditional_execution_1(capfd):
     captured = capfd.readouterr()
     assert "greater than 8" in captured.out
     
+def test_while_loop_divisibility(capfd):
+    prog = """
+    var x=1000;
+    while (x>0){
+        if (x%3==0 or x%5==0)
+        then
+        {
+            displayl x;
+        }
+        else{
+            displayl "Not divisible by 3 or 5";
+        }
+        end;
+        x=x-1;
+    };
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "1000" in captured.out
+    assert "999" in captured.out
+    assert "Not divisible by 3 or 5" in captured.out
 
+def test_function_return_value(capfd):
+    prog = """
+    fn foo() {
+        if 2==2 then {
+            42; 
+        }
+        else {
+
+        } end;
+    };
+    displayl foo();
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "42" in captured.out
+
+def test_variable_scope_in_loop(capfd):
+    prog = """
+    var u = 100;
+    for(var u=0; u<3; u+=1){
+        var b = 2;
+        displayl b;
+    }
+    displayl 179;
+    displayl u;
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "2" in captured.out
+    assert "179" in captured.out
+    assert "100" in captured.out
+
+def test_fibonacci_function(capfd):
+    prog = """
+    displayl "Fibonacci:";
+
+    fn fib(a) {
+        if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+    };
+    displayl "----";
+    var x = 20;
+    displayl x;
+    displayl fib(x);
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "Fibonacci:" in captured.out
+    assert "20" in captured.out
+    assert "6765" in captured.out
 def test_conditional_execution_2(capfd):
     prog = """var x = 0;
     displayl if x > 5 then 
@@ -129,14 +199,17 @@ for(var u=0; u<3; u+=1){
 displayl 179;
 displayl u;"""
 
-    prog="""if 2==2 then {
-    fn foo(){displayl "haha";}
-    foo();
-} else {
-    displayl 9;
-} end;"""
+    prog="""displayl "Fibonacci:";
 
-    print(parse(prog))
+fn fib(a) {
+    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+};
+displayl "----";
+var x = 3;
+displayl x;
+displayl fib(x);  """
+
+    pprint(parse(prog))
     execute(prog)
 
     

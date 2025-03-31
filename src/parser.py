@@ -707,7 +707,7 @@ def parse(s: str) -> List[AST]:
                     #     stmt = parse_display()      # Parse current statement
                     #     bodyCode.append(stmt)       # collection of parsed statements
                     # body = Statements(bodyCode)     # list of parsed statements
-
+                    tS.define(funcName,None,SymbolCategory.FUNCTION)
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
                     ast = FuncDef(funcName, params, body, tS_f, isRec)
