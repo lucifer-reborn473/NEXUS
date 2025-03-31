@@ -105,7 +105,8 @@ def e(tree: AST, tS) -> Any:
                 )  #! every line in body is evaluated (always returns something)
 
             for i in range(len(funcParams)):
-                funcScope.table[funcParams[i]] = None  # Step 4
+                funcScope.define(funcParams[i],None,SymbolCategory.VARIABLE)
+                # funcScope.table[funcParams[i]] = None  # Step 4
 
             return ans  # after returning ans
 
@@ -377,6 +378,11 @@ displayl "boo"
     displayl ptmp; 
     displayl nig; 
     """
+
+    prog="""
+    displayl 3
+    displayl 2
+"""
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")

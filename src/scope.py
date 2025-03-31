@@ -11,6 +11,7 @@ class SymbolCategory(Enum):
     SCHEMA ="class"
     # Add more categories as needed
 
+@dataclass
 class SymbolTable:
     def __init__(self, parent=None):
         self.table = {}  # Format: {identifier: (value, category)}
