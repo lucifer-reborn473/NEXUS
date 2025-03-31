@@ -169,6 +169,9 @@ class WhileLoop(AST):
     whileScope: Any
 
 @dataclass
+class Feed(AST):
+    msg: AST
+@dataclass
 class ForLoop(AST):
     initialization: AST 
     condition: AST
@@ -323,7 +326,7 @@ def parse(s: str) -> List[AST]:
                     return ast, tS
                 case _:
                     return ast, tS
-
+    
     def parse_var(tS):  # for `var` declaration
         def parse_dtype_and_name():
             """Parse the data type and variable name."""
@@ -594,14 +597,14 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_array_dict(tS):
-        ast=parse_string(tS)
+        ast=parse_input(tS)
         while True:
             match t.peek(None):
                 case LeftSquareToken(): # parse list of elements
                     next(t)
                     elements = []
                     while not isinstance(t.peek(None), RightSquareToken):
-                        elements.append(parse_string(tS))
+                        elements.append(parse_input(tS))
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
                     expect(RightSquareToken())
@@ -611,9 +614,9 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     elements= []
                     while not isinstance(t.peek(None), RightBraceToken):
-                        key=parse_string(tS)
+                        key=parse_input(tS)
                         expect(ColonToken())
-                        val = parse_string(tS)
+                        val = parse_input(tS)
                         elements.append((key,val))
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
@@ -622,6 +625,21 @@ def parse(s: str) -> List[AST]:
                     ast=Hash(elements)
                 case _:
                     return ast
+    def parse_input(tS):
+        ast=parse_string(tS)
+        while True:
+            match t.peek(None):
+                case KeywordToken("feed"):
+                    next(t)
+                    expect(LeftParenToken())
+                    msg=parse_string(tS)
+                    if (msg is None):
+                        msg=String("FEED:")
+                    expect(RightParenToken())
+                    ast = Feed(msg)
+                case _:
+                    return ast
+
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
@@ -737,7 +755,8 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
                 # parse_func() ends here
-    
+   
+
     def parse_brackets(tS):
         while True:
             match t.peek(None):
@@ -856,7 +875,7 @@ def parse(s: str) -> List[AST]:
                             ast = Variable(v)
                 case _:
                     return ast    
-                
+    
     def parse_atom(tS): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):
