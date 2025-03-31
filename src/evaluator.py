@@ -239,15 +239,30 @@ def e(tree: AST, tS) -> Any:
         # Loops
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
+                loop_should_break = False
                 for stmt in body.statements:
-                    e(stmt, tS_while)
+                    result = e(stmt, tS_while)
+                    if isinstance(result, BreakOn):
+                        loop_should_break = True
+                        break  
+                    elif isinstance(result, MoveOn):
+                        break
+                if loop_should_break:
+                    break
 
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
             while e(cond, tS_for):
                 loop_should_break = False
                 for stmt in body.statements:
-                    e(stmt, tS_for)
+                    result = e(stmt, tS_for)
+                    if isinstance(result, BreakOn):
+                        loop_should_break = True
+                        break
+                    elif isinstance(result, MoveOn):
+                        break
+                if loop_should_break:
+                    break
                 e(incr, tS_for)
 
         case BreakOn():
@@ -384,6 +399,15 @@ displayl "boo"
     displayl 3
     displayl 2
 """
+
+
+    prog = """
+    for(var i = 0; i < 5; i = i + 1) {
+        if i == 2 then moveon end;
+        if i == 4 then breakon end;
+        displayl i;
+    }
+    """
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")
