@@ -40,10 +40,19 @@ Learn how to set up and start using Nexus.
 
 Key features of Nexus include:
 
-- Multi-language support
-- Optimized performance
-- Easy-to-use interface
+- High-level
+- Dynamically-typed
+- Lexically-scoped
+- Imperative
+- Expression-oriented
+
+## Coming soon
+- Support for Functional programming
 - Detailed error reporting
+
+<!-- - Multi-language support -->
+<!-- - Optimized performance -->
+<!-- - Easy-to-use interface -->
 
 <!-- Add a features-related image here -->
 
@@ -55,11 +64,9 @@ Key features of Nexus include:
 
 Follow these steps to install Nexus:
 
-1. Download the latest release from [GitHub Releases](#).
+1. Download the latest release from [GitHub Releases](https://github.com/lucifer-reborn473/Our_Compiler).
 2. Run the installer for your operating system.
 3. Verify the installation by running `nexus --version`.
-
----
 
 ## Usage
 
