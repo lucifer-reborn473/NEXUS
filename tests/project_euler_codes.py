@@ -42,7 +42,7 @@ code2="""
 """
 
 prog="""
-array a= [1,2,3,4,5,6,7,8,9,10];
+array a= ["meow","meow","nigga"];
 displayl a[a.Length -2];
 if a[0] == 1 then{
     displayl "True";

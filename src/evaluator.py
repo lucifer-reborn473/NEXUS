@@ -1,11 +1,10 @@
 from parser import *
-from context import Context
+from scope import SymbolCategory, SymbolTable
 import copy
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
-context = Context()  # context as a global variable
 
 
 def e(tree: AST, tS) -> Any:
@@ -18,6 +17,11 @@ def e(tree: AST, tS) -> Any:
             return b
         case Variable(v):
             return tS.lookup(v)
+        case Array(val):
+            all_vals = list(map(lambda x: e(x, tS), val))
+            return all_vals
+        case Hash(val):
+            return {e(k, tS): e(v, tS) for k, v in val}
         # Operators
         case BinOp("+", l, r):
             return e(l, tS) + e(r, tS)
@@ -74,25 +78,27 @@ def e(tree: AST, tS) -> Any:
         case UnaryOp("char", val):
             return chr(e(val, tS))
 
-        case FuncDef(funcName, funcParams, funcBody, funcScope):
-            # tS.table[funcName] = (funcParams, funcBody, funcScope)
+        case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
+            tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
 
         case FuncCall(funcName, funcArgs):
-            # evaluate the function call
             """
             Step 1: Extract function body
             Step 2: Put argument values into function's scope
             Step 3: Evaluate the function body
             Step 4: Pop the arg values from the function's scope (don't delete the scope table)
             """
-            (funcParams, funcBody, funcScopeMain, isRec) = tS.lookup(funcName)  # Step 1
+            funcData = tS.lookup(funcName)  # Step 1
+            if not isinstance(funcData, tuple) or len(funcData) != 4:
+                raise ValueError(f"Function {funcName} is not defined correctly.")
+            (funcParams, funcBody, funcScopeMain, isRec) = funcData
             funcScope = funcScopeMain.copy_scope() if isRec else funcScopeMain
 
             for i in range(len(funcParams)):  # Step 2
-                funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
+                # funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
+                funcScope.define(funcParams[i], e(funcArgs[i], tS),SymbolCategory.VARIABLE)
 
-            ans = None
             for stmt in funcBody.statements:  # Step 3
                 ans = e(
                     stmt, funcScope
@@ -131,9 +137,9 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update(var_name, new_val)
             return new_val
 
-        case VarBind(name, dtype, value):
+        case VarBind(name, dtype, value,category):
             var_val = e(value, tS)
-            tS.table[name] = var_val  # binds in current scope
+            tS.define(name,var_val,category)# binds in current scope
             return var_val
         case PushFront(arr_name, value):
             arr= tS.lookup(arr_name)
@@ -188,10 +194,11 @@ def e(tree: AST, tS) -> Any:
                 return value
             else:
                 raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
-        case BindArray(xname, atype, val):
-            all_vals = list(map(lambda x: e(x, tS), val))
-            tS.table[xname] = all_vals
-            return all_vals
+        # case BindArray(xname, atype, val):
+        #     all_vals = list(map(lambda x: e(x, tS), val))
+        #     tS.table[xname] = all_vals
+        #     tS.define(xname,all_vals,SymbolCategory.ARRAY)
+        #     return all_vals
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
@@ -204,45 +211,41 @@ def e(tree: AST, tS) -> Any:
             val_to_assign = e(value, tS)
             tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
             return val_to_assign
+        #hash funcs
+        case CallHashVal(name,key):
+           return tS.lookup(name)[e(key, tS)]
+        
+        case AddHashPair(name, key, val):
+            hash_table = tS.lookup(name)
+            hash_table[e(key, tS)] = e(val, tS)
+            tS.find_and_update(name, hash_table)
+        
+        case RemoveHashPair(name, key):
+            hash_table = tS.lookup(name)
+            if e(key, tS) in hash_table:
+                del hash_table[e(key, tS)]
+                tS.find_and_update(name, hash_table)
+            else:
+                raise KeyError(f"Key {e(key, tS)} not found in hash {name}")
+
+        case AssignHashVal(name, key, new_val):
+            hash_table = tS.lookup(name)
+            hash_table[e(key, tS)] = e(new_val, tS)
+            tS.find_and_update(name, hash_table)
+            return hash_table[e(key, tS)]
+            
         # Loops
-        # case WhileLoop(cond, body, tS_while):
-        #     while e(cond, tS_while):
-        #         for stmt in body.statements:
-        #             e(stmt, tS_while)
-
-        # case ForLoop(init, cond, incr, body, tS_for):
-        #     e(init, tS_for)  
-        #     while e(cond, tS_for):  
-        #         for stmt in body.statements:  
-        #             e(stmt, tS_for)
-        #         e(incr, tS_for)
-
-                
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
-                loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_while)
-                    if isinstance(result, BreakOn):
-                        loop_should_break = True
-                        break  
-                    elif isinstance(result, MoveOn):
-                        break
-                if loop_should_break:
-                    break
+                    e(stmt, tS_while)
 
         case ForLoop(init, cond, incr, body, tS_for):
             e(init, tS_for)
+            while e(cond, tS_for):
                 loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_for)
-                    if isinstance(result, BreakOn):
-                        loop_should_break = True
-                        break
-                    elif isinstance(result, MoveOn):
-                        break
-                if loop_should_break:
-                    break
+                    e(stmt, tS_for)
                 e(incr, tS_for)
 
         case BreakOn():
@@ -251,7 +254,10 @@ def e(tree: AST, tS) -> Any:
         case MoveOn():
             return MoveOn()
 
-
+def execute(prog):
+        lines, tS = parse(prog)
+        for line in lines.statements:
+            e(line, tS)
 
 if __name__ == "__main__":
 
@@ -279,25 +285,102 @@ if __name__ == "__main__":
 
     # ========================================================
 
-    #! Visual separator for numbers (example: var x = 1_000_000 or 1`000`000)
-    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+    prog = """
+fn foo(i){
+    if i==1 then var a = 2 else 5 end;
+    a = 42;
+}
+displayl foo(2);
+"""  #! (for Rohit) no error since funcScope contain `a` (why?)
 
-    #! Arrays
-        #! how arrays passed/returned from functions
-        #! array features in Project doc
-        #! array, string slicing
+    prog2 = """
+fn foo(i){
+    if i==1 then a = 2 else 5 end;
+    a = 42;
+}
+displayl foo(2);
+"""  #! (for Rohit) error since funcScope does not contain `a`
 
     #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
+
+    prog3 = """
+var a = 2;
+var a = 100;
+displayl a;
+"""  #! (for Rohit) should throw error
+
+    #! check for redeclaration of function
+
+    #! are arrays mutable? => can be done but not done yet, since we are storing as python lists
+
+    #! how arrays passed/returned from functions
+
+    prog4 = """
+displayl 2
+displayl 3
+"""  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
+
+
+    #! add nil datatype for function returns
+
+    prog = """
     
-    #! `mydef` as keyword for struct
+    var i = 0;
+    while (i < 5) {
+        i = i + 1;
+        if i == 2 then moveon end;
+        /~ if i == 4 then breakon end;~/
+        displayl i;
+    }
+        """
+
+
+    prog5 = """
+var a = 2++3;
+displayl a;
+"""  #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
+
+    #     prog = """
+    # var a = 2^3
+    # """ #! infinite loop
+
+    #! array features in Project doc
+
+    #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
+
+    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
+
+    prog = """
+var a = if 2==2 then 5 else 6 end;
+displayl a;
+displayl "hi"
+displayl "boo"
+
+""" #! error without brackets (even if 6 comes first)
+
 
     # =======================================
+    
+    
+    prog = """
+    var a = 2^3^2;
+    displayl a;
+    """ #! infinite loop
 
-    prog = """"""
-
+    prog="""
+    var nig =[1,3,"s"];
+    var ptmp ={"s":1,"a":2}; 
+    displayl nig[nig.Length-1];
+    ptmp.Add("meow",12);
+    nig.Remove(2);
+    ptmp.Remove("a");
+    displayl ptmp; 
+    displayl nig; 
+    """
     parsed, gS = parse(prog)
+    
+    print("Parsed Output: ")
     pprint(parsed)
-    # print("------")
-    # print("Program Output: ")
-
+    print("------")
+    print("Program Output: ")
     execute(prog)

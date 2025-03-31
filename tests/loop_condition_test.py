@@ -41,7 +41,7 @@ def test_loop_function(capfd):
     };
     var x = 5;
     displayl("Calling loopFunction with x=5");
-    loopFunction(x);
+    loopFunction(x); 
     """
     execute(prog)
     captured = capfd.readouterr()
@@ -111,6 +111,32 @@ if __name__ =="__main__":
         x=x-1;
     };
 """
-    
+    prog="""fn foo() {
+    if 2==2 then {
+        42; 
+    }
+    else {
+
+    } end;
+};
+displayl foo(); """
+
+    prog="""var u = 100;
+for(var u=0; u<3; u+=1){
+    var b = 2;
+    displayl b;
+}
+displayl 179;
+displayl u;"""
+
+    prog="""if 2==2 then {
+    fn foo(){displayl "haha";}
+    foo();
+} else {
+    displayl 9;
+} end;"""
+
+    print(parse(prog))
+    execute(prog)
 
     
