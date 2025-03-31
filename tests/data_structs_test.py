@@ -51,6 +51,7 @@ def test_array_operations(code, expected_output, capfd):
     a.PushBack(6);
     displayl a;
     displayl a.PopFront;
+    displayl a[a.Length-1];
     displayl a;
     displayl a.PopBack;
     displayl a;
@@ -66,6 +67,7 @@ def test_array_operations(code, expected_output, capfd):
     """[0, 1, 2, 3, 4, 5]
 [0, 1, 2, 3, 4, 5, 6]
 0
+6
 [1, 2, 3, 4, 5, 6]
 6
 [1, 2, 3, 4, 5]
