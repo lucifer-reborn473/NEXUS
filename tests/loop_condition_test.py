@@ -165,51 +165,46 @@ def test_conditional_execution_2(capfd):
     assert "less than 5" in captured.out
     assert "not greater than 5" in captured.out
 
+@pytest.mark.parametrize("input_value, expected_output", [
+        ("42", "42"),  # Integer input
+        ("3.14", "3.14"),  # Float input
+        ("Hello, World!", "Hello, World!"),  # String input
+        ("", ""),  # Empty input
+        ("true", "true"),  # Boolean-like string input
+        ("null", "null"),  # Null-like string input
+        ("special_chars!@#$%^&*()", "special_chars!@#$%^&*()"),  # Special characters
+        ("123abc", "123abc"),  # Alphanumeric input
+        ("   spaced input   ", "   spaced input   "),  # Input with leading/trailing spaces
+        ("'quoted'", "'quoted'"),  # Quoted string input
+    ])
+def test_feed_input_handling(input_value, expected_output, monkeypatch, capfd):
+    prog = """
+    var a = feed("Enter input:");
+    displayl a;
+    """
+    # Mock the input function to simulate user input
+    monkeypatch.setattr('builtins.input', lambda _: input_value)
+    execute(prog)
+    captured = capfd.readouterr()
+    assert expected_output in captured.out
 if __name__ =="__main__":
     prog="""
-    var x=1000;
-    while (x>0){
-        if (x%3==0 or x%5==0)
-        then
-        {
-            displayl x;
-        }
-        else{
-            displayl "Not divisible by 3 or 5";
-        }
-        end;
-        x=x-1;
-    };
+    var a = feed ();
+    displayl a;
 """
-    prog="""fn foo() {
-    if 2==2 then {
-        42; 
-    }
-    else {
 
-    } end;
-};
-displayl foo(); """
-
-    prog="""var u = 100;
-for(var u=0; u<3; u+=1){
-    var b = 2;
-    displayl b;
-}
-displayl 179;
-displayl u;"""
-
-    prog="""displayl "Fibonacci:";
-
-fn fib(a) {
-    if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
-};
-displayl "----";
-var x = 3;
-displayl x;
-displayl fib(x);  """
-
-    pprint(parse(prog))
+    # pprint(parse(prog))
     execute(prog)
 
+"""
+Input:
+
+var a = feed ("Give input:");
+
+OR
+
+var = feed(): # displays FEED
+
+Parenthesis are necessary
+"""
     

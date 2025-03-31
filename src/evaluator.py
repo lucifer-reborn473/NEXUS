@@ -77,7 +77,8 @@ def e(tree: AST, tS) -> Any:
             return ord(e(val, tS))
         case UnaryOp("char", val):
             return chr(e(val, tS))
-
+        case Feed(msg):
+            return input(e(msg,tS))
         case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
             tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
