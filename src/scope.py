@@ -19,11 +19,11 @@ class SymbolTable:
     def define(self, iden, value, category: SymbolCategory):
         self.table[iden] = (value, category)
 
-    def lookup(self, iden):
+    def lookup(self, iden,cat=False):
         if iden in self.table:
-            return self.table[iden][0] #returns value of iden
+            return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
         elif self.parent:  # check in parent (enclosing scope)
-            return self.parent.lookup(iden)
+            return self.parent.lookup(iden, cat)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
 
@@ -39,7 +39,6 @@ class SymbolTable:
             self.parent.find_and_update_arr(iden, index, val)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
-
     def find_and_update(self, iden, val):
         if iden in self.table:
             category = self.table[iden][1]

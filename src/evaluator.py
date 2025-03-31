@@ -17,6 +17,11 @@ def e(tree: AST, tS) -> Any:
             return b
         case Variable(v):
             return tS.lookup(v)
+        case Array(val):
+            all_vals = list(map(lambda x: e(x, tS), val))
+            return all_vals
+        case Hash(val):
+            return {e(k, tS): e(v, tS) for k, v in val}
         # Operators
         case BinOp("+", l, r):
             return e(l, tS) + e(r, tS)
@@ -132,9 +137,9 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update(var_name, new_val)
             return new_val
 
-        case VarBind(name, dtype, value):
+        case VarBind(name, dtype, value,category):
             var_val = e(value, tS)
-            tS.define(name,var_val,SymbolCategory.VARIABLE)# binds in current scope
+            tS.define(name,var_val,category)# binds in current scope
             return var_val
         case PushFront(arr_name, value):
             arr= tS.lookup(arr_name)
@@ -189,11 +194,11 @@ def e(tree: AST, tS) -> Any:
                 return value
             else:
                 raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
-        case BindArray(xname, atype, val):
-            all_vals = list(map(lambda x: e(x, tS), val))
-            tS.table[xname] = all_vals
-            tS.define(xname,all_vals,SymbolCategory.ARRAY)
-            return all_vals
+        # case BindArray(xname, atype, val):
+        #     all_vals = list(map(lambda x: e(x, tS), val))
+        #     tS.table[xname] = all_vals
+        #     tS.define(xname,all_vals,SymbolCategory.ARRAY)
+        #     return all_vals
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
@@ -206,6 +211,29 @@ def e(tree: AST, tS) -> Any:
             val_to_assign = e(value, tS)
             tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
             return val_to_assign
+        #hash funcs
+        case CallHashVal(name,key):
+           return tS.lookup(name)[e(key, tS)]
+        
+        case AddHashPair(name, key, val):
+            hash_table = tS.lookup(name)
+            hash_table[e(key, tS)] = e(val, tS)
+            tS.find_and_update(name, hash_table)
+        
+        case RemoveHashPair(name, key):
+            hash_table = tS.lookup(name)
+            if e(key, tS) in hash_table:
+                del hash_table[e(key, tS)]
+                tS.find_and_update(name, hash_table)
+            else:
+                raise KeyError(f"Key {e(key, tS)} not found in hash {name}")
+
+        case AssignHashVal(name, key, new_val):
+            hash_table = tS.lookup(name)
+            hash_table[e(key, tS)] = e(new_val, tS)
+            tS.find_and_update(name, hash_table)
+            return hash_table[e(key, tS)]
+            
         # Loops
         case WhileLoop(cond, body, tS_while):
             while e(cond, tS_while):
@@ -338,6 +366,17 @@ displayl "boo"
     var a = 2^3^2;
     displayl a;
     """ #! infinite loop
+
+    prog="""
+    var nig =[1,3,"s"];
+    var ptmp ={"s":1,"a":2}; 
+    displayl nig[nig.Length-1];
+    ptmp.Add("meow",12);
+    nig.Remove(2);
+    ptmp.Remove("a");
+    displayl ptmp; 
+    displayl nig; 
+    """
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")
