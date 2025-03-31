@@ -40,7 +40,8 @@ keyword_tokens = (
     "return",
     "breakout",
     "moveon"
-    "loopon"
+    "loopon",
+    "feed",
 )
 
 boolean_tokens = (

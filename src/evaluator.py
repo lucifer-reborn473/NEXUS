@@ -77,7 +77,8 @@ def e(tree: AST, tS) -> Any:
             return ord(e(val, tS))
         case UnaryOp("char", val):
             return chr(e(val, tS))
-
+        case Feed(msg):
+            return input(e(msg,tS))
         case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
             tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
@@ -105,7 +106,8 @@ def e(tree: AST, tS) -> Any:
                 )  #! every line in body is evaluated (always returns something)
 
             for i in range(len(funcParams)):
-                funcScope.table[funcParams[i]] = None  # Step 4
+                funcScope.define(funcParams[i],None,SymbolCategory.VARIABLE)
+                # funcScope.table[funcParams[i]] = None  # Step 4
 
             return ans  # after returning ans
 
@@ -377,6 +379,11 @@ displayl "boo"
     displayl ptmp; 
     displayl nig; 
     """
+
+    prog="""
+    displayl 3
+    displayl 2
+"""
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")

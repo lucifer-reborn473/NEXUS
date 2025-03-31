@@ -44,27 +44,29 @@ The below steps describes how to write a simple progam in Nexus that outputs "He
 - Booleans (`True` and `False`)
 
 ### Comments
-- Full-line comments using `/>` (everything written after `/>` in the same line is ignored)
+- Single-line comments begin with /> and continue until the end of the line
     Example:
     ```
     var a = 40+2;   /> a holds 42
     displayl a;     /> 42
     ```
--  Multi-line or in-expression comments using `/~ ... ~/`  
-    Example:
-    ```
-    var price = 100;    /> INR per KG
-    var quantity = 3;   /> KGs
-    var discount = 0.3;
-    var total = price * /~ discount * ~/ quantity; /> INR
-    ```
-    ```
-    /~
-    The below program
-    outputs team name
-    ~/
-    displayl "Team Nexus";
-    ```
+-  Multi-line or expression-embedded comments using `/~ ... ~/`  
+    Examples:
+    - Expression-embedded comments:
+        ```
+        var price = 100;    /> INR per KG
+        var quantity = 3;   /> KGs
+        var discount = 0.3;
+        var total = price * /~ discount * ~/ quantity; /> INR
+        ```
+    - Multiline comments:
+        ```
+        /~
+        The below program
+        outputs team name
+        ~/
+        displayl "Team Nexus";
+        ```
 
 ### Variables
 - Declared using the `var` keyword. Redeclaration is not allowed in the same scope and is caught at compile-time.
@@ -225,6 +227,12 @@ Hey BG, please add:
 - Nexus is based on lexical (or, static) scoping, i.e, a function's scope is based on where it's defined and not where it's called
 - Scoping in conditionals, loops and functions
 
+
+- Runs in C++, errors in Nexus:
+    ```
+    var a = a;
+    displayl a;
+    ```
 
 # Bytecode
 

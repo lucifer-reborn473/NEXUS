@@ -6,14 +6,18 @@ Welcome to the official documentation for **Nexus**. This documentation is desig
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Getting Started](#getting-started)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Contributing](#contributing)
-- [License](#license)
+- [Nexus Documentation](#nexus-documentation)
+  - [Table of Contents](#table-of-contents)
+  - [Introduction](#introduction)
+  - [Getting Started](#getting-started)
+  - [Documentation](#documentation)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Common Options:](#common-options)
+  - [Examples](#examples)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ---
 
@@ -35,6 +39,17 @@ Learn how to set up and start using Nexus.
 - [Basic Usage](#usage)
 
 ---
+
+## Documentation
+
+Welcome to the documentation for the Nexus Compiler. This set of documents provides detailed information on the language grammar, syntax rules, expressions, statements, recursive functions, scoping rules, and control flow mechanisms of the Prog language.
+
+- [Grammar](grammar.md)
+- [Syntax Rules](syntax.md)
+- [Control Flow Mechanisms](control_flow.md)
+- [Recursive Functions](recursive_functions.md)
+- [Scoping](scope_management.md)
+- [Bytecode Generation](bytecode_generation.md)
 
 ## Features
 
