@@ -190,7 +190,7 @@ The `feed` function is used to take input from the user. It always requires pare
 FeedFunction := "feed" "(" [StringLiteral] ")"
 ```
 
-- If a string literal is provided, it is displ		ayed as a prompt to the user.
+- If a string literal is provided, it is displ			ayed as a prompt to the user.
 - If no string literal is provided, a default prompt (`FEED`) is displayed.
 
 **Examples:**

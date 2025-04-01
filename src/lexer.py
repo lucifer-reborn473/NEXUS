@@ -147,9 +147,11 @@ def lex(s: str) -> Iterator[Token]:
             t = s[i]
             prev_char = s[i]
             i = i + 1
-            while i < len(s) and s[i].isdigit():
+            while i < len(s) and (s[i].isdigit() or (s[i] == '.' and '.' not in t)):
                 t = t + s[i]
                 i = i + 1
+            if t.count('.') > 1:  # Invalid number with multiple decimal points
+                raise SyntaxError(f"Invalid number: {t}")
             prevToken = NumberToken(t)
             yield prevToken
         
@@ -201,9 +203,15 @@ def lex(s: str) -> Iterator[Token]:
                             while i < len(s) and s[i].isalpha():
                                 t += s[i]
                                 i += 1
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
+                                yield OperatorToken('+')
                             yield NumberToken("-1")
                             yield OperatorToken("*")
                             yield VarToken(t[1:]) # variable name (identifier)
+                        
+                        elif s[i]=='(':
+                            yield(OperatorToken('-'))
+
 
                 case t if t in (base_operator_tokens+bitwise_ops):
                     prev_char = s[i]

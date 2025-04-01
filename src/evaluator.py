@@ -10,7 +10,10 @@ import copy
 def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
-            return int(n)
+            if '.' in n:  # Check if the number contains a decimal point
+                return float(n)  # Return as a float
+            else:
+                return int(n)
         case String(s):
             return s
         case Boolean(b):
@@ -135,7 +138,7 @@ def e(tree: AST, tS) -> Any:
 
         case CompoundAssignment(var_name, op, value):
             prev_val = tS.lookup(var_name)
-            new_val = e(BinOp(op[0], Number(prev_val), value), tS)
+            new_val = e(BinOp(op[0], Number(str(prev_val)), value), tS)
             tS.find_and_update(var_name, new_val)
             return new_val
 

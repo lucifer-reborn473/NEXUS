@@ -259,8 +259,15 @@ def test_function_multiply(capfd):
     assert "20" in captured.out
 if __name__ =="__main__":
     prog="""
-    var a = feed ();
-    displayl a;
+    var integer sum=2;
+    for (var i=1;i<10;i+=1){
+        sum+=i;
+    }; 
+    var i=1;
+    /~i= i+ sum;
+    displayl i;~/
+    displayl sum;
+    display "done";
 """
 
     
