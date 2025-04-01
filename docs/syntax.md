@@ -151,6 +151,24 @@ fn add(a, b) {
 display add(5, 10);
 ```
 
+## Feed Function
+
+The `feed` function is used to take input from the user. It always requires parentheses.
+
+```prog
+FeedFunction := "feed" "(" [StringLiteral] ")"
+```
+
+- If a string literal is provided, it is displayed as a prompt to the user.
+- If no string literal is provided, a default prompt (`FEED`) is displayed.
+
+**Examples:**
+
+```prog
+var a = feed("Give input:");
+var b = feed();
+```
+
 ## Sample Program
 
 Here is a sample program demonstrating all the features:
