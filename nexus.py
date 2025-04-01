@@ -5,13 +5,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from evaluator import *  # Adjust with your actual module
 import time
 from tqdm import tqdm
+from pprint import pprint
 
-def run_nexus_file(file_path):
+def run_nexus_file(file_path,display_ast=False):
     """Runs the given Nexus file and tracks execution time."""
     start_time = time.time()
     try:
         with open(file_path, 'r') as file:
             code = file.read()
+        if display_ast:
+            print(f"Displaying AST for {file_path}:\n")
+            tree = parse(code)
+            pprint(tree)
+            print('\n')
         print(f"Running {file_path}...\n")
         start_time = time.perf_counter_ns()
         execute(code)
@@ -24,8 +30,8 @@ def run_nexus_file(file_path):
         print(f"Error while executing the code: {e}")
    
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: nexus <file.nx>")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: nexus <file.nx> [--ast]")
         return
 
     file_path = sys.argv[1]
@@ -33,7 +39,8 @@ def main():
         print("Error: File extension must be .nx")
         return
 
-    run_nexus_file(file_path)
+    display_ast = len(sys.argv) == 3 and sys.argv[2] == "--ast"
+    run_nexus_file(file_path, display_ast)
 
 if __name__ == "__main__":
     main()

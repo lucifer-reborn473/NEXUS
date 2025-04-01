@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-python nexus.py "$1"
+python nexus.py "$1" "$2"
