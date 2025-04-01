@@ -16,8 +16,8 @@ def run_nexus_file(file_path):
         start_time = time.perf_counter_ns()
         execute(code)
         end_time = time.perf_counter_ns()
-        execution_time_ns = end_time - start_time
-        print(f"\nProgram execution completed in {execution_time_ns} nanoseconds.")
+        execution_time_us = (end_time - start_time) / 1000  # Convert nanoseconds to microseconds
+        print(f"\nProgram execution completed in {execution_time_us:.2f} microseconds.")
     except FileNotFoundError:
         print(f"Error: File '{file_path}' not found.")
     except Exception as e:

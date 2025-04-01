@@ -14,7 +14,7 @@ Statements := Statement | Statement Statements
 **Example:**
 
 ```prog
-var x : integer = 10;
+var integer x = 10;
 display x;
 ```
 
@@ -29,66 +29,97 @@ Statement := VariableDeclaration | FunctionDefinition | FunctionCall | IfStateme
 **Example:**
 
 ```prog
-var y : integer = 20;
+var integer= 20;
 display y + 5;
 ```
 
 ## Variable Declarations
 
-Variables are declared using the `var` keyword:
+Variables are declared using the `var` keyword followed by the type and the variable name. The type must be explicitly specified (`integer`, `decimal`, `uinteger`, `array`, or `hash`) to typecast the variable. If no type is specified, the type is inferred from the assigned value.
 
 ```prog
-VariableDeclaration := "var" Identifier ":" Type "=" Expression ";"
-Type := "integer" | "decimal" | "uinteger"
+VariableDeclaration := "var" Type Identifier "=" Expression ";"
+Type := "integer" | "decimal" | "uinteger" | "array" | "hash"
 ```
 
-**Example:**
+### Rules:
+
+- Specifying a type will typecast the variable to the given type.
+- If the type is omitted, it is inferred from the value.
+- For `array` and `hash`, if the value cannot be translated into the specified type, an error is thrown.
+
+**Examples:**
 
 ```prog
-var z : decimal = 3.14;
-var count : uinteger = 100;
-display z * count;
+/> Basic declarations
+var integer x = 10; /> Explicit type declaration
+var decimal y = 3.14; /> Explicit type declaration
+var uinteger count = 100;
+
+/> Array declarations
+var array arr = [1, 2, 3];
+var mixedArr = [2.5, "hi"]; /> Type inferred
+
+/> Hash declarations
+var hash hashy = {"key1": 10, "key2": 20};
+var inferredHash = {"a": 1, "b": 2}; /> Type inferred
+
+/> Invalid declarations
+var array invalidArr = {"a": 1}; /> Error: Cannot typecast to array
+var hash invalidHash = [1, 2, 3]; /> Error: Cannot typecast to hash
 ```
 
 ## Arrays
 
-Arrays are declared and manipulated using square brackets:
+Arrays are declared and manipulated using square brackets. They support various operations such as adding, removing, and accessing elements.
 
 ```prog
-ArrayDeclaration := "var" Identifier ":" "array" "=" "[" Elements "]"
+ArrayDeclaration := "var" "array" Identifier "=" "[" Elements "]"
 Elements := Expression | Expression "," Elements
 ArrayOperations := Identifier "[" Index "]" | Identifier "." ArrayMethod "(" Arguments ")"
 ArrayMethod := "PushFront" | "PushBack" | "PopFront" | "PopBack" | "Length" | "Clear" | "Insert" | "Remove"
 ```
 
-**Example:**
+### Rules:
+
+- Arrays can contain elements of mixed types.
+- Operations like `PushFront`, `PushBack`, `Insert`, and `Remove` modify the array.
+- Accessing an invalid index will throw an error.
+
+**Examples:**
 
 ```prog
-var arr : array = [1, 2, 3];
-arr.PushBack(4);
-display arr[2];
-arr.Remove(1);
-display arr.Length;
+var array arr = [1, 2, 3];
+arr.PushBack(4); /> Adds 4 to the end
+display arr[2]; /> Displays 3
+arr.Remove(1); /> Removes the element at index 1
+display arr.Length; /> Displays the length of the array
 ```
 
 ## Hashes
 
-Hashes (dictionaries) are declared and manipulated using curly braces:
+Hashes (dictionaries) are declared and manipulated using curly braces. They allow key-value pairs and support operations like adding and removing keys.
 
 ```prog
-HashDeclaration := "var" Identifier ":" "hash" "=" "{" KeyValuePairs "}"
+HashDeclaration := "var" "hash" Identifier "=" "{" KeyValuePairs "}"
 KeyValuePairs := Key ":" Value | Key ":" Value "," KeyValuePairs
 HashOperations := Identifier "[" Key "]" | Identifier "." HashMethod "(" Arguments ")"
 HashMethod := "Add" | "Remove"
 ```
 
-**Example:**
+### Rules:
+
+- Keys must be unique.
+- Accessing a non-existent key will throw an error.
+- Operations like `Add` and `Remove` modify the hash.
+
+**Examples:**
 
 ```prog
-var hash : hash = {"key1": 10, "key2": 20};
-hash.Add("key3", 30);
-display hash["key1"];
-hash.Remove("key2");
+var hash h = {"key1": 10, "key2": 20};
+h.Add("key3", 30); /> Adds a new key-value pair
+display h["key1"]; /> Displays 10
+h.Remove("key2"); /> Removes the key "key2"
 ```
 
 ## Loops
@@ -103,13 +134,13 @@ ForLoop := "for" "(" Initialization ";" Condition ";" Increment ")" Block
 **Example:**
 
 ```prog
-var i : integer = 0;
+var integer i = 0;
 while (i < 5) {
     display i;
     i = i + 1;
 }
 
-for (var j : integer = 0; j < 5; j = j + 1) {
+for (var integer j = 0; j < 5; j = j + 1) {
     display j;
 }
 ```
@@ -159,14 +190,14 @@ The `feed` function is used to take input from the user. It always requires pare
 FeedFunction := "feed" "(" [StringLiteral] ")"
 ```
 
-- If a string literal is provided, it is displayed as a prompt to the user.
+- If a string literal is provided, it is displ		ayed as a prompt to the user.
 - If no string literal is provided, a default prompt (`FEED`) is displayed.
 
 **Examples:**
 
 ```prog
-var a = feed("Give input:");
-var b = feed();
+var integer a = feed("Give input:");
+var integer b = feed();
 ```
 
 ## Sample Program
@@ -174,30 +205,30 @@ var b = feed();
 Here is a sample program demonstrating all the features:
 
 ```prog
-var x : integer = 10;
-var arr : array = [1, 2, 3];
-var hash : hash = {"key1": 10, "key2": 20};
+var integer x = 10;
+var array arr = [1, 2, 3];
+var hash hash = {"key1": 10, "key2": 20};
 
 arr.PushBack(4);
 hash.Add("key3", 30);
 
 fn multiply(a, b) {
-    return a * b;
+    a * b;
 }
 
 if x > 5 then {
-    display "x is greater than 5";
+    displayl "x is greater than 5";
 } else {
-    display "x is 5 or less";
+    displayl "x is 5 or less";
 } end;
 
 while (x > 0) {
-    display x;
+    displayl x;
     x = x - 1;
 }
-
-for (var i : integer = 0; i < arr.Length; i = i + 1) {
-    display arr[i];
+displayl ("Array run:");
+for (var integer i = 0; i < arr.Length; i = i + 1) {
+    displayl arr[i];
 }
 
 display multiply(hash["key1"], 2);

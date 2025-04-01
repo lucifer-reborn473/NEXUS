@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 from evaluator import *
-
+from bytecode_eval import execute_all
 
 @pytest.mark.parametrize("expression, expected", [
     ("2 + 3", "5"),
@@ -20,3 +20,7 @@ def test_arithmetic_operations(expression, expected, capfd):
     execute(f"display({expression})")
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
+
+    # execute_all(f"displayl({expression})")
+    # captured_all = capfd.readouterr()
+    # assert captured_all.out.strip() == expected

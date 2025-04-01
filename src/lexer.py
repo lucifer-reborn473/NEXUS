@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from collections.abc import Iterator
 from tokens import  *
+from typing import Union
 
 # ==========================================================================================
 # ==================================== LEXER ===============================================

@@ -85,3 +85,32 @@ for(var u=0; u<3; u+=1){
 }
 displayl 179;
 displayl u;
+
+/>
+var x = 10;
+var arr = [1, 2, 3];
+var hash = {"key1": 10, "key2": 20};
+
+arr.PushBack(4);
+hash.Add("key3", 30);
+
+fn multiply(a, b) {
+    return a * b;
+}
+
+if x > 5 then {
+    display "x is greater than 5";
+} else {
+    display "x is 5 or less";
+} end;
+
+while (x > 0) {
+    display x;
+    x = x - 1;
+}
+
+for (var integer i = 0; i < arr.Length; i = i + 1) {
+    display arr[i];
+}
+
+display multiply(hash["key1"], 2);

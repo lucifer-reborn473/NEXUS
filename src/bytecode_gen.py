@@ -9,7 +9,10 @@ def do_codegen(t, code, scope):
     match t:
         case Number(v):
             code.append(PUSH)
-            code.append(int(v))
+            num = int(v)
+            num_bytes = num.to_bytes((num.bit_length() + 7) // 8 or 1, byteorder='big', signed=True)
+            code.append(len(num_bytes))  # Store byte length
+            code.extend(num_bytes)       # Store actual bytes
         case BinOp("+", l, r):
             do_codegen(l, code, scope)
             do_codegen(r, code, scope)
@@ -22,7 +25,7 @@ def do_codegen(t, code, scope):
             do_codegen(l, code, scope)
             do_codegen(r, code, scope)
             code.append(MUL)
-        case BinOp("÷", l, r) | BinOp("/", l, r):
+        case BinOp("/", l, r):
             do_codegen(l, code, scope)
             do_codegen(r, code, scope)
             code.append(DIV)

@@ -187,24 +187,85 @@ def test_feed_input_handling(input_value, expected_output, monkeypatch, capfd):
     execute(prog)
     captured = capfd.readouterr()
     assert expected_output in captured.out
+
+def test_array_and_hash_operations(capfd):
+    prog = """
+    var arr = [1, 2, 3];
+    var hash = {"key1": 10, "key2": 20};
+
+    arr.PushBack(4);
+    hash.Add("key3", 30);
+
+    displayl ("array display:");
+    for (var integer i = 0; i < arr.Length; i = i + 1) {
+        displayl arr[i];
+    }
+    fn multiply(a, b) {
+        a * b;
+    }
+    displayl multiply(hash["key1"], 2);
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "array display:" in captured.out
+    assert "1" in captured.out
+    assert "2" in captured.out
+    assert "3" in captured.out
+    assert "4" in captured.out
+    assert "20" in captured.out
+
+
+def test_conditional_and_loop_execution(capfd):
+    prog = """
+    var x = 10;
+
+    if x > 5 then {
+        displayl "x is greater than 5";
+    } else {
+        displayl "x is 5 or less";
+    } end;
+
+    while (x > 0) {
+        displayl x;
+        x = x - 1;
+    }
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "x is greater than 5" in captured.out
+    assert "10" in captured.out
+    assert "9" in captured.out
+    assert "8" in captured.out
+    assert "7" in captured.out
+    assert "6" in captured.out
+    assert "5" in captured.out
+    assert "4" in captured.out
+    assert "3" in captured.out
+    assert "2" in captured.out
+    assert "1" in captured.out
+
+
+def test_function_multiply(capfd):
+    prog = """
+    fn multiply(a, b) {
+        a * b;
+    }
+
+    var result = multiply(5, 4);
+    displayl result;
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "20" in captured.out
 if __name__ =="__main__":
     prog="""
     var a = feed ();
     displayl a;
 """
 
-    # pprint(parse(prog))
+    
+    # pprint(list(lex(prog)))
+    pprint(parse(prog))
     execute(prog)
 
-"""
-Input:
-
-var a = feed ("Give input:");
-
-OR
-
-var = feed(): # displays FEED
-
-Parenthesis are necessary
-"""
     
