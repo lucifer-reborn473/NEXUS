@@ -204,7 +204,40 @@ More operators discussed in their respective sections
         ```
         Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
-    
+#### Functions are first-class citizens in Nexus
+- Example 1:
+    ```
+    var x = 100;
+    fn bar(){
+        x;
+    }
+    fn foo(g){ 
+        g() + 2; /> takes function as parameter
+    }
+    displayl foo(bar);
+    ```
+    Output
+    ```
+    102
+    ```
+
+- Example 2:
+    ```
+    fn foo(){
+        fn bar(){
+            x+2;
+        }
+        bar; /> returns a function
+    }
+    var x = 40;
+    var y = foo(); /> assigns to a variable
+    displayl y();
+    ```
+    Output
+    ```
+    42
+    ```
+
 
 ### Arrays
 - Declared using the `array` keyword
