@@ -19,7 +19,9 @@ The below steps describes how to write a simple progam in Nexus that outputs "He
     displayl "Hello, World!";
     ```
 4. Save the file.
-5. Open terminal and write `nexus helloworld.nex` and press enter!
+5. Open terminal and write `nexus helloworld.nex` and press enter!  
+
+Woohoo! You just wrote your first "Hello, World!" program in Nexus.
 
 # Enter Nexus!
 - Every statement must end with a semicolon
@@ -36,12 +38,17 @@ The below steps describes how to write a simple progam in Nexus that outputs "He
     - `feed` keyword, followed by an optional expression to print, takes in input in string format and returns it.
 
 - Valid identifier: Made of English letters only
-- Blocks of code can be enclosed in braces (`{...}`)
 
 ### Datatypes
+#### Primitives:
 - Numbers
 - Strings (must be enclosed in double quotes)
 - Booleans (`True` and `False`)
+- `None`  
+#### Compound Datatypes:
+- Array
+- Hash
+- Class
 
 ### Comments
 - Single-line comments begin with /> and continue until the end of the line
@@ -69,20 +76,14 @@ The below steps describes how to write a simple progam in Nexus that outputs "He
         ```
 
 ### Variables
-- Declared using the `var` keyword. Redeclaration is not allowed in the same scope and is caught at compile-time.
+- Declared using the `var` keyword. Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Initialization defaults to `None`
-- Optional datatype declarations (interger, uinteger, decimal)
-
 
 ### Strings
 - Must be enclosed in double quotes
 - String operations:
     - Concatenation using `+`
-    - `char()` and `ascii()` functions
-        - Description:
-        ...
-        - Examples:
-            If `x` is a lower-case Latin letter, then `char("A" + x - "a")` evaluates to `x`'s upper-case version.
+    - `char()` and `ascii()` functions (respectively equivalen to `chr()` and `ord()` in Python)
 
 
 ### Operators
@@ -102,7 +103,6 @@ Basic operators include:
 
 - Logical
     - operators include `and`, `or` and `not`
-    - acts as control-flow constructs
 
 - Bitwise
     - operators include `&`, `|`, `^`, `>>`, `<<`, `~`
@@ -124,8 +124,8 @@ More operators discussed in their respective sections
 
 ### Conditionals
 - Valid syntaxes:
-    - `if ... then ... else end;`
-    - `if ... then ... end;`
+    - `if ... then ... else ... end;`
+    - `if ... then ... end;` (if condition is false, then evaluates to `None`)
 - Nesting supported
 - Empty `then` and/or `else` expressions returns `None`
 - Examples:
@@ -178,15 +178,17 @@ More operators discussed in their respective sections
 - `breakout` statement equaivalent to `break` statement in Python.
 
 ### Functions
-- Functions in Nexus are declared using the `fn` keyword if the function is non-recursive (does not calls itself), else using `fnrec`
-- Redeclaration is not allowed in the same scope and is caught at compile-time.
+- There are two types of keyword for declaring functions in Nexus:
+    - `fn` for non-recursive functions (does not calls itself)
+    - `fnrec` for recursive functions
+- Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
         ```
         fn giveSum(a, b){
             a+b;
-        }
+        };
         displayl giveSum(40, 2);
         ```
         Output:
@@ -197,10 +199,10 @@ More operators discussed in their respective sections
         ```
         fn fib(n){
             if n==1 or n==2 then 1 else fib(n-1) + fib(n-2) end;
-        }
+        };
         displayl fib(10); /> outputs 55
         ```
-        Note: fib(31) takes nearly ___ seconds, while fib(32) takes nearly __ seconds (averaged over 5 iterations)
+        Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
     
 
@@ -222,25 +224,110 @@ Hey BG, please add:
 - Common operations (adding/removing keys, checking existence)
 - Iteration techniques
 
-
 # Scoping
-- Nexus is based on lexical (or, static) scoping, i.e, a function's scope is based on where it's defined and not where it's called
-- Scoping in conditionals, loops and functions
+- Nexus is based on lexical (or, static) scoping.
 
+- structural hierarchy of scopes made during parsing
+    - lexical structure captured while parsing
+    - helps identify and catch duplicate declarations for variables and functions
+- resolution of values during the evaluation phase (see Example 6 below)
 
-- Runs in C++, errors in Nexus:
+- Conditionals and loops have their own local scopes
+
+- Example 1:
     ```
-    var a = a;
-    displayl a;
+    fn foo(i){
+        if i==1 then var a = 2 else 5 end;
+        a = 42;
+    };
+    displayl foo(1);
+    ```
+- Example 2:
+    ```
+    var x = 9;
+    fn bar() {
+        x;
+    };
+    fn foo() {
+        var x = 100;
+        bar();
+    };
+    displayl foo();
+    ```
+    Output
+    ```
+    9
     ```
 
-# Bytecode
 
+- Exampl 3:
+    ```
+    var x = 2;
+    fn foo(){
+        var x = 300;
+        x;
+    };
+    fn bar(x){
+        x += 1000;
+        x;
+    };
+    fn baz(x){
+        if x<5 then foo() else bar(x) end;
+    };
+    displayl baz(4);
+    displayl baz(6);
+    ```
+    Output:
+    ```
+    300
+    1006
+    ```
 
-# Error handling
+- Example 4:
+    ```
+    var x = 1000;
+    fn foo() {
+        fn bar() {
+            x;
+        }
+        var x = 117;
+        bar();
+    }
+    displayl foo();
+    ```
+    Output
+    ```
+    117
+    ```
 
-To add:
-- Common error types
-- How to catch and handle errors
-- Best practices for error handling
-- Troubleshooting: common issues users might encounter and their solutions
+- Example 5:
+    ```
+    var a = "g-";
+    fn foo(x, i){
+        if i==1 then var a = "1-" else "dummy" end;
+        if x==1 then "k" else a + foo(x-1, i+1) end;
+    };
+    displayl foo(5,1);
+    ```
+    Output:
+    ```
+    g-g-g-g-k
+    ```
+
+- Example 6:
+    ```
+    fn foo(i){
+        fn bar(){
+            i;
+        };
+        fn baz(){
+            bar();
+        };
+        if i==10 then baz() else foo(i+1) end;
+    };
+    displayl foo(0);
+    ```
+    Output:
+    ```
+    10
+    ```
