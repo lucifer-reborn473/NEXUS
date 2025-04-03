@@ -220,6 +220,9 @@ def lex(s: str) -> Iterator[Token]:
                         prev_char = s[i]
                         i = i + 1
                         prevToken = OperatorToken(t + prev_char)
+                    elif i<len(s) and t=="*" and s[i] == "*":
+                        i += 1
+                        prevToken = OperatorToken("**")
                     else:
                         prevToken = OperatorToken(t)
                     yield prevToken

@@ -562,19 +562,10 @@ def parse(s: str) -> List[AST]:
                 
     def parse_exp(tS):
         ast = parse_ascii_char(tS)
-        while True:
-            match t.peek(None):
-                case OperatorToken("^"):
-                    next(t)
-                    ast = BinOp("^", ast, parse_ascii_char(tS))
-                case _:
-                    return ast
-    def parse_exp(tS):
-        ast = parse_ascii_char(tS)
-        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
+        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "**":
             next(t)
             right = parse_exp(tS)
-            ast = BinOp("^", ast, right)
+            ast = BinOp("**", ast, right)
         return ast
 
                 

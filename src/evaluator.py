@@ -36,7 +36,7 @@ def e(tree: AST, tS) -> Any:
             return e(l, tS) / e(r, tS)
         case BinOp("/", l, r):
             return e(l, tS) / e(r, tS)
-        case BinOp("^", l, r):
+        case BinOp("**", l, r):
             return e(l, tS) ** e(r, tS)
         case BinOp("<", l, r):
             return e(l, tS) < e(r, tS)
@@ -383,7 +383,7 @@ displayl "boo"
     
     
     prog = """
-    var a = 2^3^2;
+    var a = 2**3**2;
     displayl a;
     """ #! infinite loop
 
@@ -410,6 +410,12 @@ displayl "boo"
         if i == 4 then breakon end;
         displayl i;
     }
+    """
+
+
+    prog = """
+    var a = 2**3**2;
+    displayl a;
     """
     parsed, gS = parse(prog)
     
