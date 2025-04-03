@@ -223,6 +223,8 @@ def lex(s: str) -> Iterator[Token]:
                     elif i<len(s) and t=="*" and s[i] == "*":
                         i += 1
                         prevToken = OperatorToken("**")
+                    elif i<len(s) and t == "+" and s[i] == "+":
+                        raise SyntaxError("Invalid operator '++'. Did you mean '+'?")
                     else:
                         prevToken = OperatorToken(t)
                     yield prevToken
