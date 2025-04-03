@@ -37,7 +37,18 @@ def e(tree: AST, tS) -> Any:
         case BinOp("/", l, r):
             return e(l, tS) / e(r, tS)
         case BinOp("**", l, r):
-            return e(l, tS) ** e(r, tS)
+            base = e(l, tS)
+            exponent = e(r, tS)
+            
+            # Rule 1: Zero to the power of a negative number
+            if base == 0 and exponent < 0:
+                raise ValueError("Math error: Zero cannot be raised to a negative power.")
+            
+            # Rule 2: Negative number to the power of a decimal
+            if base < 0 and not exponent.is_integer():
+                raise ValueError("Math error: Negative numbers cannot be raised to a decimal power.")
+            
+            return base ** exponent
         case BinOp("<", l, r):
             return e(l, tS) < e(r, tS)
         case BinOp(">", l, r):
@@ -414,7 +425,7 @@ displayl "boo"
 
 
     prog = """
-    var a = 2**3**2;
+    var a = -5**0.5;
     displayl a;
     """
     parsed, gS = parse(prog)
