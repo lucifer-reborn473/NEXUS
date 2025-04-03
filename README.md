@@ -11,7 +11,7 @@
 | 1                    | **Numbers**                            | Numeric values (constants or variables) | N/A                                                              |
 | 2                    | `()`                                       | Parentheses (for grouping expressions)  | Left-to-Right                                                    |
 | 3                    | `**`                                       | Exponentiation                          | Right-to-Left                                                    |
-| 4                    | `div_dot`                                  | Floor Division using dot notation       | Left-to-Right                                                    |
+| 4                    | `div_dot`                                  | Regualar Division using dot notation       | Left-to-Right                                                    |
 | 5                    | `div_slash`                                | Regular Division using slash notation   | Left-to-Right                                                    |
 | 6                    | `%`                                        | Modulo (Remainder)                      | Left-to-Right                                                    |
 | 7                    | `*`                                        | Multiplication                          | Left-to-Right                                                    |
@@ -20,7 +20,7 @@
 | 10                   | `<<`, `>>`                               | Bitwise Shift (Left, Right)             | Left-to-Right                                                    |
 | 11                   | `<`, `>`, `<=`, `>=`, `==`, `!=` | Comparison Operators                    | Left-to-Right                                                    |
 | 12                   | `&`, `^`, `~`                          | Bitwise Operators                       | Left-to-Right                                                    |
-| 13                   | `and`, `or`, `not`                     | Logical Operators                       | Left-to-Right (`and`, `or`) , Right-to-Left (`not`) |
+| 13                   | `and`, `or`, `not`                     | Logical Operators                       | Left-to-Right (`and`, `or`) <br> Right-to-Left (`not`) |
 
 To-implement:
 
