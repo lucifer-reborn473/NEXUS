@@ -49,18 +49,40 @@ def e(tree: AST, tS) -> Any:
                 raise ValueError("Math error: Negative numbers cannot be raised to a decimal power.")
             
             return base ** exponent
-        case BinOp("<", l, r):
-            return e(l, tS) < e(r, tS)
-        case BinOp(">", l, r):
-            return e(l, tS) > e(r, tS)
-        case BinOp("==", l, r):
-            return e(l, tS) == e(r, tS)
-        case BinOp("!=", l, r):
-            return e(l, tS) != e(r, tS)
-        case BinOp("<=", l, r):
-            return e(l, tS) <= e(r, tS)
-        case BinOp(">=", l, r):
-            return e(l, tS) >= e(r, tS)
+        # case BinOp("<", l, r):
+        #     return e(l, tS) < e(r, tS)
+        # case BinOp(">", l, r):
+        #     return e(l, tS) > e(r, tS)
+        # case BinOp("==", l, r):
+        #     return e(l, tS) == e(r, tS)
+        # case BinOp("!=", l, r):
+        #     return e(l, tS) != e(r, tS)
+        # case BinOp("<=", l, r):
+        #     return e(l, tS) <= e(r, tS)
+        # case BinOp(">=", l, r):
+        #     return e(l, tS) >= e(r, tS)
+
+        case ChainedComparison(operands, operators):
+            # Evaluate the first operand.
+            left_value = e(operands[0], tS)
+            for i, op in enumerate(operators):
+                right_value = e(operands[i + 1], tS)
+                # Check the comparison based on op.
+                if op == "<" and not (left_value < right_value):
+                    return False
+                elif op == ">" and not (left_value > right_value):
+                    return False
+                elif op == "==" and not (left_value == right_value):
+                    return False
+                elif op == "!=" and not (left_value != right_value):
+                    return False
+                elif op == "<=" and not (left_value <= right_value):
+                    return False
+                elif op == ">=" and not (left_value >= right_value):
+                    return False
+                # For the next comparison, use the current right_value.
+                left_value = right_value
+            return True
         case BinOp("%", l, r):
             return e(l, tS) % e(r, tS)
         case BinOp("and", l, r):
@@ -425,8 +447,16 @@ displayl "boo"
 
 
     prog = """
-    var a = -5**0.5;
+    var a = 5;
+    var b = 16; 
+    var c = 15;
+
+
     displayl a;
+    displayl b;  /> 16
+    displayl c;  /> 15
+    var resultnnew = a < b < c;  /> False because 16 < 15 is False
+    displayl resultnnew;
     """
     parsed, gS = parse(prog)
     

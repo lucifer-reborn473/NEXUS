@@ -200,6 +200,12 @@ class If(AST):
     condScope: Any
 
 @dataclass
+class ChainedComparison(AST):
+    operands: List[AST]
+    operators: List[str]
+
+
+@dataclass
 class Statements:
     statements: List[AST]
 
@@ -462,31 +468,48 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
 
+    # def parse_cmp(tS):
+    #     ast = parse_shift(tS)
+    #     while True:
+    #         match t.peek(None):
+    #             case OperatorToken("<"):
+    #                 next(t)
+    #                 ast = BinOp("<", ast, parse_shift(tS))
+    #             case OperatorToken(">"):
+    #                 next(t)
+    #                 ast = BinOp(">", ast, parse_shift(tS))
+    #             case OperatorToken("=="):
+    #                 next(t)
+    #                 ast = BinOp("==", ast, parse_shift(tS))
+    #             case OperatorToken("!="):
+    #                 next(t)
+    #                 ast = BinOp("!=", ast, parse_shift(tS))
+    #             case OperatorToken("<="):
+    #                 next(t)
+    #                 ast = BinOp("<=", ast, parse_shift(tS))
+    #             case OperatorToken(">="):
+    #                 next(t)
+    #                 ast = BinOp(">=", ast, parse_shift(tS))
+    #             case _:
+    #                 return ast
+                             
     def parse_cmp(tS):
-        ast = parse_shift(tS)
+        operands = [parse_shift(tS)]
+        operators = []
         while True:
             match t.peek(None):
-                case OperatorToken("<"):
+                case OperatorToken("<") | OperatorToken(">") | OperatorToken("==") | OperatorToken("!=") | OperatorToken("<=") | OperatorToken(">="):
+                    op = t.peek(None).o
                     next(t)
-                    ast = BinOp("<", ast, parse_shift(tS))
-                case OperatorToken(">"):
-                    next(t)
-                    ast = BinOp(">", ast, parse_shift(tS))
-                case OperatorToken("=="):
-                    next(t)
-                    ast = BinOp("==", ast, parse_shift(tS))
-                case OperatorToken("!="):
-                    next(t)
-                    ast = BinOp("!=", ast, parse_shift(tS))
-                case OperatorToken("<="):
-                    next(t)
-                    ast = BinOp("<=", ast, parse_shift(tS))
-                case OperatorToken(">="):
-                    next(t)
-                    ast = BinOp(">=", ast, parse_shift(tS))
+                    operators.append(op)
+                    operands.append(parse_shift(tS))
                 case _:
-                    return ast
-                             
+                    break
+        if operators:
+            return ChainedComparison(operands, operators)
+        else:
+            return operands[0]
+
     def parse_shift(tS):
         ast = parse_add(tS)
         while True:
