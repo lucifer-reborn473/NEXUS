@@ -69,6 +69,62 @@ var array invalidArr = {"a": 1}; /> Error: Cannot typecast to array
 var hash invalidHash = [1, 2, 3]; /> Error: Cannot typecast to hash
 ```
 
+
+
+
+
+## Comments
+
+Nexus supports two types of comments:
+
+1. **Single-line comments**: Begin with `/>` and continue until the end of the line.
+   **Example:**
+   ```prog
+   var a = 42;   /> This is a single-line comment
+   display a;    /> Outputs 42
+   ```
+
+2. **Multi-line or expression-embedded comments**: Enclosed within `/~ ... ~/`.
+   **Examples:**
+   - Multi-line comments:
+
+     ```prog
+     /~
+     This is a multi-line comment.
+     It spans multiple lines.
+     ~/
+     display "Hello, World!";
+     ```
+
+   - Expression-embedded comments:
+
+     ```prog
+     var total = price * /~ discount * ~/ quantity;
+     ```
+
+## Operators
+
+Nexus supports a variety of operators:
+
+1. **Arithmetic Operators**: `+`, `-`, `*`, `/`, `÷`, `%`, `**`
+   - `÷` has higher precedence than `/`.
+   - Exponentiation (`**`) follows right-associativity.
+
+2. **Comparison Operators**: `==`, `!=`, `>`, `<`, `<=`, `>=`
+
+3. **Logical Operators**: `and`, `or`, `not`
+
+4. **Bitwise Operators**: `&`, `|`, `^`, `>>`, `<<`, `~`
+
+5. **Assignment Operators**: `=`, `+=`, `-=`, `*=`, `/=`, `%=`
+
+**Examples:**
+
+```prog
+var a = 5 + 3 * 2; /> a = 11
+var b = (5 > 3) + 99; /> b = 100
+```
+
 ## Arrays
 
 Arrays are declared and manipulated using square brackets. They support various operations such as adding, removing, and accessing elements.
@@ -122,6 +178,24 @@ display h["key1"]; /> Displays 10
 h.Remove("key2"); /> Removes the key "key2"
 ```
 
+## Conditional Statements
+
+Conditional statements use `if`, `then`, `else`, and `end`:
+
+```prog
+IfStatement := "if" Condition "then" Block ["else" Block] "end"
+```
+
+**Example:**
+
+```prog
+if x > 10 then {
+    display "x is greater than 10";
+} else {
+    display "x is 10 or less";
+} end;
+```
+
 ## Loops
 
 Loops are supported with `while` and `for` constructs:
@@ -145,22 +219,24 @@ for (var integer j = 0; j < 5; j = j + 1) {
 }
 ```
 
-## Conditional Statements
+## Display Statements
 
-Conditional statements use `if`, `then`, `else`, and `end`:
+The `display` and `displayl` keywords are used for printing output.
 
 ```prog
-IfStatement := "if" Condition "then" Block ["else" Block] "end"
+DisplayStatement := "display" Expression ";" | "displayl" Expression ";"
 ```
 
-**Example:**
+### Rules:
+
+- `display` prints the expression without a newline.
+- `displayl` prints the expression followed by a newline.
+
+**Examples:**
 
 ```prog
-if x > 10 then {
-    display "x is greater than 10";
-} else {
-    display "x is 10 or less";
-} end;
+display "Hello, ";
+displayl "World!";
 ```
 
 ## Functions
@@ -173,13 +249,24 @@ Parameters := Identifier | Identifier "," Parameters
 Block := "{" Statements "}"
 ```
 
-**Example:**
+### Rules:
+
+- `fn` is used for non-recursive functions.
+- `fnrec` is used for recursive functions.
+- Functions are first-class citizens and can be passed as arguments, returned, or assigned to variables.
+
+**Examples:**
 
 ```prog
 fn add(a, b) {
     return a + b;
 }
 display add(5, 10);
+
+fnrec fib(n) {
+    if n == 1 or n == 2 then 1 else fib(n - 1) + fib(n - 2) end;
+}
+display fib(10); /> Outputs 55
 ```
 
 ## Feed Function
@@ -190,7 +277,7 @@ The `feed` function is used to take input from the user. It always requires pare
 FeedFunction := "feed" "(" [StringLiteral] ")"
 ```
 
-- If a string literal is provided, it is displ			ayed as a prompt to the user.
+- If a string literal is provided, it is displayed as a prompt to the user.
 - If no string literal is provided, a default prompt (`FEED`) is displayed.
 
 **Examples:**
