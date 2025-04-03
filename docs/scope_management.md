@@ -1,81 +1,114 @@
-# Scope Management
+# Scope Management in Nexus
 
-This document provides an overview of the scope management system implemented in the Our_Compiler project. It details the `SymbolTable` class, its methods for managing variable scopes, and the `SymbolCategory` enumeration used to categorize symbols.
+This document provides an overview of how scoping works in Nexus.
 
-## SymbolTable Class
+---
 
-The `SymbolTable` class is responsible for maintaining a mapping of identifiers (variables, functions, etc.) to their corresponding values and categories. It supports nested scopes, allowing for the definition of variables within functions or blocks without interfering with variables in outer scopes.
+## Scoping in Nexus
 
-### Attributes
+Nexus is based on lexical (or static) scoping, meaning the scope of variables is determined by their position in the source code.
 
-- `table`: A dictionary that maps identifiers to a tuple containing the value and its category.
-- `parent`: A reference to the parent `SymbolTable`, enabling scope chaining.
+### **Key Features**
 
-### Methods
+- Structural hierarchy of scopes is created during parsing.
+- Lexical structure is captured while parsing to identify and catch duplicate declarations for variables and functions.
+- Resolution of values occurs during the evaluation phase.
 
-#### `__init__(self, parent=None)`
+---
 
-Initializes a new `SymbolTable`. If a parent is provided, it allows for nested scopes.
+## Rules
 
-#### `define(self, iden, value, category: SymbolCategory)`
+- Conditionals and loops have their own local scopes.
+- Variables declared in inner blocks cannot access variables in outer blocks unless they are in the enclosing scope.
+- Shadowing occurs when a local variable has the same name as a global variable.
 
-Defines a new identifier in the current scope with its associated value and category.
+---
 
-- **Parameters**:
-  - `iden`: The identifier name (string).
-  - `value`: The value associated with the identifier.
-  - `category`: The category of the symbol (e.g., variable, function).
+## Examples
 
-#### `lookup(self, iden, cat=False)`
+### **Example 1: Local Scope**
 
-Looks up an identifier in the current scope and its parent scopes.
+```prog
+fn foo(i) {
+    if i == 1 then var a = 2 else 5 end;
+    a = 42;
+}
+displayl foo(1);
+```
 
-- **Parameters**:
-  - `iden`: The identifier name (string).
-  - `cat`: If `True`, returns the category instead of the value.
-- **Returns**: The value or category of the identifier.
-- **Raises**: `NameError` if the identifier is not found.
+---
 
-#### `inScope(self, iden)`
+### **Example 2: Shadowing**
 
-Checks if an identifier is defined in the current scope.
+```prog
+var x = 9;
 
-- **Parameters**:
-  - `iden`: The identifier name (string).
-- **Returns**: `True` if the identifier is in the current scope, `False` otherwise.
+fn bar() {
+    x;
+}
 
-#### `find_and_update_arr(self, iden, index, val)`
+fn foo() {
+    var x = 100;
+    bar();
+}
 
-Updates the value at a specific index in an array.
+displayl foo(); /~ Outputs: 9 ~/
+```
 
-- **Parameters**:
-  - `iden`: The identifier name of the array.
-  - `index`: The index to update.
-  - `val`: The new value to assign.
-- **Raises**: `NameError` if the identifier is not found or is not an array.
+---
 
-#### `find_and_update(self, iden, val)`
+### **Example 3: Nested Scopes**
 
-Updates the value of an identifier in the current scope.
+```prog
+var x = 2;
 
-- **Parameters**:
-  - `iden`: The identifier name (string).
-  - `val`: The new value to assign.
-- **Raises**: `NameError` if the identifier is not found.
+fn foo() {
+    var x = 300;
+    x;
+}
 
-#### `copy_scope(self)`
+fn bar(x) {
+    x += 1000;
+    x;
+}
 
-Creates a copy of the current scope, allowing for the creation of a new scope that inherits from the current one.
+fn baz(x) {
+    if x < 5 then foo() else bar(x) end;
+}
 
-- **Returns**: A new `SymbolTable` instance that is a copy of the current scope.
+displayl baz(4); /~ Outputs: 300 ~/
+displayl baz(6); /~ Outputs: 1006 ~/
+```
 
-## SymbolCategory Enum
+---
 
-The `SymbolCategory` enumeration categorizes symbols managed by the `SymbolTable`. It includes the following categories:
+### **Example 4: Function Scope**
 
-- `VARIABLE`: Represents a variable.
-- `FUNCTION`: Represents a function.
-- `ARRAY`: Represents an array.
-- `CONSTANT`: Represents a constant value.
-- `HASH`: Represents a hash (dictionary).
-- `SCHEMA`: Represents a class or schema.
+```prog
+var x = 1000;
+
+fn foo() {
+    fn bar() {
+        x;
+    }
+    var x = 117;
+    bar();
+}
+
+displayl foo(); /~ Outputs: 117 ~/
+```
+
+---
+
+### **Example 5: Recursive Scoping**
+
+```prog
+var a = "g-";
+
+fn foo(x, i) {
+    if i == 1 then var a = "1-" else "dummy" end;
+    if x == 1 then "k" else a + foo(x - 1, i + 1) end;
+}
+
+displayl foo(5, 1); /~ Outputs: g-g-g-g-k ~/
+```

@@ -1,89 +1,63 @@
 # Recursive Functions in Nexus
 
-This document covers how recursive functions and static scoping work in Nexus.
+This document covers how recursive functions work in Nexus.
+
+---
 
 ## Recursive Functions
 
-Prog supports recursive functions, allowing a function to call itself either directly or indirectly.
+Nexus supports recursive functions, allowing a function to call itself either directly or indirectly.
 
-### Direct Recursion
+### **Direct Recursion**
 
 A function calls itself until a base case is met.
 
 ```prog
-fn factorial(n) {
-    if n == 1 then {
-        return 1;
-    } else {
-        return n * factorial(n - 1);
-    } end;
+fn fib(n) {
+    if n == 1 or n == 2 then 1 else fib(n - 1) + fib(n - 2) end;
 }
-display factorial(5); /~ Outputs: 120 ~/
+displayl fib(10); /> Outputs: 55
 ```
 
-### Indirect Recursion
+**Note:** Recursive functions can be computationally expensive. For example:
+- `fib(31)` takes nearly 22.8 seconds.
+- `fib(32)` takes nearly 35.4 seconds (averaged over 3 iterations).
 
-Two or more functions call each other in a cyclic manner.
+---
+
+## Functions as First-Class Citizens
+
+Functions in Nexus are first-class citizens, meaning they can be assigned to variables, passed as arguments, and returned from other functions.
+
+### **Examples**
+
+#### **Assigning a Function to a Variable**
 
 ```prog
-fn A(n) {
-    if n > 0 then {
-        display n;
-        B(n - 1);
-    } end;
+var x = 100;
+
+fn bar() {
+    x;
 }
 
-fn B(n) {
-    if n > 0 then {
-        display n;
-        A(n / 2);
-    } end;
+fn foo(g) {
+    g() + 2; /> Takes a function as a parameter
 }
 
-A(5); /~ Demonstrates indirect recursion. ~/
+displayl foo(bar); /~ Outputs: 102 ~/
 ```
 
-### Tail Recursion
-
-The recursive call is the last operation performed in the function.
+#### **Returning a Function**
 
 ```prog
-fn sum(n, acc) {
-    if n == 0 then {
-        return acc;
-    } else {
-        return sum(n - 1, acc + n);
-    } end;
+fn foo() {
+    fn bar() {
+        x + 2;
+    }
+    bar; /> Returns a function
 }
-display sum(5, 0); /~ Outputs: 15 ~/
+
+var x = 40;
+var y = foo(); /> Assigns the returned function to a variable
+displayl y(); /~ Outputs: 42 ~/
 ```
-
-## Static Scoping
-
-Prog uses static (lexical) scoping, which means the scope of variables is determined by their position in the source code.
-
-**Example:**
-
-```prog
-var globalVar : integer = 10;
-
-fn func() {
-    var localVar : integer = globalVar + 5;
-    display localVar; /~ Uses globalVar from outer scope. ~/
-}
-
-func(); /~ Outputs: 15 ~/
-
-fn anotherFunc() {
-    var globalVar : integer = 20; /~ Local variable shadows the global one. ~/
-    display globalVar; /~ Outputs: 20. ~/
-}
-
-anotherFunc();
-display globalVar; /~ Outputs: 10 (global variable remains unchanged). ~/
-```
-
-**Key Points:**
-
-- Variables declared in inner blocks cannot access variables in outer blocks unless they are in the enclosing scope.
-- Shadowing may occur when a local variable has the same name as a global variable.

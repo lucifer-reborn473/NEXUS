@@ -1,4 +1,4 @@
-# Control Flow Mechanism
+# Control Flow
 
 Control flow mechanisms allow a program to make decisions, repeat actions, and execute code conditionally. In the Prog language, control flow is implemented using **conditional statements** (`if-then-else`) and **looping constructs** (`while` and `for` loops). 
 
@@ -6,7 +6,7 @@ Control flow mechanisms allow a program to make decisions, repeat actions, and e
 
 ## **1. If-Then-Else Statements**
 
-The `if-then-else` construct is used for conditional execution. It evaluates a condition and executes one block of code if the condition is true, and another block (optional) if the condition is false.
+The `if-then-else` construct is used for conditional execution. It evaluates a condition and executes the `THEN` block of code if the condition is true, otherwise the `ELSE` block (optional) if the condition is false.
 
 ### **Syntax in Prog**
 
@@ -34,7 +34,49 @@ var result : integer = if <condition> then {
 } end;
 ```
 
+### **Rules**
+
+- Valid syntax:
+  - `if ... then ... else ... end;`
+  - `if ... then ... end;` (if the condition is false, then evaluates to `None`)
+- Nesting is supported.
+- Empty `then` and/or `else` expressions return `None`.
+
 ### **Examples**
+
+#### **Using Braces (`{...}`)**
+
+```prog
+var a = if 2 == 2 then {
+    displayl "inside then";
+    42;
+} else {
+    displayl "inside else";
+    7;
+} end;
+displayl a;
+/~ Outputs:
+inside then
+42 ~/
+```
+
+#### **Conditionally Evaluating Expressions**
+
+```prog
+var b = if 2 != 2 then a else 5; /> `a` is not declared in this scope but the code runs without error!
+displayl b;
+/~ Outputs:
+5 ~/
+```
+
+#### **Nesting**
+
+```prog
+var a = if 4 < 3 then if 3 == 2 then 5 else 100 end else 1000 end;
+displayl a;
+/~ Outputs:
+1000 ~/
+```
 
 #### **If-Then-Else as a Statement**
 
@@ -67,7 +109,6 @@ var grade : string = if score >= 90 then {
 display grade;
 /~ Outputs: Grade B ~/
 ```
-
 
 ---
 
@@ -121,8 +162,6 @@ for (var i : integer = 0; i < 5; i += 1) {
 ---
 
 ## **4. Break and Continue**
-
-### **Theory**
 
 - **Break (`breakon`)**: Exits the loop immediately.
 - **Continue (`moveon`)**: Skips the current iteration and moves to the next.
