@@ -3,7 +3,7 @@
 - Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Calling a function with empty body returns `None`
 - Examples:
-    - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
+    - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum  
         ```
         fn giveSum(a, b){
             a+b;
