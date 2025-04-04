@@ -1,7 +1,5 @@
 ### Functions
-- There are two types of keyword for declaring functions in Nexus:
-    - `fn` for non-recursive functions (does not calls itself)
-    - `fnrec` for recursive functions
+- Declared using the `fn` keyword.
 - Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Calling a function with empty body returns `None`
 - Examples:
@@ -70,7 +68,7 @@
 - Conditionals and loops have their own local scopes
 
 - Example 1:
-    ```
+    ```python
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
         a = 42;

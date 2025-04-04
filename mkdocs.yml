@@ -9,3 +9,4 @@ nav:
   - Conditionals & Loops: Conditionals & Loops.md
   - Functions & Scoping: Functions & Scoping.md
   - Bytecode: Bytecode.md
+  - Test Coverage: Test Coverage.md
