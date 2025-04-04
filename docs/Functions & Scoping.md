@@ -140,7 +140,7 @@
     var a = "g-";
     fn foo(x, i){
         if i==1 then var a = "1-" else "dummy" end;
-        if x==1 then "k" else a + foo(x-1, i+1) end;
+        if x==1 then "k" else a + foo(x-1, i+1) end; 
     };
     displayl foo(5,1);
     ```
