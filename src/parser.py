@@ -180,7 +180,7 @@ class ForLoop(AST):
     forScope: Any
 
 @dataclass
-class BreakOn(AST):
+class BreakOut(AST):
     pass
 
 @dataclass
@@ -875,9 +875,9 @@ def parse(s: str) -> List[AST]:
             case BreakToken():
                 next(t)
                 return Break()
-            case BreakOnToken():
+            case BreakOutToken():
                 next(t)
-                return BreakOn()
+                return BreakOut()
             case MoveOnToken():
                 next(t)
                 return MoveOn()
