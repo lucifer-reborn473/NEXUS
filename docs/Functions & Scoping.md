@@ -4,7 +4,7 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
-        ```undefined```
+        ```
         fn giveSum(a, b){
             a+b;
         };
