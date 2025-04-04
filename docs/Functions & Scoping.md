@@ -4,11 +4,11 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum  
-        ```
-        fn giveSum(a, b){
-            a+b;
-        };
-        displayl giveSum(40, 2);
+        ```shell
+        fn giveSum(a, b){  
+            a+b;  
+        };  
+        displayl giveSum(40, 2);  
         ```
         Output:
         ```
