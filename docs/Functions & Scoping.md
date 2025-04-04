@@ -14,21 +14,6 @@
         ```
         42
         ```
-        ```
-        var a = if 2==2 then {
-            displayl "inside then";
-            42;
-        } else {
-            displayl "inside else";
-            7;
-        } end;
-        displayl a;
-        ```  
-        Output:
-        ```
-        inside then
-        42
-        ```
     - Function to calculate the nth Fibonacci number:
         ```
         fn fib(n){
