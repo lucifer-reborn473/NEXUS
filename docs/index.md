@@ -2,4 +2,4 @@
 
 
 Our team :
-Balgopal Moharana  Rohit Raj  Husain Malwat  Anushk Bhana 
+Balgopal Moharana,  Rohit Raj,  Husain Malwat,  Anushk Bhana 
