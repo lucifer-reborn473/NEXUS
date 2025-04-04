@@ -1,4 +1,4 @@
 # Welcome to NEXUS Compiler
 
-![NEXUS Compiler Logo](assets/images/nexus_logo.png)
+<img src="nexus_logo.png" alt="NEXUS Compiler Logo" width="200">
 Our team : Balgopal Moharana,  Rohit Raj,  Husain Malwat,  Anushk Bhana 
