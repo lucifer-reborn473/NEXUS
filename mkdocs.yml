@@ -1,9 +1,12 @@
-site_name: Compiler Docs
+site_name: NEXUS
 theme:
   name: material
 nav:
   - Home: index.md
-  - Installation: installation.md
-  - Usage: usage.md
-  - Features: features.md
-
+  - An outilne of the project: all-in-one.md
+  - Grammar: grammar.md
+  - Syntax: syntax.md
+  - Recursive Functions: recursive_functions.md
+  - Contol Flow: control_flow.md
+  - Bytecode Generation: bytecode_generation.md
+  - Scope Management: scope_management.md
