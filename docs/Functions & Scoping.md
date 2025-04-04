@@ -70,7 +70,7 @@
 - Conditionals and loops have their own local scopes
 
 - Example 1:
-    ```
+    ```python
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
         a = 42;
