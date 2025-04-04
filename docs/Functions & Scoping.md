@@ -6,18 +6,18 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
-        ```
+        ```prog
         fn giveSum(a, b){
             a+b;
         };
         displayl giveSum(40, 2);
         ```
         Output:
-        ```
+        ```prog
         42
         ```
     - Function to calculate the nth Fibonacci number:
-        ```
+        ```prog
         fn fib(n){
             if n==1 or n==2 then 1 else fib(n-1) + fib(n-2) end;
         };
@@ -27,7 +27,7 @@
 
 #### Functions are first-class citizens in Nexus
 - Example 1:
-    ```
+    ```prog
     var x = 100;
     fn bar(){
         x;
@@ -38,12 +38,12 @@
     displayl foo(bar);
     ```
     Output
-    ```
+    ```prog
     102
     ```
 
 - Example 2:
-    ```
+    ```prog
     fn foo(){
         fn bar(){
             x+2;
@@ -55,7 +55,7 @@
     displayl y();
     ```
     Output
-    ```
+    ```prog
     42
     ```
 
@@ -70,7 +70,7 @@
 - Conditionals and loops have their own local scopes
 
 - Example 1:
-    ```
+    ```prog
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
         a = 42;
@@ -78,7 +78,7 @@
     displayl foo(1);
     ```
 - Example 2:
-    ```
+    ```prog
     var x = 9;
     fn bar() {
         x;
@@ -90,13 +90,13 @@
     displayl foo();
     ```
     Output
-    ```
+    ```prog
     9
     ```
 
 
 - Exampl 3:
-    ```
+    ```prog
     var x = 2;
     fn foo(){
         var x = 300;
@@ -113,7 +113,7 @@
     displayl baz(6);
     ```
     Output:
-    ```
+    ```prog
     300
     1006
     ```
@@ -131,7 +131,7 @@
     displayl foo();
     ```
     Output
-    ```
+    ```prog
     117
     ```
 
@@ -145,12 +145,12 @@
     displayl foo(5,1);
     ```
     Output:
-    ```
+    ```prog
     g-g-g-g-k
     ```
 
 - Example 6:
-    ```
+    ```prog
     fn foo(i){
         fn bar(){
             i;
@@ -163,6 +163,6 @@
     displayl foo(0);
     ```
     Output:
-    ```
+    ```prog
     10
     ```
