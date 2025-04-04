@@ -1,6 +1,12 @@
 site_name: NEXUS
 theme:
   name: material
+markdown_extensions:
+  - pymdownx.highlight:
+      use_pygments: true
+      custom_syntax_highlighting: true
+  - pymdownx.superfences
+
 nav:
   - Home: index.md
   - Overview & Installation: Overview & Installation.md
