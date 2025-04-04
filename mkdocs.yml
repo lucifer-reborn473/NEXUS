@@ -3,5 +3,10 @@ theme:
   name: material
 nav:
   - Home: index.md
-  - Our work: all-in-one.md
-
+  - An outilne of the project: all-in-one.md
+  - Grammar: grammar.md
+  - Syntax: syntax.md
+  - Scope Management: scope_management.md
+  - Recursive Functions: recursive_functions.md
+  - Contol Flow: control_flow.md
+  - Bytecode Generation: bytecode_generation.md
