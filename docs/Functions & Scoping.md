@@ -4,14 +4,29 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum  
-        ```shell
+        ```
         fn giveSum(a, b){  
             a+b;  
         };  
         displayl giveSum(40, 2);  
-        ```
+        ```  
         Output:
         ```
+        42
+        ```
+        ```
+        var a = if 2==2 then {
+            displayl "inside then";
+            42;
+        } else {
+            displayl "inside else";
+            7;
+        } end;
+        displayl a;
+        ```  
+        Output:
+        ```
+        inside then
         42
         ```
     - Function to calculate the nth Fibonacci number:
