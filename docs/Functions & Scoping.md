@@ -1,12 +1,10 @@
 ### Functions
-- There are two types of keyword for declaring functions in Nexus:
-    - `fn` for non-recursive functions (does not calls itself)
-    - `fnrec` for recursive functions
+- Declared using the `fn` keyword.
 - Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
-        ```plaintext
+        ```
         fn giveSum(a, b){
             a+b;
         };
@@ -27,7 +25,7 @@
 
 #### Functions are first-class citizens in Nexus
 - Example 1:
-    ```plaintext
+    ```
     var x = 100;
     fn bar(){
         x;
