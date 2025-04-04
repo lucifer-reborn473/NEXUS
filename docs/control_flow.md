@@ -27,7 +27,7 @@ if <condition> then {
 The `if-then-else` construct can also be used as an expression, allowing it to evaluate to a value. This is useful when the result of the conditional logic is directly assigned to a variable or used in another expression.
 
 ```prog
-var result : integer = if <condition> then {
+var result = if <condition> then {
     <expression>
 } else {
     <expression>
@@ -81,7 +81,7 @@ displayl a;
 #### **If-Then-Else as a Statement**
 
 ```prog
-var score : integer = 85;
+var score  = 85;
 
 if score >= 90 then {
     display "Grade A";
@@ -96,7 +96,7 @@ if score >= 90 then {
 #### **If-Then-Else as an Expression**
 
 ```prog
-var score : integer = 85;
+var score = 85;
 
 var grade : string = if score >= 90 then {
     "Grade A"
@@ -127,7 +127,7 @@ while (<condition>) {
 ### **Example**
 
 ```prog
-var i : integer = 0;
+var i = 0;
 
 while (i < 5) {
     display i;
@@ -153,7 +153,7 @@ for (<initialization>; <condition>; <update>) {
 ### **Example**
 
 ```prog
-for (var i : integer = 0; i < 5; i += 1) {
+for (var i = 0; i < 5; i += 1) {
     display i;
 }
 /~ Outputs: Numbers from 0 to 4 ~/
@@ -178,7 +178,7 @@ while (<condition>) {
 
 ### **Example**
 ```prog
-var i : integer = 0;
+var i = 0;
 
 while (i < 5) {
     i += 1;
@@ -198,8 +198,8 @@ Nested loops allow one loop to be placed inside another. Each loop has its own s
 ### **Example**
 
 ```prog
-for (var i : integer = 0; i < 3; i += 1) {
-    for (var j : integer = 0; j < 2; j += 1) {
+for (var i = 0; i < 3; i += 1) {
+    for (var j  = 0; j < 2; j += 1) {
         display i * j;
     }
 }

@@ -256,7 +256,7 @@ def e(tree: AST, tS) -> Any:
                 loop_should_break = False
                 for stmt in body.statements:
                     result = e(stmt, tS_while)
-                    if isinstance(result, BreakOn):
+                    if isinstance(result, BreakOut):
                         loop_should_break = True
                         break  
                     elif isinstance(result, MoveOn):
@@ -270,7 +270,7 @@ def e(tree: AST, tS) -> Any:
                 loop_should_break = False
                 for stmt in body.statements:
                     result = e(stmt, tS_for)
-                    if isinstance(result, BreakOn):
+                    if isinstance(result, BreakOut):
                         loop_should_break = True
                         break
                     elif isinstance(result, MoveOn):
@@ -279,8 +279,8 @@ def e(tree: AST, tS) -> Any:
                     break
                 e(incr, tS_for)
 
-        case BreakOn():
-            return BreakOn()
+        case BreakOut():
+            return BreakOut()
 
         case MoveOn():
             return MoveOn()
@@ -360,7 +360,7 @@ displayl 3
     while (i < 5) {
         i = i + 1;
         if i == 2 then moveon end;
-        /~ if i == 4 then breakon end;~/
+        /~ if i == 4 then breakout end;~/
         displayl i;
     }
         """
@@ -418,7 +418,7 @@ displayl "boo"
     prog = """
     for(var i = 0; i < 5; i = i + 1) {
         if i == 2 then moveon end;
-        if i == 4 then breakon end;
+        if i == 4 then breakout end;
         displayl i;
     }
     """
