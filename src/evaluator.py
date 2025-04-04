@@ -25,6 +25,8 @@ def e(tree: AST, tS) -> Any:
             return all_vals
         case Hash(val):
             return {e(k, tS): e(v, tS) for k, v in val}
+        case Assert(val):
+            assert e(val,tS)
         # Operators
         case BinOp("+", l, r):
             return e(l, tS) + e(r, tS)
@@ -84,7 +86,7 @@ def e(tree: AST, tS) -> Any:
             return input(e(msg,tS))
         case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
             tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
-            return
+            return (funcParams, funcBody, funcScope, isRec)
 
         case FuncCall(funcName, funcArgs):
             """
@@ -113,7 +115,9 @@ def e(tree: AST, tS) -> Any:
                 # funcScope.table[funcParams[i]] = None  # Step 4
 
             return ans  # after returning ans
-
+        case SchemaDef(schema_name,params,default_values,methods,schema_scope):
+            tS.define(schema_name, (params,default_values,methods,schema_scope), SymbolCategory.SCHEMA)
+        
         case Statements(statements):
             result = None
             for stmt in statements:
