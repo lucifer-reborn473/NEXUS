@@ -6,7 +6,7 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
-        ```
+        ```plaintext
         fn giveSum(a, b){
             a+b;
         };
@@ -27,7 +27,7 @@
 
 #### Functions are first-class citizens in Nexus
 - Example 1:
-    ```
+    ```plaintext
     var x = 100;
     fn bar(){
         x;
