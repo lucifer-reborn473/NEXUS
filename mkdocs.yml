@@ -3,10 +3,9 @@ theme:
   name: material
 nav:
   - Home: index.md
-  - An outilne of the project: all-in-one.md
-  - Grammar: grammar.md
-  - Syntax: syntax.md
-  - Recursive Functions: recursive_functions.md
-  - Contol Flow: control_flow.md
-  - Bytecode Generation: bytecode_generation.md
-  - Scope Management: scope_management.md
+  - Overview & Installation: Overview & Installation.md
+  - Basic Syntax: Basic Syntax.md
+  - Compound Datatypes: Compound Datatypes.md
+  - Conditionals & Loops: Conditionals & Loops.md
+  - Functions & Scoping: Functions & Scoping.md
+  - Bytecode: Bytecode.md
