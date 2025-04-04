@@ -3,7 +3,5 @@ theme:
   name: material
 nav:
   - Home: index.md
-  - Installation: installation.md
-  - Usage: usage.md
-  - Features: features.md
+  - Our work: all-in-one.md
 
