@@ -13,12 +13,12 @@ Follow these steps to install Nexus:
 ### Hello, World!
 The below steps describes how to write a simple progam in Nexus that outputs "Hello, World!" onto the screen.
 1. Open a directory in your favorite code editor.
-2. Create a file `helloworld.nex`
+2. Create a file `helloworld.nx`
 3. Enter the below code:
     ```
     displayl "Hello, World!";
     ```
 4. Save the file.
-5. Open terminal and write `nexus helloworld.nex` and press enter!  
+5. Open terminal and write `.\nexus.sh helloworld.nx` and press enter!  
 
 Woohoo! You just wrote your first "Hello, World!" program in Nexus.
