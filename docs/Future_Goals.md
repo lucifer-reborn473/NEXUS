@@ -9,8 +9,8 @@
 6. Resolve types effectively.
 
 ## Tasks already resolved
-1. Resolve types.
-2. Create schema.
+1. Resolve types. <done>
+2. Create schema. 
 3. Implement bytecode for functions and loops.
 4. Solve Project Euler problems.
 5. Provide good examples demonstrating implementation.
