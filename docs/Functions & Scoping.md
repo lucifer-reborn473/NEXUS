@@ -4,7 +4,7 @@
 - Calling a function with empty body returns `None`
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
-        ```prog
+        ```  
         fn giveSum(a, b){  
             a+b;  
         };  
@@ -15,7 +15,7 @@
         42
         ```
     - Function to calculate the nth Fibonacci number:
-        ```prog
+        ```
         fn fib(n){
             if n==1 or n==2 then 1 else fib(n-1) + fib(n-2) end;
         };
@@ -24,8 +24,8 @@
         Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
 #### Functions are first-class citizens in Nexus
-- Example 1:  
-    ```prog
+- Example 1:
+    ```  
     var x = 100;
     fn bar(){
         x;
@@ -33,7 +33,7 @@
     fn foo(g){ 
         g() + 2; /> takes function as parameter
     }
-    displayl foo(bar);
+    displayl foo(bar);  
     ```  
     Output
     ```
@@ -41,7 +41,7 @@
     ```
 
 - Example 2:
-    ```prog
+    ```
     fn foo(){
         fn bar(){
             x+2;
@@ -68,7 +68,7 @@
 - Conditionals and loops have their own local scopes
 
 - Example 1:
-    ```prog
+    ```
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
         a = 42;
@@ -76,7 +76,7 @@
     displayl foo(1);
     ```  
 - Example 2:
-    ```prog
+    ```
     var x = 9;
     fn bar() {
         x;
@@ -94,7 +94,7 @@
 
 
 - Example 3:
-    ```prog
+    ```
     var x = 2;
     fn foo(){
         var x = 300;
@@ -117,7 +117,7 @@
     ```
 
 - Example 4:
-    ```prog
+    ```
     var x = 1000;
     fn foo() {
         fn bar() {
@@ -134,7 +134,7 @@
     ```
 
 - Example 5:
-    ```prog
+    ```
     var a = "g-";
     fn foo(x, i){
         if i==1 then var a = "1-" else "dummy" end;
@@ -148,7 +148,7 @@
     ```
 
 - Example 6:
-    ```prog
+    ```
     fn foo(i){
         fn bar(){
             i;
