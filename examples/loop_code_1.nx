@@ -1,0 +1,12 @@
+var x = 10;
+
+    if x > 5 then {
+        displayl "x is greater than 5";
+    } else {
+        displayl "x is 5 or less";
+    } end;
+
+    while (x > 0) {
+        displayl x;
+        x = x - 1;
+    }

@@ -2,7 +2,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-from evaluator import *  # Adjust with your actual module
+from evaluator import *  
 import time
 from tqdm import tqdm
 from pprint import pprint

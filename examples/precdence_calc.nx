@@ -1,0 +1,4 @@
+displayl 5 + 3 > 7;  /> Shows that arithmetic operators have higher precedence than comparison operators
+displayl 5 + 3 > 7 - 2;  /> More complex example of arithmetic before comparison
+displayl 10 / 2 == 5 and 2 * 3 == 5;  /> Shows precedence: arithmetic → comparison → logical
+displayl 10 % 3 + 2*3 < 5 * 2 - 3;  /> Complex expression testing precedence rules

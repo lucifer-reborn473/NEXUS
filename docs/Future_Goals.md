@@ -11,9 +11,9 @@
 ## Tasks already resolved
 1. Resolve types. <done>
 2. Create schema. 
-3. Implement bytecode for functions and loops.
-4. Solve Project Euler problems.
-5. Provide good examples demonstrating implementation.
+3. Implement bytecode for functions and loops.<done>
+4. Solve Project Euler problems. <done>
+5. Provide good examples demonstrating implementation. <done>
 
 ## Final Goal
 1. Enable string slicing and user-friendly features.

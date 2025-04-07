@@ -1,0 +1,17 @@
+var integer x = 10;
+displayl x;
+
+var uinteger z = -5;
+displayl z;
+
+var decimal r=2;
+displayl r;
+
+var integer p=2.34;
+displayl p;
+
+var boolean b = 0;
+displayl b;
+
+var Hash h = [1, 2, 3];
+displayl h;

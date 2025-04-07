@@ -1,0 +1,10 @@
+ fn subtractAndDisplay(x, y) {
+        var result = x - y;
+        displayl result;
+        result;
+    };
+    var f = 5.0;
+    var g = 0.5;
+    while (f > 0.0) {
+        f = subtractAndDisplay(f, g);
+    }
