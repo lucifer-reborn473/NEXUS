@@ -3,7 +3,7 @@
 - Redeclaration is not allowed in the same scope and is caught before evaluation.
 - Calling a function with empty body returns `None`
 - Examples:
-    - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum  
+    - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
         ```prog
         fn giveSum(a, b){  
             a+b;  
@@ -24,7 +24,7 @@
         Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
 #### Functions are first-class citizens in Nexus
-- Example 1:
+- Example 1:  
     ```prog
     var x = 100;
     fn bar(){
