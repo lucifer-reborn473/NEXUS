@@ -153,9 +153,37 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update(var_name, new_val)
             return new_val
 
-        case VarBind(name, dtype, value,category):
+        case VarBind(name, dtype, value, category):
             var_val = e(value, tS)
-            tS.define(name,var_val,category)# binds in current scope
+            
+            try:
+                match dtype:
+                    case "integer":
+                        var_val = int(var_val)
+                    case "decimal":
+                        var_val = float(var_val)
+                    case "uinteger":
+                        var_val = int(var_val)
+                        if var_val < 0:
+                                var_val*=-1
+                    case "string":
+                        var_val = str(var_val)
+                    case "array":
+                        if not isinstance(var_val, list):
+                            raise ValueError(f"Cannot cast {value} to array: value must be a list.")
+                    case "Hash":
+                        if not isinstance(var_val, dict):
+                            raise ValueError(f"Cannot cast {value} to Hash: value must be a dictionary.")
+                    case "boolean":
+                        var_val = bool(var_val)
+                    case None:
+                        pass  # No typecasting needed
+                    case _:
+                        raise ValueError(f"Unknown data type: {dtype}")
+            except (ValueError, TypeError) as err:
+                raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
+            
+            tS.define(name, var_val, category)  # binds in current scope
             return var_val
         case PushFront(arr_name, value):
             arr= tS.lookup(arr_name)

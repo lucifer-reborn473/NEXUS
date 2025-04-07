@@ -36,8 +36,6 @@ keyword_tokens = (
     "not",
     "and",
     "proc",
-    "array",
-    "return",
     "feed",
 )
 
@@ -50,6 +48,10 @@ base_type_tokens = (
     "integer",
     "decimal",
     "uinteger",
+    "string",
+    "array",
+    "Hash",
+    "boolean",
 )
 
 base_operator_tokens = (
