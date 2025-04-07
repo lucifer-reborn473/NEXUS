@@ -14,6 +14,7 @@
 3. Implement bytecode for functions and loops.<done>
 4. Solve Project Euler problems. <done>
 5. Provide good examples demonstrating implementation. <done>
+6. Good Documentation
 
 ## Final Goal
 1. Enable string slicing and user-friendly features.
