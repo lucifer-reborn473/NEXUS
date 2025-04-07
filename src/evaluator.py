@@ -72,7 +72,7 @@ def e(tree: AST, tS) -> Any:
         case BinOp("|", l, r):
             return e(l, tS) | e(r, tS)
         case BinOp("^", l, r):
-            return e(l, tS) ^ e(r, tS)
+            return e(l, tS) ** e(r, tS)
         case BinOp("<<", l, r):
             return e(l, tS) << e(r, tS)
         case BinOp(">>", l, r):
