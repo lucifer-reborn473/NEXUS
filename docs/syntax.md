@@ -61,12 +61,12 @@ var array arr = [1, 2, 3];
 var mixedArr = [2.5, "hi"]; /> Type inferred
 
 /> Hash declarations
-var hash hashy = {"key1": 10, "key2": 20};
+var Hash hashy = {"key1": 10, "key2": 20};
 var inferredHash = {"a": 1, "b": 2}; /> Type inferred
 
 /> Invalid declarations
 var array invalidArr = {"a": 1}; /> Error: Cannot typecast to array
-var hash invalidHash = [1, 2, 3]; /> Error: Cannot typecast to hash
+var Hash invalidHash = [1, 2, 3]; /> Error: Cannot typecast to hash
 ```
 
 

@@ -3,7 +3,7 @@
     - `if ... then ... else ... end;`
     - `if ... then ... end;` (if condition is false, then evaluates to `None`)
 - Nesting supported
-- Empty `then` and/or `else` expressions returns `None`
+- Empty `then` and/or `else` expressions return `None`
 - Examples:
     - Using braces (`{...}`)
         ```prog
@@ -15,18 +15,19 @@
             7;
         } end;
         displayl a;
-        ```  
+        ```
         Output:
-        ``` prog
+        ```prog
         inside then
         42
         ```
 
     - Conditionally evaluating expressions
         ```prog
-        var b = if 2!=2 then a else 5; /> a is not declared in this scope but the code runs without error!
+        var b = if 2!=2 then a else 5; 
+        // a is not declared in this scope but the code runs without error!
         displayl b;
-        ```  
+        ```
         Output:
         ```prog
         5
@@ -45,23 +46,26 @@
 ### Loops
 - `for` and `while` loops supported with similar syntax as in C/C++.
 - Example:
+
     ```prog
     for(var i=0; i<10; i+=1){
         displayl i;
     }
     ```
-- `moveon` statement equaivalent to `continue` statement in Python.
-- `breakout` statement equaivalent to `break` statement in Python.
-- Example
-    ``` prog
+
+- `moveon` statement equivalent to `continue` statement in Python.
+- `breakout` statement equivalent to `break` statement in Python.
+- Example:
+
+    ```prog
     while (i < 5) {
         i += 1;
         if i == 2 then moveon end;
-        if i == 4 then breakon end;
+        if i == 4 then breakout end;
         display i;
     }
     ```
-    Output
+    Output:
     ```prog
     1
     3
