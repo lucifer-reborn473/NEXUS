@@ -10,66 +10,51 @@ Bytecode is a low-level representation of the program that is easier to execute 
 
 The following table documents the bytecode instructions defined in the `bytecode_gen.py` file. Each instruction operates on a stack-based virtual machine.  
 ```
-| **Instruction**       | **Opcode** | **Stack Behavior**                | **Description**                                                                |
-|-----------------------|------------|-----------------------------------|--------------------------------------------------------------------------------|
-| **HALT**              | `0`        | `-`                               | Terminates program execution                                                   |
-| **NOP**               | `1`        | `-`                               | No operation; placeholder instruction                                          |
-| **PUSH**              | `2`        | `[] → [value]`                    | Pushes a value onto the stack                                                  |
-| **POP**               | `3`        | `[value] → []`                    | Removes the top value from the stack                                           |
-| **ADD**               | `4`        | `[a, b] → [a+b]`                  | Adds two values and pushes result                                              |
-| **SUB**               | `5`        | `[a, b] → [a-b]`                  | Subtracts second value from first                                              |
-| **MUL**               | `6`        | `[a, b] → [a*b]`                  | Multiplies two values                                                          |
-| **NEG**               | `7`        | `[a] → [-a]`                      | Negates a value                                                                |
-| **DIV**               | `8`        | `[a, b] → [a/b]`                  | Divides first value by second                                                  |
-| **MOD**               | `9`        | `[a, b] → [a%b]`                  | Computes remainder of division                                                 |
-| **POW**               | `10`       | `[a, b] → [a^b]`                  | Raises first value to power of second                                          |
-| **LT**                | `11`       | `[a, b] → [a<b]`                  | Tests if first value is less than second                                       |
-| **GT**                | `12`       | `[a, b] → [a>b]`                  | Tests if first value is greater than second                                    |
-| **EQ**                | `13`       | `[a, b] → [a==b]`                 | Tests if values are equal                                                      |
-| **NEQ**               | `14`       | `[a, b] → [a!=b]`                 | Tests if values are not equal                                                  |
-| **LE**                | `15`       | `[a, b] → [a<=b]`                 | Tests if first value is less than or equal to second                           |
-| **GE**                | `16`       | `[a, b] → [a>=b]`                 | Tests if first value is greater than or equal to second                        |
-| **AND**               | `17`       | `[a, b] → [a&&b]`                 | Logical AND operation                                                          |
-| **OR**                | `18`       | `[a, b] → [a||b]`                 | Logical OR operation                                                           |
-| **BAND**              | `19`       | `[a, b] → [a&b]`                  | Bitwise AND operation                                                          |
-| **BOR**               | `20`       | `[a, b] → [a|b]`                  | Bitwise OR operation                                                           |
-| **BXOR**              | `21`       | `[a, b] → [a^b]`                  | Bitwise XOR operation                                                          |
-| **SHL**               | `22`       | `[a, b] → [a<<b]`                 | Bitwise left shift                                                             |
-| **SHR**               | `23`       | `[a, b] → [a>>b]`                 | Bitwise right shift                                                            |
-| **NOT**               | `24`       | `[a] → [!a]`                      | Logical NOT operation                                                          |
-| **BNOT**              | `25`       | `[a] → [~a]`                      | Bitwise NOT operation                                                          |
-| **ASCII**             | `26`       | `[a] → [ord(a)]`                  | Converts character to ASCII code                                               |
-| **CHAR**              | `27`       | `[a] → [chr(a)]`                  | Converts ASCII code to character                                               |
-| **VARBIND**           | `28`       | `[value] → []`                    | Binds value to variable                                                        |
-| **DISPLAY**           | `29`       | `[value] → []`                    | Displays value without newline                                                 |
-| **DISPLAYL**          | `30`       | `[value] → []`                    | Displays value with newline                                                    |
-| **ASSIGN**            | `31`       | `[value] → []`                    | Assigns value to existing variable                                             |
-| **CALLARRAY**         | `32`       | `[arr, idx] → [val]`              | Gets value at array index                                                      |
-| **PUSHFRONT**         | `33`       | `[arr, val] → []`                 | Adds element to start of array                                                 |
-| **PUSHBACK**          | `34`       | `[arr, val] → []`                 | Adds element to end of array                                                   |
-| **POPFRONT**          | `35`       | `[arr] → [val]`                   | Removes and returns first element from array                                   |
-| **POPBACK**           | `36`       | `[arr] → [val]`                   | Removes and returns last element from array                                    |
-| **ASSIGNTOARRAY**     | `37`       | `[arr, idx, val] → []`            | Sets value at array index                                                      |
-| **CALLHASHVAL**       | `38`       | `[hash, key] → [val]`             | Gets value for key in hash map                                                 |
-| **ADDHASHPAIR**       | `39`       | `[hash, key, val] → []`           | Adds key-value pair to hash map                                                |
-| **REMOVEHASHPAIR**    | `40`       | `[hash, key] → []`                | Removes key from hash map                                                      |
-| **ASSIGNHASHVAL**     | `41`       | `[hash, key, val] → []`           | Updates value for key in hash map                                              |
-| **ASSIGNFULLARRAY**   | `42`       | `[arr, vals] → []`                | Assigns multiple values to array                                               |
-| **INSERTAT**          | `43`       | `[arr, idx, val] → []`            | Inserts value at array index                                                   |
-| **REMOVEAT**          | `44`       | `[arr, idx] → [val]`              | Removes and returns value at array index                                       |
-| **GETLENGTH**         | `45`       | `[container] → [length]`          | Gets length of container (array/hash)                                          |
-| **CLEARARRAY**        | `46`       | `[arr] → []`                      | Empties an array                                                               |
-| **JUMP**              | `47`       | `[] → []`                         | Unconditional jump                                                             |
-| **JUMP_IF_TRUE**      | `48`       | `[cond] → []`                     | Jumps if condition is true                                                     |
-| **JUMP_IF_FALSE**     | `49`       | `[cond] → []`                     | Jumps if condition is false                                                    |
-| **LABEL**             | `50`       | `[] → []`                         | Defines a jump target (placeholder)                                            |
-| **FEED**              | `51`       | `[prompt] → [input]`              | Reads user input                                                               |
-| **FUNC_DEF**          | `52`       | `[] → []`                         | Defines a function                                                             |
-| **FUNC_CALL**         | `53`       | `[args] → [result]`               | Calls a function                                                               |
-| **RETURN**            | `54`       | `[result] → [result]`             | Returns from function                                                          |
-| **BREAK**             | `55`       | `[] → []`                         | Breaks out of a loop                                                           |
-| **MOVEON**            | `56`       | `[] → []`                         | Continues to next iteration of loop                                            |
-| **COMPOUND_ASSIGN**   | `57`       | `[var, val] → []`                 | Combines operation with assignment (+=, -=, etc.)                              |
+| **Instruction**       | **Opcode** | **Stack Behavior**            | **Description**                                          |
+|-----------------------|-----------|-------------------------------|----------------------------------------------------------|
+| **HALT**             | `0`       | `-`                           | Terminates program execution                            |
+| **NOP**              | `1`       | `-`                           | No operation; placeholder instruction                   |
+| **PUSH**             | `2`       | `[] → [value]`                | Pushes a value onto the stack                           |
+| **POP**              | `3`       | `[value] → []`                | Removes the top value from the stack                    |
+| **ADD**              | `4`       | `[a, b] → [a+b]`              | Adds two values and pushes the result                   |
+| **SUB**              | `5`       | `[a, b] → [a-b]`              | Subtracts second value from first                       |
+| **MUL**              | `6`       | `[a, b] → [a*b]`              | Multiplies two values                                   |
+| **NEG**              | `7`       | `[a] → [-a]`                  | Negates a value                                         |
+| **DIV**              | `8`       | `[a, b] → [a/b]`              | Divides first value by second                           |
+| **MOD**              | `9`       | `[a, b] → [a%b]`              | Computes remainder of division                          |
+| **POW**              | `10`      | `[a, b] → [a^b]`              | Raises first value to power of second                   |
+| **LT**               | `11`      | `[a, b] → [a<b]`              | Tests if first value is less than second                |
+| **GT**               | `12`      | `[a, b] → [a>b]`              | Tests if first value is greater than second             |
+| **EQ**               | `13`      | `[a, b] → [a==b]`             | Tests if values are equal                               |
+| **NEQ**              | `14`      | `[a, b] → [a!=b]`             | Tests if values are not equal                           |
+| **LE**               | `15`      | `[a, b] → [a<=b]`             | Tests if first value is less than or equal to second    |
+| **GE**               | `16`      | `[a, b] → [a>=b]`             | Tests if first value is greater than or equal to second|
+| **AND**              | `17`      | `[a, b] → [a&&b]`             | Logical AND operation                                  |
+| **OR**               | `18`      | `[a, b] → [a||b]`             | Logical OR operation                                   |
+| **BAND**             | `19`      | `[a, b] → [a&b]`              | Bitwise AND operation                                  |
+| **BOR**              | `20`      | `[a, b] → [a|b]`              | Bitwise OR operation                                   |
+| **BXOR**             | `21`      | `[a, b] → [a^b]`              | Bitwise XOR operation                                  |
+| **SHL**              | `22`      | `[a, b] → [a<<b]`             | Bitwise left shift                                     |
+| **SHR**              | `23`      | `[a, b] → [a>>b]`             | Bitwise right shift                                    |
+| **NOT**              | `24`      | `[a] → [!a]`                  | Logical NOT operation                                  |
+| **BNOT**             | `25`      | `[a] → [~a]`                  | Bitwise NOT operation                                  |
+| **ASCII**            | `26`      | `[a] → [ord(a)]`              | Converts character to ASCII code                       |
+| **CHAR**             | `27`      | `[a] → [chr(a)]`              | Converts ASCII code to character                       |
+| **VARBIND**          | `28`      | `[value] → []`                | Binds value to variable                                |
+| **DISPLAY**          | `29`      | `[value] → []`                | Displays value without newline                         |
+| **DISPLAYL**         | `30`      | `[value] → []`                | Displays value with newline                            |
+| **ASSIGN**           | `31`      | `[value] → []`                | Assigns value to existing variable                     |
+| **JUMP**             | `47`      | `[] → []`                     | Unconditional jump                                     |
+| **JUMP_IF_TRUE**     | `48`      | `[cond] → []`                 | Jumps if condition is true                            |
+| **JUMP_IF_FALSE**    | `49`      | `[cond] → []`                 | Jumps if condition is false                           |
+| **LABEL**            | `50`      | `[] → []`                     | Defines a jump target (placeholder)                   |
+| **FEED**             | `51`      | `[prompt] → [input]`          | Reads user input                                      |
+| **FUNC_DEF**         | `52`      | `[] → []`                     | Defines a function                                    |
+| **FUNC_CALL**        | `53`      | `[args] → [result]`           | Calls a function                                      |
+| **RETURN**           | `54`      | `[result] → [result]`         | Returns from function                                |
+| **BREAK**           | `55`      | `[] → []`                     | Breaks out of a loop                                 |
+| **MOVEON**          | `56`      | `[] → []`                     | Continues to next iteration of loop                  |
+| **COMPOUND_ASSIGN** | `57`      | `[var, val] → []`             | Combines operation with assignment (+=, -=, etc.)    |
 ```
 
 ## The `codegen` Function
