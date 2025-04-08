@@ -1,12 +1,18 @@
-# Welcome to NEXUS Compiler
-
 <div align="center">
-  <img src="nexus_logo.png" alt="NEXUS Compiler Logo" width="150">
-  <br><br>
-  <strong>Our Team:</strong> Balgopal Moharana, Rohit Raj, Husain Malwat, Anushk Bhana
+  <h1>Welcome to NEXUS Compiler</h1>
 </div>
 
 ---
+
+<div align="center">
+  <img src="nexus_logo.png" alt="NEXUS Compiler Logo" width="150">
+</div>
+
+---
+
+## Our Team
+
+**Balgopal Moharana, Rohit Raj, Husain Malwat, Anushk Bhana**
 
 ## What is Nexus?
 
