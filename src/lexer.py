@@ -10,7 +10,7 @@ class Token:
 
 @dataclass
 class VarToken(Token):
-    var_name: str # identifier
+    var_name: str # variable identifier
 
 @dataclass
 class NumberToken(Token):
@@ -123,7 +123,6 @@ def lex(s: str) -> Iterator[Token]:
                 yield BreakOnToken()
             elif t == "moveon":
                 yield MoveOnToken()
-
             else:
                 prevToken = VarToken(t)
                 yield prevToken
@@ -200,6 +199,8 @@ def lex(s: str) -> Iterator[Token]:
                             while i < len(s) and s[i].isalpha():
                                 t += s[i]
                                 i += 1
+                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
+                                yield OperatorToken('+')
                             yield NumberToken("-1")
                             yield OperatorToken("*")
                             yield VarToken(t[1:]) # variable name (identifier)
@@ -241,3 +242,6 @@ def lex(s: str) -> Iterator[Token]:
                 case ':':
                     i+=1
                     yield ColonToken()
+                case _:
+                    print(f"Not a valid token: {t}")
+                    exit()
