@@ -14,11 +14,11 @@
 
 ## Key Features
 
-✅ **Readable and Intuitive Syntax** – Designed to be easy to learn and use.
-✅ **Optimized for Performance** – Leverages efficient compilation techniques.
-✅ **Extensible and Modular** – Supports modular development and extensions.
-✅ **Strong Type System** – Ensures reliability and prevents common errors.
-✅ **Cross-Platform Support** – Runs seamlessly on multiple operating systems.
+✅ **Readable and Intuitive Syntax** – Designed to be easy to learn and use.  
+✅ **Optimized for Performance** – Leverages efficient compilation techniques.  
+✅ **Extensible and Modular** – Supports modular development and extensions.  
+✅ **Strong Type System** – Ensures reliability and prevents common errors.  
+✅ **Cross-Platform Support** – Runs seamlessly on multiple operating systems.  
 
 ## Community & Support
 
