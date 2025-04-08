@@ -10,10 +10,6 @@
 
 ---
 
-## Our Team
-
-**Balgopal Moharana, Rohit Raj, Husain Malwat, Anushk Bhana**
-
 ## What is Nexus?
 
 **Nexus** is a high-performance, developer-friendly programming language designed for efficiency and ease of use. Built from the ground up, Nexus simplifies complex tasks while offering powerful features for modern software development.
@@ -25,6 +21,10 @@
 ✅ **Lexically-Scoped** – Ensures predictable variable resolution.  
 ✅ **Expression-Oriented** – Every construct evaluates to a value.  
 ✅ **Imperative Paradigm** – Designed for structured and procedural programming.  
+
+## Our Team
+
+**Anushk Bhana, Balgopal Moharana, Husain Malwat, Rohit Raj**
 
 ## Community & Support
 
