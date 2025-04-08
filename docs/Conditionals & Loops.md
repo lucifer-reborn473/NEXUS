@@ -57,7 +57,7 @@
     while (i < 5) {
         i += 1;
         if i == 2 then moveon end;
-        if i == 4 then breakon end;
+        if i == 4 then breakout end;
         display i;
     }
     ```
