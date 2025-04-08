@@ -344,104 +344,6 @@ if __name__ == "__main__":
 
     # ========================================================
 
-    prog = """
-fn foo(i){
-    if i==1 then var a = 2 else 5 end;
-    a = 42;
-}
-displayl foo(2);
-"""  #! (for Rohit) no error since funcScope contain `a` (why?)
-
-    prog2 = """
-fn foo(i){
-    if i==1 then a = 2 else 5 end;
-    a = 42;
-}
-displayl foo(2);
-"""  #! (for Rohit) error since funcScope does not contain `a`
-
-    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
-
-    prog3 = """
-var a = 2;
-var a = 100;
-displayl a;
-"""  #! (for Rohit) should throw error
-
-    #! check for redeclaration of function
-
-    #! are arrays mutable? => can be done but not done yet, since we are storing as python lists
-
-    #! how arrays passed/returned from functions
-
-    prog4 = """
-displayl 2
-displayl 3
-"""  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
-
-
-    #! add nil datatype for function returns
-
-    prog = """
-    
-    var i = 0;
-    while (i < 5) {
-        i = i + 1;
-        if i == 2 then moveon end;
-        /~ if i == 4 then breakout end;~/
-        displayl i;
-    }
-        """
-
-
-    prog5 = """
-var a = 2++3;
-displayl a;
-"""  #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
-
-    #     prog = """
-    # var a = 2^3
-    # """ #! infinite loop
-
-    #! array features in Project doc
-
-    #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
-
-    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
-
-    prog = """
-var a = if 2==2 then 5 else 6 end;
-displayl a;
-displayl "hi"
-displayl "boo"
-
-""" #! error without brackets (even if 6 comes first)
-
-
-    # =======================================
-    
-    
-    prog = """
-    var a = 2**3**2;
-    displayl a;
-    """ #! infinite loop
-
-    prog="""
-    var nig =[1,3,"s"];
-    var ptmp ={"s":1,"a":2}; 
-    displayl nig[nig.Length-1];
-    ptmp.Add("meow",12);
-    nig.Remove(2);
-    ptmp.Remove("a");
-    displayl ptmp; 
-    displayl nig; 
-    """
-
-    prog="""
-    displayl 3
-    displayl 2
-"""
-
 
     prog = """
     for(var i = 0; i < 5; i = i + 1) {
@@ -451,11 +353,10 @@ displayl "boo"
     }
     """
 
-
     prog = """
-    var a = -5**0.5;
-    displayl a;
+    
     """
+    
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")
