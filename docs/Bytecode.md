@@ -8,7 +8,7 @@ Bytecode is a low-level representation of the program that is easier to execute 
 
 ## Bytecode Instructions
 
-The following table documents the bytecode instructions defined in the `bytecode_gen.py` file. Each instruction operates on a stack-based virtual machine.
+The following table documents the bytecode instructions defined in the `bytecode_gen.py` file. Each instruction operates on a stack-based virtual machine.  
 | **Instruction**       | **Opcode** | **Stack Behavior**                | **Description**                                                                |
 |-----------------------|------------|-----------------------------------|--------------------------------------------------------------------------------|
 | **HALT**              | `0`        | `-`                               | Terminates program execution                                                   |
