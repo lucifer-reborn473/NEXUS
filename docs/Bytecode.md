@@ -9,6 +9,7 @@ Bytecode is a low-level representation of the program that is easier to execute 
 ## Bytecode Instructions
 
 The following table documents the bytecode instructions defined in the `bytecode_gen.py` file. Each instruction operates on a stack-based virtual machine.  
+```
 | **Instruction**       | **Opcode** | **Stack Behavior**                | **Description**                                                                |
 |-----------------------|------------|-----------------------------------|--------------------------------------------------------------------------------|
 | **HALT**              | `0`        | `-`                               | Terminates program execution                                                   |
@@ -69,7 +70,7 @@ The following table documents the bytecode instructions defined in the `bytecode
 | **BREAK**             | `55`       | `[] → []`                         | Breaks out of a loop                                                           |
 | **MOVEON**            | `56`       | `[] → []`                         | Continues to next iteration of loop                                            |
 | **COMPOUND_ASSIGN**   | `57`       | `[var, val] → []`                 | Combines operation with assignment (+=, -=, etc.)                              |
-
+```
 
 ## The `codegen` Function
 
