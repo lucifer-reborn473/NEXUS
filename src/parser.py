@@ -206,7 +206,6 @@ class FuncDef(AST):
     funcParams: List[Variable]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
     funcScope: Any              # static scoping (scope is tied to function definition and not its call)
-    isRec: bool                 # recursive or not
 
 @dataclass 
 class FuncCall(AST):
@@ -527,6 +526,7 @@ def parse(s: str) -> List[AST]:
                     ast = BinOp("*", ast, parse_modulo(tS))
                 case _:
                     return ast
+    
     def parse_modulo(tS):
         ast =parse_div_slash(tS)
         while True:
@@ -548,32 +548,32 @@ def parse(s: str) -> List[AST]:
                     return ast
 
     def parse_div_dot(tS):
-        ast = parse_exp(tS)
+        ast = parse_ascii_char(tS)
         while True:
             match t.peek(None):
                 case OperatorToken("÷"):
                     next(t)
-                    ast = BinOp("÷", ast, parse_exp(tS))
+                    ast = BinOp("÷", ast, parse_ascii_char(tS))
                 case _:
                     return ast
                 
-    def parse_exp(tS):
-        ast = parse_ascii_char(tS)
-        while True:
-            match t.peek(None):
-                case OperatorToken("^"):
-                    next(t)
-                    ast = BinOp("^", ast, parse_ascii_char(tS))
-                case _:
-                    return ast
-    def parse_exp(tS):
-        ast = parse_ascii_char(tS)
-        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
-            next(t)
-            right = parse_exp(tS)
-            ast = BinOp("^", ast, right)
-        return ast
+    # def parse_exp(tS):
+    #     ast = parse_ascii_char(tS)
+    #     while True:
+    #         match t.peek(None):
+    #             case OperatorToken("^"):
+    #                 next(t)
+    #                 ast = BinOp("^", ast, parse_ascii_char(tS))
+    #             case _:
+    #                 return ast
 
+    # def parse_exp(tS):
+    #     ast = parse_ascii_char(tS)
+    #     if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "^":
+    #         next(t)
+    #         right = parse_exp(tS)
+    #         ast = BinOp("^", ast, right)
+    #     return ast
                 
     def parse_ascii_char(tS):
         ast = parse_array_dict(tS)
@@ -593,6 +593,7 @@ def parse(s: str) -> List[AST]:
                     ast = UnaryOp("ascii", value)
                 case _:
                     return ast
+                
     def parse_array_dict(tS):
         ast=parse_string(tS)
         while True:
@@ -611,7 +612,7 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     elements= []
                     while not isinstance(t.peek(None), RightBraceToken):
-                        key=parse_string(tS)
+                        key = parse_string(tS)
                         expect(ColonToken())
                         val = parse_string(tS)
                         elements.append((key,val))
@@ -619,9 +620,10 @@ def parse(s: str) -> List[AST]:
                             next(t)
                     expect(RightBraceToken())
 
-                    ast=Hash(elements)
+                    ast = Hash(elements)
                 case _:
                     return ast
+                
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
@@ -629,41 +631,22 @@ def parse(s: str) -> List[AST]:
                 return String(s)
             case _:
                 return parse_boolean(tS)
+            
     def parse_boolean(tS):
         match t.peek(None):
             case BooleanToken(b):
                 next(t)
                 return Boolean(b=="True")
             case _:
-                return parse_func(tS)
-    # def loop_parse(tS):
-        # ast=parse_func(tS)
-        # while True:
-        #     match t.peek(None):
-        #         case KeywordToken("loop"):
-        #             next(t) # loop keyword detected move to next token
-        #             cond=None
-        #             if (t.peek(None) == LeftParenToken()): # loop condition starts
-        #                 next(t)
-        #                 cond=parse_logic(tS)[0]
-        #                 expect(RightParenToken())
-        #             expect (LeftBraceToken()) # loop body starts
-        #             body = parse_var(tS)[0] # temporary 
-        #             ast=Loop(cond,body)
-        #         case _:
-        #             return ast       
+                ast = parse_func(tS)
+                return ast  
+    
     def parse_func(tS): # Function definition and Function call
-        ast = parse_brackets(tS)
+        ast = call_vartoks(tS)
         while True:
             match t.peek(None):
-                case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
-                    if t.peek(None).kw_name == "fnrec":
-                        isRec = True
-                    else:
-                        isRec = False
-
+                case KeywordToken("fn"): # function declaration
                     next(t)
-                    
                     if isinstance(t.peek(None), VarToken):
                         funcName = t.peek(None).var_name
                         next(t)
@@ -695,11 +678,9 @@ def parse(s: str) -> List[AST]:
 
                     # add param names to function scope
                     for var_name in params:
-                        # tS_f.table[var_name] = None
-                        tS_f.define(var_name,None,SymbolCategory.VARIABLE)
+                        tS_f.define(var_name, None, SymbolCategory.VARIABLE)
                     
                     expect(LeftBraceToken()) # {
-                    # function body begins
                     
                     # body = parse_var()
                     # bodyCode = []
@@ -707,13 +688,13 @@ def parse(s: str) -> List[AST]:
                     #     stmt = parse_display()      # Parse current statement
                     #     bodyCode.append(stmt)       # collection of parsed statements
                     # body = Statements(bodyCode)     # list of parsed statements
-                    tS.define(funcName,None,SymbolCategory.FUNCTION)
+
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
-                    ast = FuncDef(funcName, params, body, tS_f, isRec)
-                    # tS.table[funcName] = (params, body, tS_f, isRec)
-                    tS.define(funcName,(params,body,tS_f,isRec),SymbolCategory.FUNCTION)
-                
+                    ast = FuncDef(funcName, params, body, tS_f)
+                    tS.define(funcName, (params, body, tS_f), SymbolCategory.FUNCTION)
+
+
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call
                     # extract arguments
@@ -737,34 +718,23 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
                 # parse_func() ends here
-    
-    def parse_brackets(tS):
-        while True:
-            match t.peek(None):
-                case LeftParenToken():
-                    next(t)
-                    (ast, tS) = parse_display(tS)
-                    match t.peek(None):
-                        case RightParenToken():
-                            next(t)
-                            return ast
-                        case _:
-                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
-                case _:
-                    return call_vartoks(tS)
+
     def call_vartoks(tS): #handles all calls related to vartokens
-        ast =parse_atom(tS)
+        ast = parse_brackets(tS)
         while True:
             match t.peek(None):
                 case VarToken(v):
                     next(t)
-                    category = tS.lookup(v,cat=True)
+                    if isinstance(t.peek(None), LeftParenToken):
+                        # means a function call
+                        return ast
+                    category = tS.lookup(v, cat = True)
                     match category:
                         case SymbolCategory.VARIABLE:
                             ast=Variable(v)
                         case SymbolCategory.ARRAY:
                             if isinstance(t.peek(None), LeftSquareToken):
-                                next(t)
+                                # next(t)
                                 index = parse_var(tS)[0]
                                 expect(RightSquareToken())
                                 if (isinstance(t.peek(None),OperatorToken) 
@@ -775,7 +745,7 @@ def parse(s: str) -> List[AST]:
                                 else: #calling a given index
                                     ast= CallArr(v, index)
                             elif (isinstance(t.peek(None),DotToken)):
-                                 next(t)
+                                #  next(t)
                                  match t.peek(None):
                                     case KeywordToken("PushFront"):
                                         next(t)
@@ -821,7 +791,7 @@ def parse(s: str) -> List[AST]:
                                 ast = Variable(v)
                         case SymbolCategory.HASH:
                             if isinstance(t.peek(None), LeftSquareToken):
-                                next(t)
+                                # next(t)
                                 key = parse_var(tS)[0]
                                 expect(RightSquareToken())
                                 if (isinstance(t.peek(None),OperatorToken) 
@@ -832,7 +802,7 @@ def parse(s: str) -> List[AST]:
                                 else:
                                     ast=CallHashVal(v,key)
                             elif (isinstance(t.peek(None),DotToken)):
-                                next(t)
+                                # next(t)
                                 match t.peek(None):
                                     case KeywordToken("Add"):
                                         next(t)
@@ -855,9 +825,25 @@ def parse(s: str) -> List[AST]:
                         case _:
                             ast = Variable(v)
                 case _:
-                    return ast    
+                    return ast
+    
+    def parse_brackets(tS):
+        while True:
+            match t.peek(None):
+                case LeftParenToken():
+                    next(t)
+                    (ast, tS) = parse_display(tS)
+                    match t.peek(None):
+                        case RightParenToken():
+                            next(t)
+                            return ast
+                        case _:
+                            raise SyntaxError(f"Expected ')' got {t.peek(None)}")
+                case _:
+                    ast = parse_atom()
+                    return ast
                 
-    def parse_atom(tS): #! while True may be included in future
+    def parse_atom(): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):
                 next(t)
@@ -871,7 +857,10 @@ def parse(s: str) -> List[AST]:
             case MoveOnToken():
                 next(t)
                 return MoveOn()
-
+            case VarToken(v):
+                next(t)
+                return Variable(v)
+            
     return parse_program()
 
 
