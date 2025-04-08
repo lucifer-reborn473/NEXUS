@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from enum import Enum
+from pprint import pprint
 
 class SymbolCategory(Enum):
     VARIABLE = "variable"
@@ -20,13 +21,23 @@ class SymbolTable:
     def define(self, iden, value, category: SymbolCategory):
         self.table[iden] = (value, category)
 
-    def lookup(self, iden,cat=False):
+    def lookup(self, iden, cat=False):
+        # print(f"...looking for {iden} with cat={cat}...")
         if iden in self.table:
             return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
         elif self.parent:  # check in parent (enclosing scope)
+            # print(f"here for {iden} in {self.parent.table} with cat={cat}")
             return self.parent.lookup(iden, cat)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
+        
+    def lookup_fun(self, iden):
+        if iden in self.table:
+            return (self.table[iden][0], self)
+        elif self.parent:
+            return self.parent.lookup_fun(iden)
+        else:
+            raise NameError(f"Function '{iden}' nhi mila!")
 
     def inScope(self, iden):
         return iden in self.table
