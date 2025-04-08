@@ -5,8 +5,6 @@ import copy
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
-
-
 def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
@@ -78,37 +76,42 @@ def e(tree: AST, tS) -> Any:
         case UnaryOp("char", val):
             return chr(e(val, tS))
 
-        case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
-            tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
+        case FuncDef(_funcName, _funcParams, _funcBody, _funcScope):
+            # just return
             return
 
-        case FuncCall(funcName, funcArgs):
-            """
-            Step 1: Extract function body
-            Step 2: Put argument values into function's scope
-            Step 3: Evaluate the function body
-            Step 4: Pop the arg values from the function's scope (don't delete the scope table)
-            """
-            funcData = tS.lookup(funcName)  # Step 1
-            if not isinstance(funcData, tuple) or len(funcData) != 4:
-                raise ValueError(f"Function {funcName} is not defined correctly.")
-            (funcParams, funcBody, funcScopeMain, isRec) = funcData
-            funcScope = funcScopeMain.copy_scope() if isRec else funcScopeMain
+        case FuncCall(fn_name, fn_args):
 
-            for i in range(len(funcParams)):  # Step 2
-                # funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
-                funcScope.define(funcParams[i], e(funcArgs[i], tS),SymbolCategory.VARIABLE)
+            # Step 1: Extract function body & adjust scope
+            ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
 
-            for stmt in funcBody.statements:  # Step 3
-                ans = e(
-                    stmt, funcScope
-                )  #! every line in body is evaluated (always returns something)
+            eval_scope = SymbolTable(fn_parent)
 
-            for i in range(len(funcParams)):
-                funcScope.define(funcParams[i],None,SymbolCategory.VARIABLE)
-                # funcScope.table[funcParams[i]] = None  # Step 4
+            for key, value in parsedScope.table.items():
+                k = copy.deepcopy(key)
+                if (value[1]==SymbolCategory.VARIABLE):
+                    # for parameters and local variables (for which value[0] is None in parsedScope)
+                    eval_scope.table[k] = (None, SymbolCategory.VARIABLE)
+                elif (value[1]==SymbolCategory.FUNCTION):
+                    # for function declarations (value[0] is of type FuncDef)
+                    v = copy.deepcopy(value)
+                    eval_scope.table[k] = (v, SymbolCategory.FUNCTION)
 
-            return ans  # after returning ans
+            # Step 2: Put argument values into function's scope
+            for param, arg in zip(param_list, fn_args):                        
+                eval_scope.define(param, e(arg, tS), SymbolCategory.VARIABLE)
+
+            # Step 3: Evaluate the function body
+            ans = None
+            for stmt in fn_body.statements:
+                ans = e(stmt, eval_scope)
+
+            # Step 4: Pop the arg values from the function's scope (don't delete the scope table)
+            # not needed (freed implicitly when the function returns)
+            # for param in param_list:
+            #     eval_scope.define(param, None, SymbolCategory.VARIABLE)
+
+            return ans
 
         case Statements(statements):
             result = None
@@ -119,6 +122,7 @@ def e(tree: AST, tS) -> Any:
         # Conditional
         case If(cond, then_body, else_body, tS_cond):
             ans = None
+            tS_cond.parent = tS
             if e(cond, tS_cond):
                 ans = e(then_body, tS_cond)
             elif else_body is not None:
@@ -138,10 +142,11 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update(var_name, new_val)
             return new_val
 
-        case VarBind(name, dtype, value,category):
+        case VarBind(name, dtype, value, category):
             var_val = e(value, tS)
-            tS.define(name,var_val,category)# binds in current scope
+            tS.define(name, var_val, category)# binds in current scope
             return var_val
+        
         case PushFront(arr_name, value):
             arr= tS.lookup(arr_name)
             arr.insert(0, e(value, tS))
@@ -237,11 +242,13 @@ def e(tree: AST, tS) -> Any:
             
         # Loops
         case WhileLoop(cond, body, tS_while):
+            tS_while.parent = tS
             while e(cond, tS_while):
                 for stmt in body.statements:
                     e(stmt, tS_while)
 
         case ForLoop(init, cond, incr, body, tS_for):
+            tS_for.parent = tS
             e(init, tS_for)
             while e(cond, tS_for):
                 loop_should_break = False
@@ -256,137 +263,25 @@ def e(tree: AST, tS) -> Any:
             return MoveOn()
 
 def execute(prog):
-        lines, tS = parse(prog)
-        for line in lines.statements:
-            e(line, tS)
+    lines, tS = parse(prog)
+    for line in lines.statements:
+        e(line, tS)
 
+# =========================================================================================================
 if __name__ == "__main__":
 
-    # # expr = "display 0<= 1 >=2 "
-    # expr = " display( var integer x= 3+ 7 -1);"
-    # compound_assignment= "display (x-=2);"
-    # # loop <condition> then <statement> end
-    # # int32 x=2
-
-    # ========================================================
-    # Loading the Program
-    fileName = "sample-code.txt"
-    try:
-        with open(fileName, "r") as file:
-            prog_fin = file.read()
-    except FileNotFoundError:
-        print(f"The file {fileName} was not found.")
-    except IOError:
-        print("An error occurred while reading the file.")
-
-    def execute(prog):
-        lines, tS = parse(prog)
-        for line in lines.statements:
-            e(line, tS)
-
-    # ========================================================
-
     prog = """
-fn foo(i){
-    if i==1 then var a = 2 else 5 end;
-    a = 42;
-}
-displayl foo(2);
-"""  #! (for Rohit) no error since funcScope contain `a` (why?)
 
-    prog2 = """
-fn foo(i){
-    if i==1 then a = 2 else 5 end;
-    a = 42;
-}
-displayl foo(2);
-"""  #! (for Rohit) error since funcScope does not contain `a`
+""" 
 
-    #! (for Rohit) check parse_var(tS)[0] instead of parse_display(tS)[0]
+# =====================================================================
 
-    prog3 = """
-var a = 2;
-var a = 100;
-displayl a;
-"""  #! (for Rohit) should throw error
-
-    #! check for redeclaration of function
-
-    #! are arrays mutable? => can be done but not done yet, since we are storing as python lists
-
-    #! how arrays passed/returned from functions
-
-    prog4 = """
-displayl 2
-displayl 3
-"""  #! (hm) why only 3 printed (should be syntax error due to missing semicolons)
-
-
-    #! add nil datatype for function returns
-
-    prog = """
-    
-    var i = 0;
-    while (i < 5) {
-        i = i + 1;
-        if i == 2 then moveon end;
-        /~ if i == 4 then breakon end;~/
-        displayl i;
-    }
-        """
-
-
-    prog5 = """
-var a = 2++3;
-displayl a;
-"""  #! error handling missing (should be handled by TOPL & its grammar, instead of Python)
-
-    #     prog = """
-    # var a = 2^3
-    # """ #! infinite loop
-
-    #! array features in Project doc
-
-    #! Visual separator for numbers (example: int x = 1_000_000 or 1`000`000)
-
-    #! ability to run a program from .topl file extension (in terminal, we write `topl myprog.topl`)
-
-    prog = """
-var a = if 2==2 then 5 else 6 end;
-displayl a;
-displayl "hi"
-displayl "boo"
-
-""" #! error without brackets (even if 6 comes first)
-
-
-    # =======================================
-    
-    
-    prog = """
-    var a = 2^3^2;
-    displayl a;
-    """ #! infinite loop
-
-    prog="""
-    var nig =[1,3,"s"];
-    var ptmp ={"s":1,"a":2}; 
-    displayl nig[nig.Length-1];
-    ptmp.Add("meow",12);
-    nig.Remove(2);
-    ptmp.Remove("a");
-    displayl ptmp; 
-    displayl nig; 
-    """
-
-    prog="""
-    displayl 3
-    displayl 2
-"""
     parsed, gS = parse(prog)
-    
-    print("Parsed Output: ")
+    print("------")
     pprint(parsed)
+    print("------")
+    pprint(gS.table)
+
     print("------")
     print("Program Output: ")
     execute(prog)
