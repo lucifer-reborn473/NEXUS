@@ -270,3 +270,6 @@ def lex(s: str) -> Iterator[Token]:
                 case ':':
                     i+=1
                     yield ColonToken()
+                case _:
+                    print(f"Not a valid token: {t}")
+                    exit()

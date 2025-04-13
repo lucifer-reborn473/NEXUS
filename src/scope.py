@@ -20,13 +20,21 @@ class SymbolTable:
     def define(self, iden, value, category: SymbolCategory):
         self.table[iden] = (value, category)
 
-    def lookup(self, iden,cat=False):
+    def lookup(self, iden, cat=False):
         if iden in self.table:
             return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
         elif self.parent:  # check in parent (enclosing scope)
             return self.parent.lookup(iden, cat)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
+
+    def lookup_fun(self, iden):
+        if iden in self.table:
+            return (self.table[iden][0], self)
+        elif self.parent:
+            return self.parent.lookup_fun(iden)
+        else:
+            raise NameError(f"Function '{iden}' nhi mila!")
 
     def inScope(self, iden):
         return iden in self.table

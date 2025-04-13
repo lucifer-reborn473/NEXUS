@@ -125,37 +125,41 @@ def e(tree: AST, tS) -> Any:
             return input(e(msg,tS))
         case TypeCast(dtype, value):
             return perform_typecast(e(value, tS), dtype)
-        case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
-            tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
+        case FuncDef(_funcName, _funcParams, _funcBody, _funcScope):
+            # tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
 
-        case FuncCall(funcName, funcArgs):
-            """
-            Step 1: Extract function body
-            Step 2: Put argument values into function's scope
-            Step 3: Evaluate the function body
-            Step 4: Pop the arg values from the function's scope (don't delete the scope table)
-            """
-            funcData = tS.lookup(funcName)  # Step 1
-            if not isinstance(funcData, tuple) or len(funcData) != 4:
-                raise ValueError(f"Function {funcName} is not defined correctly.")
-            (funcParams, funcBody, funcScopeMain, isRec) = funcData
-            funcScope = funcScopeMain.copy_scope() if isRec else funcScopeMain
+        case FuncCall(fn_name, fn_args):
+            # Step 1: Extract function body & adjust scope
+            ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
 
-            for i in range(len(funcParams)):  # Step 2
-                # funcScope.table[funcParams[i]] = e(funcArgs[i], tS)
-                funcScope.define(funcParams[i], e(funcArgs[i], tS),SymbolCategory.VARIABLE)
+            eval_scope = SymbolTable(fn_parent)
 
-            for stmt in funcBody.statements:  # Step 3
-                ans = e(
-                    stmt, funcScope
-                )  #! every line in body is evaluated (always returns something)
+            for key, value in parsedScope.table.items():
+                k = copy.deepcopy(key)
+                if (value[1]==SymbolCategory.VARIABLE):
+                    # for parameters and local variables (for which value[0] is None in parsedScope)
+                    eval_scope.table[k] = (None, SymbolCategory.VARIABLE)
+                elif (value[1]==SymbolCategory.FUNCTION):
+                    # for function declarations (value[0] is of type FuncDef)
+                    v = copy.deepcopy(value)
+                    eval_scope.table[k] = (v, SymbolCategory.FUNCTION)
+            
+            # Step 2: Put argument values into function's scope
+            for param, arg in zip(param_list, fn_args):                        
+                eval_scope.define(param, e(arg, tS), SymbolCategory.VARIABLE)
 
-            for i in range(len(funcParams)):
-                funcScope.define(funcParams[i],None,SymbolCategory.VARIABLE)
-                # funcScope.table[funcParams[i]] = None  # Step 4
+            # Step 3: Evaluate the function body
+            ans = None
+            for stmt in fn_body.statements:
+                ans = e(stmt, eval_scope)
 
-            return ans  # after returning ans
+            # Step 4: Pop the arg values from the function's scope (don't delete the scope table)
+            # although not needed (freed implicitly when the function returns)
+            for param in param_list:
+                eval_scope.define(param, 100, SymbolCategory.VARIABLE)
+
+            return ans
 
         case Statements(statements):
             result = None
@@ -165,11 +169,18 @@ def e(tree: AST, tS) -> Any:
 
         # Conditional
         case If(cond, then_body, else_body, tS_cond):
+            eval_cond_scope = SymbolTable(parent=tS)
+            # Copy static declarations from parse-time scope
+            for key, value in tS_cond.table.items():
+                if value[1] == SymbolCategory.VARIABLE:
+                    eval_cond_scope.table[key] = (None, SymbolCategory.VARIABLE)
+                elif value[1] == SymbolCategory.FUNCTION:
+                    eval_cond_scope.table[key] = copy.deepcopy(value)
             ans = None
-            if e(cond, tS_cond):
-                ans = e(then_body, tS_cond)
+            if e(cond, eval_cond_scope):
+                ans = e(then_body, eval_cond_scope)
             elif else_body is not None:
-                ans = e(else_body, tS_cond)
+                ans = e(else_body, eval_cond_scope)
             return ans
 
         # Display
@@ -285,10 +296,19 @@ def e(tree: AST, tS) -> Any:
             
         # Loops
         case WhileLoop(cond, body, tS_while):
-            while e(cond, tS_while):
+
+            eval_while_scope = SymbolTable(parent=tS)
+            # Copy static declarations from parse-time scope
+            for key, value in tS_while.table.items():
+                if value[1] == SymbolCategory.VARIABLE:
+                    eval_while_scope.table[key] = (None, SymbolCategory.VARIABLE)
+                elif value[1] == SymbolCategory.FUNCTION:
+                    eval_while_scope.table[key] = copy.deepcopy(value)
+
+            while e(cond, eval_while_scope):
                 loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_while)
+                    result = e(stmt, eval_while_scope)
                     if isinstance(result, BreakOut):
                         loop_should_break = True
                         break  
@@ -298,11 +318,19 @@ def e(tree: AST, tS) -> Any:
                     break
 
         case ForLoop(init, cond, incr, body, tS_for):
-            e(init, tS_for)
-            while e(cond, tS_for):
+            eval_for_scope = SymbolTable(parent=tS)
+            # Copy static declarations from parse-time scope
+            for key, value in tS_for.table.items():
+                if value[1] == SymbolCategory.VARIABLE:
+                    eval_for_scope.table[key] = (None, SymbolCategory.VARIABLE)
+                elif value[1] == SymbolCategory.FUNCTION:
+                    eval_for_scope.table[key] = copy.deepcopy(value)
+
+            e(init, eval_for_scope)
+            while e(cond, eval_for_scope):
                 loop_should_break = False
                 for stmt in body.statements:
-                    result = e(stmt, tS_for)
+                    result = e(stmt, eval_for_scope)
                     if isinstance(result, BreakOut):
                         loop_should_break = True
                         break
@@ -310,7 +338,7 @@ def e(tree: AST, tS) -> Any:
                         break
                 if loop_should_break:
                     break
-                e(incr, tS_for)
+                e(incr, eval_for_scope)
 
         case Repeat(times, body, repeatScope):
             repetitions = e(times, repeatScope)
@@ -336,9 +364,9 @@ def e(tree: AST, tS) -> Any:
             return MoveOn()
 
 def execute(prog):
-        lines, tS = parse(prog)
-        for line in lines.statements:
-            e(line, tS)
+    lines, tS = parse(prog)
+    for line in lines.statements:
+        e(line, tS)
 
 if __name__ == "__main__":
 
@@ -410,10 +438,35 @@ display `This is b: {b}`;"""
         displayl 1;
     }
 """
+    prog = """
+    var a =[1,2,3,4];
+    var b =20;
+    a[1]=b;
+    displayl a;
+    displayl a[2];
+    var c=[10,11,12,13];
+    c[1]=a[2]+b;
+    displayl c;
+"""
+    prog = """
+fn foo(){
+    fn bar(){
+        x+2;
+    }
+    bar; /> returns a function
+}
+var x = 40;
+var y = foo(); /> assigns to a variable
+displayl y();
+"""
+
+
     parsed, gS = parse(prog)
-    
-    print("Parsed Output: ")
+    print("------")
     pprint(parsed)
+    print("------")
+    pprint(gS.table)
+
     print("------")
     print("Program Output: ")
     execute(prog)
