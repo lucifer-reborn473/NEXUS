@@ -171,6 +171,13 @@ class WhileLoop(AST):
 @dataclass
 class Feed(AST):
     msg: AST
+
+@dataclass
+class Repeat(AST):
+    times : AST
+    body: AST
+    repeatScope: Any
+
 @dataclass
 class ForLoop(AST):
     initialization: AST 
@@ -254,26 +261,29 @@ def parse(s: str) -> List[AST]:
             return
         raise SyntaxError(f"Expected one of {expected_tokens}, but got {next_token}")
 
-    def parse_program(thisScope = None):
+    
 
+    def parse_program(thisScope=None):
         if thisScope is None:
-            thisScope = SymbolTable() # forms the global scope
+            thisScope = SymbolTable()  # forms the global scope
 
         statements = []
         while t.peek(None) is not None:
-            if isinstance(t.peek(None), RightBraceToken):    # function body parsing done
+            if isinstance(t.peek(None), RightBraceToken):  # function body parsing done
                 break
             match t.peek(None):
                 case KeywordToken("while"):
                     stmt, thisScope = parse_while(thisScope)
                 case KeywordToken("for"):
                     stmt, thisScope = parse_for(thisScope)
+                case KeywordToken("repeat"):
+                    stmt, thisScope = parse_repeat(thisScope)
                 case _:
                     stmt, thisScope = parse_display(thisScope)
 
-            statements.append(stmt)                         # collection of parsed statements
+            statements.append(stmt)  # collection of parsed statements
 
-        return Statements(statements), thisScope          # Return a list of parsed statements + scope
+        return Statements(statements), thisScope  # Return a list of parsed statements + scope
 
 
 
@@ -319,6 +329,24 @@ def parse(s: str) -> List[AST]:
             case _:
                 raise SyntaxError("Invalid syntax for for loop")
 
+    def parse_repeat(tS):
+        """
+        Parse a repeat loop.
+        Syntax: repeat (times) { statements }
+        """
+        match t.peek(None):
+            case KeywordToken("repeat"):
+                next(t)
+                expect(LeftParenToken())
+                tS_repeat = SymbolTable(tS)
+                times = parse_var(tS_repeat)[0]  # Parse the number of repetitions
+                expect(RightParenToken())
+                expect(LeftBraceToken())
+                body, tS_repeat = parse_program(tS_repeat)  # Parse the body of the loop
+                expect(RightBraceToken())
+                return Repeat(times, body, tS_repeat), tS
+            case _:
+                raise SyntaxError("Invalid syntax for repeat loop")
 
     def parse_display(tS):  # display value/output
         (ast, tS) = parse_var(tS)
@@ -916,4 +944,18 @@ def parse(s: str) -> List[AST]:
 
 
 if __name__ == "__main__":
-   pass
+   prog1="""
+    var Hash h = [1, 2, 3];
+    var sum=0;
+    repeat (h.Length-1){
+        sum+=h.PopFront;
+    }
+    displayl sum;
+    """
+
+   prog="""
+    repeat (10){
+        displayl 1;
+    }
+"""
+   pprint(parse(prog1))

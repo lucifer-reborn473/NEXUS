@@ -312,6 +312,23 @@ def e(tree: AST, tS) -> Any:
                     break
                 e(incr, tS_for)
 
+        case Repeat(times, body, repeatScope):
+            repetitions = e(times, repeatScope)
+            if not isinstance(repetitions, int) or repetitions < 0:
+                raise ValueError("Repeat loop requires a non-negative integer for the number of repetitions.")
+
+            for _ in range(repetitions):
+                loop_should_break = False
+                for stmt in body.statements:
+                    result = e(stmt, repeatScope)
+                    if isinstance(result, BreakOut):
+                        loop_should_break = True
+                        break
+                    elif isinstance(result, MoveOn):
+                        break
+                if loop_should_break:
+                    break
+        
         case BreakOut():
             return BreakOut()
 
@@ -379,6 +396,20 @@ display `This is b: {b}`;"""
     displayl sum;
 """
 
+    prog="""
+    var array h = [1, 2, 3];
+    var sum=0;
+    repeat (h.Length){
+        sum+=h.PopFront;
+    }
+    displayl sum;
+    """
+
+    prog="""
+    repeat (10){
+        displayl 1;
+    }
+"""
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")

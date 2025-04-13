@@ -257,6 +257,45 @@ def test_function_multiply(capfd):
     execute(prog)
     captured = capfd.readouterr()
     assert "20" in captured.out
+
+def test_repeat_loop_with_array(capfd):
+    prog = """
+    var array h = [1, 2, 3];
+    var sum = 0;
+    repeat (h.Length) {
+        sum += h.PopFront;
+    }
+    displayl sum;
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "6" in captured.out
+
+def test_repeat_loop_fixed_iterations(capfd):
+    prog = """
+    repeat (10) {
+        displayl 1;
+    }
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert captured.out.strip().count("1") == 10
+
+def test_repeat_loop_with_function_calls(capfd):
+    prog = """
+    fn increment(x) {
+        x + 1;
+    }
+    var sum = 0;
+    repeat (5) {
+        sum = increment(sum);
+    }
+    displayl sum;
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "5" in captured.out
+
 if __name__ =="__main__":
     prog="""
     var integer sum=2;
@@ -275,4 +314,3 @@ if __name__ =="__main__":
     pprint(parse(prog))
     execute(prog)
 
-    

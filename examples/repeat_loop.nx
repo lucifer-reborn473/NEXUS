@@ -1,0 +1,6 @@
+var array h = [1, 2, 3];
+var sum=0;
+repeat (h.Length){
+    sum+=h.PopFront;
+}
+displayl sum;

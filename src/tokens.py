@@ -37,6 +37,7 @@ keyword_tokens = (
     "and",
     "proc",
     "feed",
+    "repeat",
 )
 
 boolean_tokens = (
