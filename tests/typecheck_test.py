@@ -87,6 +87,36 @@ from evaluator import execute
     var array u = 10;
     displayl u;
     """, ValueError),
+
+    # Test format string with variable substitution
+    ("""
+    var a = 5;
+    var b = `This is a: {a}`;
+    display `This is b: {b}`;
+    """, "This is b: This is a: 5"),
+
+    # Test format string with multiple variables
+    ("""
+    var x = 10;
+    var y = 20;
+    var z = `x: {x}, y: {y}`;
+    display z;
+    """, "x: 10, y: 20"),
+
+    # Test format string with expression evaluation
+    ("""
+    var num = 7;
+    var sqnum= num*num;
+    var result = `Square of {num} is {sqnum} `;
+    display result;
+    """, "Square of 7 is 49"),
+
+    # Test format string with nested format strings
+    ("""
+    var inner = `Inner value`;
+    var outer = `Outer contains: {inner}`;
+    display outer;
+    """, "Outer contains: Inner value"),
 ])
 def test_var_type_declarations(code, expected_output, capfd):
     try:
@@ -95,6 +125,8 @@ def test_var_type_declarations(code, expected_output, capfd):
         assert captured.out.strip() == expected_output
     except Exception as e:
         assert isinstance(e, expected_output)
+
+
 
 if __name__ == "__main__":
     prog="""var Hash h = [1, 2, 3];

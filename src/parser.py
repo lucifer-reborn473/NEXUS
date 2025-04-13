@@ -215,7 +215,12 @@ class FuncDef(AST):
 class FuncCall(AST):
     funcName: str               # function name as a string
     funcArgs: List[AST]         # takes a list of expressions
-    
+
+@dataclass
+class FormatString(AST):
+    template: str
+    variables: List[str]
+
 # ==========================================================================================
 
 def map_type(value):
@@ -636,8 +641,16 @@ def parse(s: str) -> List[AST]:
             case StringToken(s):
                 next(t)
                 return String(s)
+            case FstringToken(s):
+                next(t)
+                variables = []
+                for var in s.split("{")[1:]:
+                    var_name = var.split("}")[0]
+                    variables.append(var_name)
+                return FormatString(s, variables)
             case _:
                 return parse_boolean(tS)
+                            
     def parse_boolean(tS):
         match t.peek(None):
             case BooleanToken(b):

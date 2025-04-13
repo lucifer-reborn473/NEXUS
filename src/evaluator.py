@@ -20,6 +20,9 @@ def e(tree: AST, tS) -> Any:
             return b
         case Variable(v):
             return tS.lookup(v)
+        case FormatString(template, variables):
+            varmods = {var: e(Variable(var), tS) for var in variables}
+            return template.format(**varmods)
         case Array(val):
             all_vals = list(map(lambda x: e(x, tS), val))
             return all_vals
@@ -353,9 +356,11 @@ if __name__ == "__main__":
     }
     """
 
-    prog = """
-    
-    """
+
+    prog= """var a = 5;
+var b = `This is a: {a}`;
+display `This is b: {b}`;"""
+
     
     parsed, gS = parse(prog)
     

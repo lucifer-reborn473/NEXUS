@@ -24,6 +24,7 @@ class OperatorToken(Token):
 @dataclass
 class DotToken(Token):
     pass
+
 @dataclass
 class StringToken(Token):
     val: str
@@ -88,6 +89,9 @@ class BreakOutToken(Token):
 class MoveOnToken(Token):
     pass
 
+@dataclass
+class FstringToken(Token): 
+    value: str
 
 # ======================================================================================================
 def lex(s: str) -> Iterator[Token]:
@@ -142,6 +146,17 @@ def lex(s: str) -> Iterator[Token]:
             i = i + 1
             yield StringToken(t)
 
+        #handle bakctick token
+        elif s[i] == "`":
+            i = i + 1
+            t = ""
+            while i < len(s) and s[i] != "`":
+                t += s[i]
+                i += 1
+            if i >= len(s):
+                raise SyntaxError("Expected `")
+            i = i + 1
+            yield FstringToken(t)
         # positive integers
         elif s[i].isdigit():
             t = s[i]

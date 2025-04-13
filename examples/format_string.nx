@@ -1,0 +1,3 @@
+var a = 5;
+var b = `This is a: {a}`;
+display `This is b: {b}`;
