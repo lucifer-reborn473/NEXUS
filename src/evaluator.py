@@ -459,6 +459,22 @@ var x = 40;
 var y = foo(); /> assigns to a variable
 displayl y();
 """
+    prog = """
+    var arr = [1, 2, 3];
+    var hash = {"key1": 10, "key2": 20};
+
+    arr.PushBack(4);
+    hash.Add("key3", 30);
+
+    displayl ("array display:");
+    for (var integer i = 0; i < arr.Length; i = i + 1) {
+        displayl arr[i];
+    }
+    fn multiply(a, b) {
+        a * b;
+    }
+    displayl multiply(hash["key1"], 2);
+    """
 
 
     parsed, gS = parse(prog)
