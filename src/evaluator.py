@@ -1,6 +1,7 @@
 from parser import *
 from scope import SymbolCategory, SymbolTable
 import copy
+import math
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
@@ -34,6 +35,8 @@ def perform_typecast(var_val, dtype, name=None):
     except (ValueError, TypeError) as err:
         raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
     return var_val
+
+
 def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
@@ -334,6 +337,70 @@ def e(tree: AST, tS) -> Any:
 
         case MoveOn():
             return MoveOn()
+
+        case MathFunction(funcName, args):
+            arg_values = [e(arg, tS) for arg in args]
+            match funcName:
+                case "abs":
+                    return math.fabs(arg_values[0])
+                case "min":
+                    return min(arg_values[0])
+                case "max":
+                    return max(arg_values[0])
+                case "round":
+                    return round(arg_values[0], arg_values[1] if len(arg_values) > 1 else 0)
+                case "ceil":
+                    return math.ceil(arg_values[0])
+                case "floor":
+                    return math.floor(arg_values[0])
+                case "truncate":
+                    return math.trunc(arg_values[0])
+                case "sqrt":
+                    return math.sqrt(arg_values[0])
+                case "cbrt":
+                    return arg_values[0] ** (1/3)
+                case "pow":
+                    return math.pow(arg_values[0], arg_values[1])
+                case "exp":
+                    return math.exp(arg_values[0])
+                case "log":
+                    return math.log(arg_values[0])
+                case "log10":
+                    return math.log10(arg_values[0])
+                case "log2":
+                    return math.log2(arg_values[0])
+                case "sin":
+                    return math.sin(arg_values[0])
+                case "cos":
+                    return math.cos(arg_values[0])
+                case "tan":
+                    return math.tan(arg_values[0])
+                case "asin":
+                    return math.asin(arg_values[0])
+                case "acos":
+                    return math.acos(arg_values[0])
+                case "atan":
+                    return math.atan(arg_values[0])
+                case "atan2":
+                    return math.atan2(arg_values[0], arg_values[1])
+                case "sinh":
+                    return math.sinh(arg_values[0])
+                case "cosh":
+                    return math.cosh(arg_values[0])
+                case "tanh":
+                    return math.tanh(arg_values[0])
+                case "asinh":
+                    return math.asinh(arg_values[0])
+                case "acosh":
+                    return math.acosh(arg_values[0])
+                case "atanh":
+                    return math.atanh(arg_values[0])
+                case "PI":
+                    return math.pi
+                case "E":
+                    return math.e
+                case _:
+                    raise ValueError(f"Unknown math function: {funcName}")
 
 def execute(prog):
         lines, tS = parse(prog)

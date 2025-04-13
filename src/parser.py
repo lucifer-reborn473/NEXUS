@@ -232,6 +232,11 @@ class FormatString(AST):
 class TypeCast(AST):
     dtype: str
     val: AST
+
+@dataclass
+class MathFunction(AST):
+    funcName: str
+    arg: List[AST]
 # ==========================================================================================
 
 def map_type(value):
@@ -637,14 +642,14 @@ def parse(s: str) -> List[AST]:
                 case _:
                     return ast
     def parse_array_dict(tS):
-        ast=parse_input(tS)
+        ast=parse_math(tS)
         while True:
             match t.peek(None):
                 case LeftSquareToken(): # parse list of elements
                     next(t)
                     elements = []
                     while not isinstance(t.peek(None), RightSquareToken):
-                        elements.append(parse_input(tS))
+                        elements.append(parse_math(tS))
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
                     expect(RightSquareToken())
@@ -654,15 +659,34 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     elements= []
                     while not isinstance(t.peek(None), RightBraceToken):
-                        key=parse_input(tS)
+                        key=parse_math(tS)
                         expect(ColonToken())
-                        val = parse_input(tS)
+                        val = parse_math(tS)
                         elements.append((key,val))
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
                     expect(RightBraceToken())
 
                     ast=Hash(elements)
+                case _:
+                    return ast
+    def parse_math(tS):
+        ast = parse_input(tS)
+        while True:
+            match t.peek(None):
+                case MathToken(m):
+                    next(t)
+                    if isinstance(t.peek(None), LeftParenToken):
+                        next(t)
+                        args = []
+                        while not isinstance(t.peek(None), RightParenToken):
+                            args.append(parse_var(tS)[0])
+                            if isinstance(t.peek(None), CommaToken):
+                                next(t)
+                        expect(RightParenToken())
+                    else:
+                        args = []
+                    ast = MathFunction(m, args)
                 case _:
                     return ast
     def parse_input(tS):
@@ -679,7 +703,7 @@ def parse(s: str) -> List[AST]:
                     ast = Feed(msg)
                 case _:
                     return ast
-
+                
     def parse_string(tS): # while True may be included in future
         match t.peek(None):
             case StringToken(s):
@@ -944,14 +968,7 @@ def parse(s: str) -> List[AST]:
 
 
 if __name__ == "__main__":
-   prog1="""
-    var Hash h = [1, 2, 3];
-    var sum=0;
-    repeat (h.Length-1){
-        sum+=h.PopFront;
-    }
-    displayl sum;
-    """
+   
 
    prog="""
     repeat (10){

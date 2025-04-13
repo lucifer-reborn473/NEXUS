@@ -93,6 +93,10 @@ class MoveOnToken(Token):
 class FstringToken(Token): 
     value: str
 
+@dataclass
+class MathToken(Token):
+    value : str
+
 # ======================================================================================================
 def lex(s: str) -> Iterator[Token]:
     i = 0
@@ -112,7 +116,9 @@ def lex(s: str) -> Iterator[Token]:
         # variable or reserved keyword token
         elif s[i].isalpha():
             t = ""
-            while i < len(s) and s[i].isalpha():
+            t+= s[i]
+            i = i + 1 # first character must be a letter
+            while i < len(s) and (s[i].isalpha() or s[i].isdigit() or s[i] == "_"):
                 t += s[i]
                 i += 1
             if t in keyword_tokens:
@@ -124,6 +130,8 @@ def lex(s: str) -> Iterator[Token]:
                 yield BooleanToken(t)
             elif t in base_type_tokens:
                 yield TypeToken(t)
+            elif t in math_tokens:
+                yield MathToken(t)
             elif t == "breakout":
                 yield BreakOutToken()
             elif t == "moveon":
