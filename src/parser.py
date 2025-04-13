@@ -237,6 +237,10 @@ class TypeCast(AST):
 class MathFunction(AST):
     funcName: str
     arg: List[AST]
+
+@dataclass
+class TypeOf(AST):
+    value : AST
 # ==========================================================================================
 
 def map_type(value):
@@ -649,7 +653,7 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     elements = []
                     while not isinstance(t.peek(None), RightSquareToken):
-                        elements.append(parse_math(tS))
+                        elements.append(parse_var(tS)[0])
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
                     expect(RightSquareToken())
@@ -659,9 +663,9 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     elements= []
                     while not isinstance(t.peek(None), RightBraceToken):
-                        key=parse_math(tS)
+                        key=parse_var(tS)[0]
                         expect(ColonToken())
-                        val = parse_math(tS)
+                        val = parse_var(tS)[0]
                         elements.append((key,val))
                         if isinstance(t.peek(None), CommaToken):
                             next(t)
@@ -701,6 +705,12 @@ def parse(s: str) -> List[AST]:
                         msg=String("FEED:")
                     expect(RightParenToken())
                     ast = Feed(msg)
+                case KeywordToken("typeof"):
+                    next(t)
+                    expect(LeftParenToken())
+                    value = parse_var(tS)[0]
+                    expect(RightParenToken())
+                    ast = TypeOf(value)
                 case _:
                     return ast
                 
@@ -852,46 +862,49 @@ def parse(s: str) -> List[AST]:
                     category = tS.lookup(v,cat=True)
                     match category:
                         case SymbolCategory.VARIABLE:
-                            ast=Variable(v)
+                            ast = Variable(v)
                         case SymbolCategory.ARRAY:
-                            if isinstance(t.peek(None), LeftSquareToken):
-                                next(t)
-                                index = parse_var(tS)[0]
-                                expect(RightSquareToken())
-                                if (isinstance(t.peek(None),OperatorToken) 
-                                    and t.peek(None).o == "="): # assigning a new value
+                            if isinstance(t.peek(None), LeftSquareToken):  # array access
+                                indices = []
+                                while isinstance(t.peek(None), LeftSquareToken):
                                     next(t)
-                                    value=parse_var(tS)[0]
-                                    ast=AssigntoArr(v,index,value)
-                                else: #calling a given index
-                                    ast= CallArr(v, index)
-                            elif (isinstance(t.peek(None),DotToken)):
-                                 next(t)
-                                 match t.peek(None):
+                                    indices.append(parse_var(tS)[0])
+                                    expect(RightSquareToken())
+                                
+                                if (isinstance(t.peek(None), OperatorToken) 
+                                    and t.peek(None).o == "="):  # assigning a new value
+                                    next(t)
+                                    value = parse_var(tS)[0]
+                                    ast = AssigntoArr(v, indices, value)
+                                else:  # accessing a given index
+                                    ast = CallArr(v, indices)
+                            elif isinstance(t.peek(None), DotToken):
+                                next(t)
+                                match t.peek(None):
                                     case KeywordToken("PushFront"):
                                         next(t)
                                         expect(LeftParenToken())
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast=PushFront(v,val)
+                                        ast = PushFront(v, val)
                                     case KeywordToken("PushBack"):
                                         next(t)
                                         expect(LeftParenToken())
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast=PushBack(v,val)
+                                        ast = PushBack(v, val)
                                     case KeywordToken("PopFront"):
                                         next(t)
-                                        ast=PopFront(v)
+                                        ast = PopFront(v)
                                     case KeywordToken("PopBack"):
                                         next(t)
-                                        ast=PopBack(v)
+                                        ast = PopBack(v)
                                     case KeywordToken("Length"):
                                         next(t)
-                                        ast=GetLength(v)
+                                        ast = GetLength(v)
                                     case KeywordToken("Clear"):
                                         next(t)
-                                        ast=ClearArray(v)
+                                        ast = ClearArray(v)
                                     case KeywordToken("Insert"):
                                         next(t)
                                         expect(LeftParenToken())
@@ -899,46 +912,48 @@ def parse(s: str) -> List[AST]:
                                         expect(CommaToken())
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast=InsertAt(v,index,val)    
+                                        ast = InsertAt(v, index, val)
                                     case KeywordToken("Remove"):
                                         next(t)
                                         expect(LeftParenToken())
                                         index = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast=RemoveAt(v,index)
+                                        ast = RemoveAt(v, index)
                                     case _:
                                         return ast
-                            else: #calling whole array
+                            else:  # calling the whole array
                                 ast = Variable(v)
                         case SymbolCategory.HASH:
                             if isinstance(t.peek(None), LeftSquareToken):
-                                next(t)
-                                key = parse_var(tS)[0]
-                                expect(RightSquareToken())
-                                if (isinstance(t.peek(None),OperatorToken) 
-                                    and t.peek(None).o == "="): # assigning a new value
+                                keys = []
+                                while isinstance(t.peek(None), LeftSquareToken):
                                     next(t)
-                                    value=parse_var(tS)[0]
-                                    ast = AssignHashVal(v,key,value)
+                                    keys.append(parse_var(tS)[0])
+                                    expect(RightSquareToken())
+                                if (isinstance(t.peek(None), OperatorToken) 
+                                    and t.peek(None).o == "="):  # assigning a new value
+                                    next(t)
+                                    value = parse_var(tS)[0]
+                                    ast = AssignHashVal(v, keys, value)  # Handle nested keys
                                 else:
-                                    ast=CallHashVal(v,key)
-                            elif (isinstance(t.peek(None),DotToken)):
+                                    ast = CallHashVal(v, keys)  # Handle nested keys
+                            elif isinstance(t.peek(None), DotToken):
                                 next(t)
                                 match t.peek(None):
                                     case KeywordToken("Add"):
                                         next(t)
                                         expect(LeftParenToken())
-                                        key=parse_var(tS)[0]
+                                        key = parse_var(tS)[0]
                                         expect(CommaToken())
-                                        val=parse_var(tS)[0]
+                                        val = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast=AddHashPair(v,key,val)
+                                        ast = AddHashPair(v, key, val)
                                     case KeywordToken("Remove"):
                                         next(t)
                                         expect(LeftParenToken())
-                                        key=parse_var(tS)[0]
+                                        key = parse_var(tS)[0]
                                         expect(RightParenToken())
-                                        ast = RemoveHashPair(v,key)
+                                        ast = RemoveHashPair(v, key)
                                     case _:
                                         return ast
                             else:
@@ -975,4 +990,54 @@ if __name__ == "__main__":
         displayl 1;
     }
 """
+   prog1="""
+    
+    
+"""
    pprint(parse(prog1))
+
+
+# def array_dot_operations(v, tS, ast):
+#         next(t)
+#         match t.peek(None):
+#             case KeywordToken("PushFront"):
+#                 next(t)
+#                 expect(LeftParenToken())
+#                 val = parse_var(tS)[0]
+#                 expect(RightParenToken())
+#                 ast = PushFront(v, val)
+#             case KeywordToken("PushBack"):
+#                 next(t)
+#                 expect(LeftParenToken())
+#                 val = parse_var(tS)[0]
+#                 expect(RightParenToken())
+#                 ast = PushBack(v, val)
+#             case KeywordToken("PopFront"):
+#                 next(t)
+#                 ast = PopFront(v)
+#             case KeywordToken("PopBack"):
+#                 next(t)
+#                 ast = PopBack(v)
+#             case KeywordToken("Length"):
+#                 next(t)
+#                 ast = GetLength(v)
+#             case KeywordToken("Clear"):
+#                 next(t)
+#                 ast = ClearArray(v)
+#             case KeywordToken("Insert"):
+#                 next(t)
+#                 expect(LeftParenToken())
+#                 index = parse_var(tS)[0]
+#                 expect(CommaToken())
+#                 val = parse_var(tS)[0]
+#                 expect(RightParenToken())
+#                 ast = InsertAt(v, index, val)
+#             case KeywordToken("Remove"):
+#                 next(t)
+#                 expect(LeftParenToken())
+#                 index = parse_var(tS)[0]
+#                 expect(RightParenToken())
+#                 ast = RemoveAt(v, index)
+#             case _:
+#                 return ast
+#         return ast

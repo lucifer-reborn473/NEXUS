@@ -38,6 +38,7 @@ keyword_tokens = (
     "proc",
     "feed",
     "repeat",
+    "typeof"
 )
 
 math_tokens = (
