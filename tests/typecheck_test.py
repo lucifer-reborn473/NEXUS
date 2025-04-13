@@ -6,9 +6,6 @@ from evaluator import *
 from pprint import pprint
 
 
-import pytest
-from evaluator import execute
-
 @pytest.mark.parametrize("code, expected_output", [
     # Test integer type
     ("""
