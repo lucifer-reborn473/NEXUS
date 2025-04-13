@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+setup.py
+src/__init__.py
+src/bytecode_eval.py
+src/bytecode_gen.py
+src/evaluator.py
+src/file_parser.py
+src/lexer.py
+src/parser.py
+src/scope.py
+src/tokens.py
+src/depreciated/calci.py
+src/our_compiler.egg-info/PKG-INFO
+src/our_compiler.egg-info/SOURCES.txt
+src/our_compiler.egg-info/dependency_links.txt
+src/our_compiler.egg-info/top_level.txt
