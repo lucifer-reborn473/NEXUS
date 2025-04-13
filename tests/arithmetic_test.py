@@ -3,7 +3,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 from evaluator import *
-from bytecode_eval import execute_all
+
 
 @pytest.mark.parametrize("expression, expected", [
     ("2 + 3", "5"),
