@@ -114,6 +114,37 @@ from pprint import pprint
     var outer = `Outer contains: {inner}`;
     display outer;
     """, "Outer contains: Inner value"),
+
+    # Test simple typecast
+    ("""
+    var decimal x = 10.34;
+    var integer y = 10;
+    displayl (string(x) + "dip" + (string(y)));
+    displayl (integer(x) + y);
+    """, "10.34dip10\n20"),
+
+    # Test nested typecast
+    ("""
+    var decimal x = 15.67;
+    var string result = string(integer(x));
+    displayl result;
+    """, "15"),
+
+    # Test typecast within loop
+    ("""
+    var array nums = [1.1, 2.2, 3.3];
+    var integer sum = 0;
+    for (var i=0; i<3; i+=1) {
+        sum = sum + integer(nums[i]);
+    };
+    displayl sum;
+    """, "6"),
+
+    # Test error in typecast
+    ("""
+    var string invalid = "not_a_number";
+    displayl integer(invalid);
+    """, ValueError),
 ])
 def test_var_type_declarations(code, expected_output, capfd):
     try:

@@ -1,0 +1,4 @@
+var decimal x =10.34;
+var integer y = 10; 
+displayl (string(x) + "random" + (string(y)));
+displayl (integer(x) + y);

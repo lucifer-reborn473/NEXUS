@@ -6,7 +6,34 @@ import copy
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
 
-
+def perform_typecast(var_val, dtype, name=None):
+    try:
+        match dtype:
+            case "integer":
+                var_val = int(var_val)
+            case "decimal":
+                var_val = float(var_val)
+            case "uinteger":
+                var_val = int(var_val)
+                if var_val < 0:
+                    var_val *= -1
+            case "string":
+                var_val = str(var_val)
+            case "array":
+                if not isinstance(var_val, list):
+                    raise ValueError(f"Cannot cast {var_val} to array: value must be a list.")
+            case "Hash":
+                if not isinstance(var_val, dict):
+                    raise ValueError(f"Cannot cast {var_val} to Hash: value must be a dictionary.")
+            case "boolean":
+                var_val = bool(var_val)
+            case None:
+                pass  # No typecasting needed
+            case _:
+                raise ValueError(f"Unknown data type: {dtype}")
+    except (ValueError, TypeError) as err:
+        raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
+    return var_val
 def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
@@ -96,6 +123,8 @@ def e(tree: AST, tS) -> Any:
             return chr(e(val, tS))
         case Feed(msg):
             return input(e(msg,tS))
+        case TypeCast(dtype, value):
+            return perform_typecast(e(value, tS), dtype)
         case FuncDef(funcName, funcParams, funcBody, funcScope, isRec):
             tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
             return
@@ -158,34 +187,7 @@ def e(tree: AST, tS) -> Any:
 
         case VarBind(name, dtype, value, category):
             var_val = e(value, tS)
-            
-            try:
-                match dtype:
-                    case "integer":
-                        var_val = int(var_val)
-                    case "decimal":
-                        var_val = float(var_val)
-                    case "uinteger":
-                        var_val = int(var_val)
-                        if var_val < 0:
-                                var_val*=-1
-                    case "string":
-                        var_val = str(var_val)
-                    case "array":
-                        if not isinstance(var_val, list):
-                            raise ValueError(f"Cannot cast {value} to array: value must be a list.")
-                    case "Hash":
-                        if not isinstance(var_val, dict):
-                            raise ValueError(f"Cannot cast {value} to Hash: value must be a dictionary.")
-                    case "boolean":
-                        var_val = bool(var_val)
-                    case None:
-                        pass  # No typecasting needed
-                    case _:
-                        raise ValueError(f"Unknown data type: {dtype}")
-            except (ValueError, TypeError) as err:
-                raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
-            
+            var_val = perform_typecast(var_val, dtype, name)
             tS.define(name, var_val, category)  # binds in current scope
             return var_val
         case PushFront(arr_name, value):
@@ -361,7 +363,22 @@ if __name__ == "__main__":
 var b = `This is a: {a}`;
 display `This is b: {b}`;"""
 
-    
+    prog="""
+    var decimal x =10.34;
+    var integer y = 10; 
+    displayl (string(x) + "dip" + (string(y)));
+    displayl (integer(x) + y);
+    """
+
+    prog="""
+    var array nums = [1.1, 2.2, 3.3];
+    var integer sum = 0;
+    for (var i=0; i<3; i+=1) {
+        sum = sum + integer(nums[i]);
+    };
+    displayl sum;
+"""
+
     parsed, gS = parse(prog)
     
     print("Parsed Output: ")

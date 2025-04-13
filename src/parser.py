@@ -221,6 +221,10 @@ class FormatString(AST):
     template: str
     variables: List[str]
 
+@dataclass
+class TypeCast(AST):
+    dtype: str
+    val: AST
 # ==========================================================================================
 
 def map_type(value):
@@ -575,7 +579,7 @@ def parse(s: str) -> List[AST]:
 
                 
     def parse_ascii_char(tS):
-        ast = parse_array_dict(tS)
+        ast = parse_typecast(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("char"):
@@ -590,6 +594,18 @@ def parse(s: str) -> List[AST]:
                     value = parse_if(tS)
                     expect(RightParenToken())
                     ast = UnaryOp("ascii", value)
+                case _:
+                    return ast
+    def parse_typecast(tS):
+        ast = parse_array_dict(tS)
+        while True:
+            match t.peek(None):
+                case TypeToken(dtype):
+                    next(t)
+                    expect(LeftParenToken())
+                    value = parse_var(tS)[0]
+                    expect(RightParenToken())
+                    ast = TypeCast(dtype, value)
                 case _:
                     return ast
     def parse_array_dict(tS):
@@ -900,4 +916,4 @@ def parse(s: str) -> List[AST]:
 
 
 if __name__ == "__main__":
-    pass
+   pass
