@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from enum import Enum
+from pprint import pprint
 
 class SymbolCategory(Enum):
     VARIABLE = "variable"
@@ -21,20 +22,53 @@ class SymbolTable:
         self.table[iden] = (value, category)
 
     def lookup(self, iden, cat=False):
+        # print(f"...looking for {iden} with cat={cat}...")
         if iden in self.table:
             return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
         elif self.parent:  # check in parent (enclosing scope)
+            # print(f"here for {iden} in {self.parent.table} with cat={cat}")
             return self.parent.lookup(iden, cat)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
-
+        
+    # def lookup_fun(self, iden):
+    #     if iden in self.table:
+    #         print("\n****")
+    #         pprint(self.table[iden])
+    #         print("****\n")
+    #         return (self.table[iden][0], self)
+    #     elif self.parent:
+    #         return self.parent.lookup_fun(iden)
+    #     else:
+    #         raise NameError(f"Function '{iden}' nhi mila!")
     def lookup_fun(self, iden):
         if iden in self.table:
-            return (self.table[iden][0], self)
+            value = self.table[iden]
+            # Check if this is a function
+            if value[1] == SymbolCategory.FUNCTION:
+                func_def = value[0]
+                
+                # Recursively unwrap nested function definitions
+                def unwrap_function(fd):
+                    # If it's a wrapped function with category
+                    if (isinstance(fd, tuple) and len(fd) == 2 and 
+                        isinstance(fd[1], SymbolCategory) and 
+                        fd[1] == SymbolCategory.FUNCTION):
+                        # Unwrap one level and check again
+                        return unwrap_function(fd[0])
+                    return fd
+                
+                # Get the fully unwrapped function definition
+                clean_func_def = unwrap_function(func_def)
+                return (clean_func_def, self)
+            else:
+                raise TypeError(f"'{iden}' is not a function")
         elif self.parent:
             return self.parent.lookup_fun(iden)
         else:
             raise NameError(f"Function '{iden}' nhi mila!")
+
+
 
     def inScope(self, iden):
         return iden in self.table
