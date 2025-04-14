@@ -199,6 +199,51 @@ def test_floating_point_operations(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
+
+@pytest.mark.parametrize("code, expected_output", [
+    # Test nested array access and modification
+    ("""
+    var arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    displayl arr[1][2];
+    arr[2][0] = 99;
+    displayl arr;
+    """, "6\n[[1, 2, 3], [4, 5, 6], [99, 8, 9]]"),
+
+    # Test nested hash access and modification
+    ("""
+    var hash = {
+        "key1": {"nestedKey1": 10, "nestedKey2": 20},
+        "key2": {"nestedKey3": 30, "nestedKey4": 40}
+    };
+    displayl hash["key1"]["nestedKey2"];
+    hash["key2"]["nestedKey3"] = 50;
+    displayl hash;
+    """, "20\n{'key1': {'nestedKey1': 10, 'nestedKey2': 20}, 'key2': {'nestedKey3': 50, 'nestedKey4': 40}}"),
+
+    # Test nested array functions
+    # ("""
+    # var arr = [[1, 2], [3, 4]];
+    # arr[0].PushBack(5);
+    # displayl arr;
+    # arr[1].Remove(0);
+    # displayl arr;
+    # """, "[[1, 2, 5], [3, 4]]\n[[1, 2, 5], [4]]"),
+
+    # Test nested hash functions
+    # ("""
+    # var hash = {"key1": {"nestedKey1": 10}};
+    # hash["key1"].Add("nestedKey2", 20);
+    # displayl hash;
+    # hash["key1"].Remove("nestedKey1");
+    # displayl hash;
+    # """, "{'key1': {'nestedKey1': 10, 'nestedKey2': 20}}\n{'key1': {'nestedKey2': 20}}"),
+])
+def test_nested_structures(code, expected_output, capfd):
+    execute(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
+
+
 if __name__ == "__main__":
     
     prog= """

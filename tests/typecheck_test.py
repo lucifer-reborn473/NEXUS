@@ -155,6 +155,72 @@ def test_var_type_declarations(code, expected_output, capfd):
         assert isinstance(e, expected_output)
 
 
+@pytest.mark.parametrize("code, expected_output", [
+    # Test typeof with integer
+    ("""
+    var integer x = 10;
+    displayl typeof(x);
+    """, "integer"),
+
+    # Test typeof with decimal
+    ("""
+    var decimal y = 3.14;
+    displayl typeof(y);
+    """, "decimal"),
+
+    # Test typeof with string
+    ("""
+    var string s = "Hello";
+    displayl typeof(s);
+    """, "string"),
+
+    # Test typeof with array
+    ("""
+    var array arr = [1, 2, 3];
+    displayl typeof(arr);
+    """, "array"),
+
+    # Test typeof with hash
+    ("""
+    var Hash h = {"key": "value"};
+    displayl typeof(h);
+    """, "Hash"),
+
+    # Test typeof with boolean
+    ("""
+    var b = True;
+    displayl typeof(b);
+    """, "boolean"),
+
+    # Test typeof with no type specified
+    ("""
+    var x = 42;
+    displayl typeof(x);
+    """, "integer"),
+
+    # Test typeof with nested type
+    # ("""
+    # var array nested = [[1, 2], [3, 4]];
+    # displayl typeof(nested);
+    # """, "array"),
+
+    # Test typeof with empty array
+    ("""
+    var array empty = [];
+    displayl typeof(empty);
+    """, "array"),
+
+    # Test typeof with empty hash
+    ("""
+    var  emptyHash = {};
+    displayl typeof(emptyHash);
+    """, "Hash"),
+])
+def test_typeof_keyword(code, expected_output, capfd):
+    execute(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
+
 
 if __name__ == "__main__":
     prog="""var Hash h = [1, 2, 3];

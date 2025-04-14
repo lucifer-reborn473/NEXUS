@@ -39,6 +39,39 @@ keyword_tokens = (
     "proc",
     "feed",
     "repeat",
+    "typeof"
+)
+
+math_tokens = (
+"abs",
+"min",
+"max",
+"round",
+"ceil",
+"floor",
+"truncate",
+"sqrt",
+"cbrt",
+"pow",
+"exp",
+"log",
+"log10",
+"log2",
+"sin",
+"cos",
+"tan",
+"asin",
+"acos",
+"atan",
+"atan2",
+"sinh",
+"cosh",
+"tanh",
+"asinh",
+"acosh",
+"atanh",
+"PI",
+"E",
 )
 
 boolean_tokens = (

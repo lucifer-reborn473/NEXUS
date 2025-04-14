@@ -1,6 +1,7 @@
 from parser import *
 from scope import SymbolCategory, SymbolTable
 import copy
+import math
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
@@ -34,6 +35,8 @@ def perform_typecast(var_val, dtype, name=None):
     except (ValueError, TypeError) as err:
         raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
     return var_val
+
+
 def e(tree: AST, tS) -> Any:
     match tree:
         case Number(n):
@@ -268,16 +271,26 @@ def e(tree: AST, tS) -> Any:
             tS.find_and_update(var_name, val_to_assign)
             return val_to_assign
 
-        case CallArr(xname, index):
-            return tS.lookup(xname)[e(index, tS)]
-        
-        case AssigntoArr(xname, index, value):
-            val_to_assign = e(value, tS)
-            tS.find_and_update_arr(xname, e(index, tS), val_to_assign)
-            return val_to_assign
-        #hash funcs
-        case CallHashVal(name,key):
-           return tS.lookup(name)[e(key, tS)]
+        case CallArr(xname, indices):
+            arr = tS.lookup(xname)
+            for index in indices:
+                arr = arr[e(index, tS)]
+            return arr
+
+        case AssigntoArr(xname, indices, value):
+            arr = tS.lookup(xname)
+            *outer_indices, last_index = [e(index, tS) for index in indices]
+            for index in outer_indices:
+                arr = arr[index]
+            arr[last_index] = e(value, tS)
+            tS.find_and_update(xname, tS.lookup(xname))
+            return arr[last_index]
+
+        case CallHashVal(name, keys):
+            hash_table = tS.lookup(name)
+            for key in keys:
+                hash_table = hash_table[e(key, tS)]
+            return hash_table
         
         case AddHashPair(name, key, val):
             hash_table = tS.lookup(name)
@@ -292,11 +305,14 @@ def e(tree: AST, tS) -> Any:
             else:
                 raise KeyError(f"Key {e(key, tS)} not found in hash {name}")
 
-        case AssignHashVal(name, key, new_val):
+        case AssignHashVal(name, keys, new_val):
             hash_table = tS.lookup(name)
-            hash_table[e(key, tS)] = e(new_val, tS)
-            tS.find_and_update(name, hash_table)
-            return hash_table[e(key, tS)]
+            *outer_keys, last_key = [e(key, tS) for key in keys]
+            for key in outer_keys:
+                hash_table = hash_table[key]
+            hash_table[last_key] = e(new_val, tS)
+            tS.find_and_update(name, tS.lookup(name))
+            return hash_table[last_key]
             
         # Loops
         case WhileLoop(cond, body, tS_while):
@@ -361,11 +377,87 @@ def e(tree: AST, tS) -> Any:
                 if loop_should_break:
                     break
         
+        case TypeOf(value):
+            val = e(value, tS)
+            python_type = type(val)
+            type_mapping = {
+                int: "integer",
+                float: "decimal",
+                str: "string",
+                list: "array",
+                dict: "Hash",
+                bool: "boolean",
+            }
+            return type_mapping.get(python_type, "unknown")
         case BreakOut():
             return BreakOut()
 
         case MoveOn():
             return MoveOn()
+
+        case MathFunction(funcName, args):
+            arg_values = [e(arg, tS) for arg in args]
+            match funcName:
+                case "abs":
+                    return math.fabs(arg_values[0])
+                case "min":
+                    return min(arg_values[0])
+                case "max":
+                    return max(arg_values[0])
+                case "round":
+                    return round(arg_values[0], arg_values[1] if len(arg_values) > 1 else 0)
+                case "ceil":
+                    return math.ceil(arg_values[0])
+                case "floor":
+                    return math.floor(arg_values[0])
+                case "truncate":
+                    return math.trunc(arg_values[0])
+                case "sqrt":
+                    return math.sqrt(arg_values[0])
+                case "cbrt":
+                    return arg_values[0] ** (1/3)
+                case "pow":
+                    return math.pow(arg_values[0], arg_values[1])
+                case "exp":
+                    return math.exp(arg_values[0])
+                case "log":
+                    return math.log(arg_values[0])
+                case "log10":
+                    return math.log10(arg_values[0])
+                case "log2":
+                    return math.log2(arg_values[0])
+                case "sin":
+                    return math.sin(arg_values[0])
+                case "cos":
+                    return math.cos(arg_values[0])
+                case "tan":
+                    return math.tan(arg_values[0])
+                case "asin":
+                    return math.asin(arg_values[0])
+                case "acos":
+                    return math.acos(arg_values[0])
+                case "atan":
+                    return math.atan(arg_values[0])
+                case "atan2":
+                    return math.atan2(arg_values[0], arg_values[1])
+                case "sinh":
+                    return math.sinh(arg_values[0])
+                case "cosh":
+                    return math.cosh(arg_values[0])
+                case "tanh":
+                    return math.tanh(arg_values[0])
+                case "asinh":
+                    return math.asinh(arg_values[0])
+                case "acosh":
+                    return math.acosh(arg_values[0])
+                case "atanh":
+                    return math.atanh(arg_values[0])
+                case "PI":
+                    return math.pi
+                case "E":
+                    return math.e
+                case _:
+                    raise ValueError(f"Unknown math function: {funcName}")
 
 def execute(prog):
     lines, tS = parse(prog)
@@ -442,44 +534,28 @@ display `This is b: {b}`;"""
         displayl 1;
     }
 """
-    prog = """
-    var a =[1,2,3,4];
-    var b =20;
-    a[1]=b;
-    displayl a;
-    displayl a[2];
-    var c=[10,11,12,13];
-    c[1]=a[2]+b;
-    displayl c;
+    prog="""var arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    var hash = {
+        "key1": {"nestedKey1": 10, "nestedKey2": 20},
+        "key2": {"nestedKey3": 30, "nestedKey4": 40}
+    };
+    
+    displayl arr[1][2];  /> Accessing nested array element
+    displayl hash["key1"]["nestedKey2"];  /> Accessing nested hash value
+    arr[2][0] = 99;  /> Modifying nested array element
+    hash["key2"]["nestedKey3"] = 50;  /> Modifying nested hash value
+    displayl arr;
+    displayl hash;"""
+
+    prog="""
+    var hash = {
+        "key1": {"nestedKey1": 10, "nestedKey2": 20},
+        "key2": {"nestedKey3": 30, "nestedKey4": 40}
+    };
+    displayl hash["key1"]["nestedKey2"];
+    hash["key2"]["nestedKey3"] = 50;
+    displayl hash;
 """
-    prog = """
-fn foo(){
-    fn bar(){
-        x+2;
-    }
-    bar; /> returns a function
-}
-var x = 40;
-var y = foo(); /> assigns to a variable
-displayl y();
-"""
-    prog = """
-    var arr = [1, 2, 3];
-    var hash = {"key1": 10, "key2": 20};
-
-    arr.PushBack(4);
-    hash.Add("key3", 30);
-
-    displayl ("array display:");
-    for (var integer i = 0; i < arr.Length; i = i + 1) {
-        displayl arr[i];
-    }
-    fn multiply(a, b) {
-        a * b;
-    }
-    displayl multiply(hash["key1"], 2);
-    """
-
 
     parsed, gS = parse(prog)
     print("------")
