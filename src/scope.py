@@ -30,7 +30,7 @@ class SymbolTable:
             # print(f"here for {iden} in {self.parent.table} with cat={cat}")
             return self.parent.lookup(iden, cat)
         else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
+            raise NameError(f"Variable '{iden}' not found!")
         
     # def lookup_fun(self, iden):
     #     if iden in self.table:
@@ -41,7 +41,7 @@ class SymbolTable:
     #     elif self.parent:
     #         return self.parent.lookup_fun(iden)
     #     else:
-    #         raise NameError(f"Function '{iden}' nhi mila!")
+    #         raise NameError(f"Function '{iden}' not found!")
     def lookup_fun(self, iden):
         if iden in self.table:
             value = self.table[iden]
@@ -62,12 +62,17 @@ class SymbolTable:
                 # Get the fully unwrapped function definition
                 clean_func_def = unwrap_function(func_def)
                 return (clean_func_def, self)
+            
+            elif value[1] == SymbolCategory.VARIABLE:
+                func_value = value[0]
+                return (func_value, self)  # Return the function data with current scope
+            
             else:
                 raise TypeError(f"'{iden}' is not a function")
         elif self.parent:
             return self.parent.lookup_fun(iden)
         else:
-            raise NameError(f"Function '{iden}' nhi mila!")
+            raise NameError(f"Function '{iden}' not found!")
 
 
 
@@ -87,7 +92,7 @@ class SymbolTable:
         elif self.parent:
             self.parent.find_and_update_arr(iden, index, val)
         else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
+            raise NameError(f"Variable '{iden}' not found!")
         
     def find_and_update(self, iden, val):
         if iden in self.table:
@@ -98,7 +103,7 @@ class SymbolTable:
         elif self.parent:
             self.parent.find_and_update(iden, val)
         else:
-            raise NameError(f"Variable '{iden}' nhi mila!")
+            raise NameError(f"Variable '{iden}' not found!")
 
     def copy_scope(self):
         new_scope = SymbolTable(parent=self.parent)
