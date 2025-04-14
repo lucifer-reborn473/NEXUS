@@ -22,26 +22,19 @@ class SymbolTable:
     def define(self, iden, value, category: SymbolCategory):
         self.table[iden] = (value, category)
 
-    def lookup(self, iden, cat=False):
-        # print(f"...looking for {iden} with cat={cat}...")
+    def lookup(self, iden, cat=False, giveParent=False):
         if iden in self.table:
-            return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
-        elif self.parent:  # check in parent (enclosing scope)
-            # print(f"here for {iden} in {self.parent.table} with cat={cat}")
-            return self.parent.lookup(iden, cat)
+            if not giveParent:
+                return self.table[iden][1] if cat else self.table[iden][0]  # returns category if cat=True, else value
+            else:
+                return (self.table[iden][1], self) if cat else (self.table[iden][0], self)
+        
+        elif self.parent:
+            return self.parent.lookup(iden, cat, giveParent)
+        
         else:
             raise NameError(f"Variable '{iden}' not found!")
         
-    # def lookup_fun(self, iden):
-    #     if iden in self.table:
-    #         print("\n****")
-    #         pprint(self.table[iden])
-    #         print("****\n")
-    #         return (self.table[iden][0], self)
-    #     elif self.parent:
-    #         return self.parent.lookup_fun(iden)
-    #     else:
-    #         raise NameError(f"Function '{iden}' not found!")
     def lookup_fun(self, iden):
         if iden in self.table:
             value = self.table[iden]
