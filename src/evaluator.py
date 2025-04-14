@@ -36,9 +36,24 @@ def perform_typecast(var_val, dtype, name=None):
         raise ValueError(f"Typecasting error for variable '{name}' to type '{dtype}': {err}")
     return var_val
 
+# ================================================================================================================
+"""
+Cases inside e() listed in below order:
+1. PRIMITIVES
+2. OPERATORS
+3. VARIABLE ACCESS, DECLARATION & UPDATE
+4. CONDITIONALS
+5. LOOPS
+6. FUNCTIONS
+7. ARRAY OPERATIONS
+8. HASH OPERATIONS
+9. FEATURES
+"""
+
 
 def e(tree: AST, tS) -> Any:
     match tree:
+        # Primitives ========================================================
         case Number(n):
             if '.' in n:  # Check if the number contains a decimal point
                 return float(n)  # Return as a float
@@ -48,17 +63,8 @@ def e(tree: AST, tS) -> Any:
             return s
         case Boolean(b):
             return b
-        case Variable(v):
-            return tS.lookup(v)
-        case FormatString(template, variables):
-            varmods = {var: e(Variable(var), tS) for var in variables}
-            return template.format(**varmods)
-        case Array(val):
-            all_vals = list(map(lambda x: e(x, tS), val))
-            return all_vals
-        case Hash(val):
-            return {e(k, tS): e(v, tS) for k, v in val}
-        # Operators
+        
+        # OPERATORS =================================================================================
         case BinOp("+", l, r):
             return e(l, tS) + e(r, tS)
         case BinOp("*", l, r):
@@ -72,15 +78,12 @@ def e(tree: AST, tS) -> Any:
         case BinOp("**", l, r):
             base = e(l, tS)
             exponent = e(r, tS)
-            
             # Rule 1: Zero to the power of a negative number
             if base == 0 and exponent < 0:
                 raise ValueError("Math error: Zero cannot be raised to a negative power.")
-            
             # Rule 2: Negative number to the power of a decimal
             if base < 0 and not exponent.is_integer():
                 raise ValueError("Math error: Negative numbers cannot be raised to a decimal power.")
-            
             return base ** exponent
         case BinOp("<", l, r):
             return e(l, tS) < e(r, tS)
@@ -124,53 +127,57 @@ def e(tree: AST, tS) -> Any:
             return ord(e(val, tS))
         case UnaryOp("char", val):
             return chr(e(val, tS))
-        case Feed(msg):
-            return input(e(msg,tS))
-        case TypeCast(dtype, value):
-            return perform_typecast(e(value, tS), dtype)
-        case FuncDef(_funcName, _funcParams, _funcBody, _funcScope):
-            # tS.define(funcName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
-            return
+        
+        # VARIABLE ACCESS, DECLARATION & UPDATE ========================================================
+        case Variable(v):
+            data, lexParent = tS.lookup(v, giveParent=True)
+            if isinstance(data, tuple):
+                """
+                when accessing function like a variable (as param/return)
+                value format: (params:[], body: Statements(), pS)
+                pS is parsedScope whose parent must be set to lexical parent
+                """
+                
+                def unwrap_function(fd):
+                    # If it's a wrapped function with category
+                    if (isinstance(fd, tuple) and len(fd) == 2 and 
+                        isinstance(fd[1], SymbolCategory) and 
+                        fd[1] == SymbolCategory.FUNCTION):
+                        # Unwrap one level and check again
+                        return unwrap_function(fd[0])
+                    return fd
 
-        case FuncCall(fn_name, fn_args):
-            # Step 1: Extract function body & adjust scope
-            ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
+                value = unwrap_function(data)
 
-            eval_scope = SymbolTable(fn_parent)
-
-            for key, value in parsedScope.table.items():
-                k = copy.deepcopy(key)
-                if (value[1]==SymbolCategory.VARIABLE):
-                    # for parameters and local variables (for which value[0] is None in parsedScope)
-                    eval_scope.table[k] = (None, SymbolCategory.VARIABLE)
-                elif (value[1]==SymbolCategory.FUNCTION):
-                    # for function declarations (value[0] is of type FuncDef)
-                    v = copy.deepcopy(value)
-                    eval_scope.table[k] = (v, SymbolCategory.FUNCTION)
+                value[2].parent = lexParent # where this variable is found
+                # tree.is_fun = True
+                return (value[0], value[1], value[2])
             
-            # Step 2: Put argument values into function's scope
-            for param, arg in zip(param_list, fn_args):                        
-                eval_scope.define(param, e(arg, tS), SymbolCategory.VARIABLE)
-
-            # Step 3: Evaluate the function body
-            ans = None
-            for stmt in fn_body.statements:
-                ans = e(stmt, eval_scope)
-
-            # Step 4: Pop the arg values from the function's scope (don't delete the scope table)
-            # although not needed (freed implicitly when the function returns)
-            for param in param_list:
-                eval_scope.define(param, 100, SymbolCategory.VARIABLE)
-
-            return ans
-
-        case Statements(statements):
-            result = None
-            for stmt in statements:
-                result = e(stmt, tS)
-            return result
-
-        # Conditional
+            else:
+                return data
+        
+        case VarBind(name, dtype, value, category):
+            var_val = e(value, tS)
+            var_val = perform_typecast(var_val, dtype, name)
+            tS.define(name, var_val, category)  # binds in current scope
+            return var_val
+        
+        case AssignToVar(var_name, value):
+            val_to_assign = e(value, tS)
+            tS.find_and_update(var_name, val_to_assign)
+            return val_to_assign
+        
+        case CompoundAssignment(var_name, op, value):
+            # Check if variable is fixed
+            category = tS.lookup(var_name, cat=True)
+            if category == SymbolCategory.FIXED:
+                raise ValueError(f"Error: Cannot modify fixed variable '{var_name}'")
+            prev_val = tS.lookup(var_name)
+            new_val = e(BinOp(op[0], Number(str(prev_val)), value), tS)
+            tS.find_and_update(var_name, new_val)
+            return new_val
+        
+        # CONDITIONAL ===========================================================================
         case If(cond, then_body, else_body, tS_cond):
             eval_cond_scope = SymbolTable(parent=tS)
             # Copy static declarations from parse-time scope
@@ -186,135 +193,7 @@ def e(tree: AST, tS) -> Any:
                 ans = e(else_body, eval_cond_scope)
             return ans
 
-        # Display
-        case Display(val):
-            return print(e(val, tS), end="")
-
-        case DisplayL(val):
-            return print(e(val, tS))
-
-        case CompoundAssignment(var_name, op, value):
-            # Check if variable is fixed
-            category = tS.lookup(var_name, cat=True)
-            if category == SymbolCategory.FIXED:
-                raise ValueError(f"Error: Cannot modify fixed variable '{var_name}'")
-            prev_val = tS.lookup(var_name)
-            new_val = e(BinOp(op[0], Number(str(prev_val)), value), tS)
-            tS.find_and_update(var_name, new_val)
-            return new_val
-
-        case VarBind(name, dtype, value, category):
-            var_val = e(value, tS)
-            var_val = perform_typecast(var_val, dtype, name)
-            tS.define(name, var_val, category)  # binds in current scope
-            return var_val
-        case PushFront(arr_name, value):
-            arr= tS.lookup(arr_name)
-            arr.insert(0, e(value, tS))
-            tS.find_and_update(arr_name, arr)
-            return arr
-
-        case PushBack(arr_name, value):
-            arr = tS.lookup(arr_name)
-            arr.append(e(value, tS))
-            tS.find_and_update(arr_name, arr)
-            return arr
-
-        case PopFront(arr_name):
-            arr = tS.lookup(arr_name)
-            if len(arr) > 0:
-                value = arr.pop(0)
-                tS.find_and_update(arr_name, arr)
-                return value
-            else:
-                raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
-
-        case PopBack(arr_name):
-            arr = tS.lookup(arr_name)
-            if len(arr) > 0:
-                value = arr.pop()
-                tS.find_and_update(arr_name, arr)
-                return value
-            else:
-                raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
-
-        case GetLength(arr_name):
-            return len(tS.lookup(arr_name))
-
-        case ClearArray(arr_name):
-            arr = tS.lookup(arr_name)
-            arr.clear()
-            tS.find_and_update(arr_name, arr)
-            return arr
-
-        case InsertAt(arr_name, index, value):
-            arr = tS.lookup(arr_name)
-            arr.insert(e(index, tS), e(value, tS))
-            tS.find_and_update(arr_name, arr)
-            return arr
-
-        case RemoveAt(arr_name, index):
-            arr = tS.lookup(arr_name)
-            if 0 <= e(index, tS) < len(arr):
-                value = arr.pop(e(index, tS))
-                tS.find_and_update(arr_name, arr)
-                return value
-            else:
-                raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
-        # case BindArray(xname, atype, val):
-        #     all_vals = list(map(lambda x: e(x, tS), val))
-        #     tS.table[xname] = all_vals
-        #     tS.define(xname,all_vals,SymbolCategory.ARRAY)
-        #     return all_vals
-        case AssignToVar(var_name, value):
-            val_to_assign = e(value, tS)
-            tS.find_and_update(var_name, val_to_assign)
-            return val_to_assign
-
-        case CallArr(xname, indices):
-            arr = tS.lookup(xname)
-            for index in indices:
-                arr = arr[e(index, tS)]
-            return arr
-
-        case AssigntoArr(xname, indices, value):
-            arr = tS.lookup(xname)
-            *outer_indices, last_index = [e(index, tS) for index in indices]
-            for index in outer_indices:
-                arr = arr[index]
-            arr[last_index] = e(value, tS)
-            tS.find_and_update(xname, tS.lookup(xname))
-            return arr[last_index]
-
-        case CallHashVal(name, keys):
-            hash_table = tS.lookup(name)
-            for key in keys:
-                hash_table = hash_table[e(key, tS)]
-            return hash_table
-        
-        case AddHashPair(name, key, val):
-            hash_table = tS.lookup(name)
-            hash_table[e(key, tS)] = e(val, tS)
-            tS.find_and_update(name, hash_table)
-        
-        case RemoveHashPair(name, key):
-            hash_table = tS.lookup(name)
-            if e(key, tS) in hash_table:
-                del hash_table[e(key, tS)]
-                tS.find_and_update(name, hash_table)
-            else:
-                raise KeyError(f"Key {e(key, tS)} not found in hash {name}")
-
-        case AssignHashVal(name, keys, new_val):
-            hash_table = tS.lookup(name)
-            *outer_keys, last_key = [e(key, tS) for key in keys]
-            for key in outer_keys:
-                hash_table = hash_table[key]
-            hash_table[last_key] = e(new_val, tS)
-            tS.find_and_update(name, tS.lookup(name))
-            return hash_table[last_key]
-            
-        # Loops
+        # LOOPS ========================================================================================
         case WhileLoop(cond, body, tS_while):
 
             eval_while_scope = SymbolTable(parent=tS)
@@ -377,6 +256,193 @@ def e(tree: AST, tS) -> Any:
                 if loop_should_break:
                     break
         
+        case BreakOut():
+            return BreakOut()
+
+        case MoveOn():
+            return MoveOn()
+
+        # FUNCTIONS ===========================================================================
+        case FuncDef(funcDefName, funcDefParams, funcDefBody, funcDefScope):
+            # tS.define(fusncName, (funcParams, funcBody, funcScope, isRec), SymbolCategory.FUNCTION)
+            # return (funcDefParams, funcDefBody, funcDefScope)
+            return
+
+        case FuncCall(fn_name, fn_args):
+            # Step 1: Extract function body & adjust scope
+
+            cat = tS.lookup(fn_name, cat=True)
+            if cat==SymbolCategory.VARIABLE:
+                # means variable was assigned a function, and now been called
+                # closure applies here, i.e, parsedScope "carries" the correct parent
+                (param_list, fn_body, parsedScope) = tS.lookup(fn_name)
+                eval_scope = SymbolTable(parsedScope.parent)
+            else:
+                ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
+                eval_scope = SymbolTable(fn_parent)
+            
+            for key, value in parsedScope.table.items():
+                k = copy.deepcopy(key)
+                if (value[1]==SymbolCategory.VARIABLE):
+                    # for parameters and local variables (for which value[0] is None in parsedScope)
+                    eval_scope.table[k] = (None, SymbolCategory.VARIABLE)
+                elif (value[1]==SymbolCategory.FUNCTION):
+                    # for function declarations (value[0] is of type FuncDef)
+                    v = copy.deepcopy(value)
+                    eval_scope.table[k] = (v, SymbolCategory.FUNCTION)
+            
+            # Step 2: Put argument values into function's scope
+            for param, arg in zip(param_list, fn_args):                        
+                eval_scope.define(param, e(arg, tS), SymbolCategory.VARIABLE)
+
+            # Step 3: Evaluate the function body
+            ans = None
+            for stmt in fn_body.statements:
+                ans = e(stmt, eval_scope)
+
+            # NOT DONE to support closure
+            # Step 4: Pop the arg values from the function's scope (don't delete the scope table)
+            # although not needed (freed implicitly when the function returns)
+            # for param in param_list:
+            #     eval_scope.define(param, None, SymbolCategory.VARIABLE)
+
+            return ans
+
+        # ARRAY OPERATIONS ========================================================================
+        case Array(val):
+            all_vals = list(map(lambda x: e(x, tS), val))
+            return all_vals
+        
+        case CallArr(xname, indices):
+            arr = tS.lookup(xname)
+            for index in indices:
+                arr = arr[e(index, tS)]
+            return arr
+
+        case AssigntoArr(xname, indices, value):
+            arr = tS.lookup(xname)
+            *outer_indices, last_index = [e(index, tS) for index in indices]
+            for index in outer_indices:
+                arr = arr[index]
+            arr[last_index] = e(value, tS)
+            tS.find_and_update(xname, tS.lookup(xname))
+            return arr[last_index]
+
+        case PushFront(arr_name, value):
+            arr= tS.lookup(arr_name)
+            arr.insert(0, e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case PushBack(arr_name, value):
+            arr = tS.lookup(arr_name)
+            arr.append(e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case PopFront(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop(0)
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
+
+        case PopBack(arr_name):
+            arr = tS.lookup(arr_name)
+            if len(arr) > 0:
+                value = arr.pop()
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
+
+        case GetLength(arr_name):
+            return len(tS.lookup(arr_name))
+
+        case ClearArray(arr_name):
+            arr = tS.lookup(arr_name)
+            arr.clear()
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case InsertAt(arr_name, index, value):
+            arr = tS.lookup(arr_name)
+            arr.insert(e(index, tS), e(value, tS))
+            tS.find_and_update(arr_name, arr)
+            return arr
+
+        case RemoveAt(arr_name, index):
+            arr = tS.lookup(arr_name)
+            if 0 <= e(index, tS) < len(arr):
+                value = arr.pop(e(index, tS))
+                tS.find_and_update(arr_name, arr)
+                return value
+            else:
+                raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
+        # case BindArray(xname, atype, val):
+        #     all_vals = list(map(lambda x: e(x, tS), val))
+        #     tS.table[xname] = all_vals
+        #     tS.define(xname,all_vals,SymbolCategory.ARRAY)
+        #     return all_vals
+
+
+        # HASH OPERATIONS ========================================================================
+        case Hash(val):
+            return {e(k, tS): e(v, tS) for k, v in val}
+       
+        case CallHashVal(name, keys):
+            hash_table = tS.lookup(name)
+            for key in keys:
+                hash_table = hash_table[e(key, tS)]
+            return hash_table
+        
+        case AddHashPair(name, key, val):
+            hash_table = tS.lookup(name)
+            hash_table[e(key, tS)] = e(val, tS)
+            tS.find_and_update(name, hash_table)
+        
+        case RemoveHashPair(name, key):
+            hash_table = tS.lookup(name)
+            if e(key, tS) in hash_table:
+                del hash_table[e(key, tS)]
+                tS.find_and_update(name, hash_table)
+            else:
+                raise KeyError(f"Key {e(key, tS)} not found in hash {name}")
+
+        case AssignHashVal(name, keys, new_val):
+            hash_table = tS.lookup(name)
+            *outer_keys, last_key = [e(key, tS) for key in keys]
+            for key in outer_keys:
+                hash_table = hash_table[key]
+            hash_table[last_key] = e(new_val, tS)
+            tS.find_and_update(name, tS.lookup(name))
+            return hash_table[last_key]
+        
+        # FEATURES =================================================================================
+        case Display(val):
+            return print(e(val, tS), end="")
+
+        case DisplayL(val):
+            return print(e(val, tS))
+        
+        case Feed(msg):
+            return input(e(msg,tS))
+        
+        case FormatString(template, variables):
+            varmods = {var: e(Variable(var), tS) for var in variables}
+            return template.format(**varmods)
+        
+        case TypeCast(dtype, value):
+            return perform_typecast(e(value, tS), dtype)
+        
+        case Statements(statements):
+            result = None
+            for stmt in statements:
+                result = e(stmt, tS)
+            return result
+        
         case TypeOf(value):
             val = e(value, tS)
             python_type = type(val)
@@ -389,11 +455,6 @@ def e(tree: AST, tS) -> Any:
                 bool: "boolean",
             }
             return type_mapping.get(python_type, "unknown")
-        case BreakOut():
-            return BreakOut()
-
-        case MoveOn():
-            return MoveOn()
 
         case MathFunction(funcName, args):
             arg_values = [e(arg, tS) for arg in args]
@@ -458,6 +519,9 @@ def e(tree: AST, tS) -> Any:
                     return math.e
                 case _:
                     raise ValueError(f"Unknown math function: {funcName}")
+
+
+# ================================================================================================================
 
 def execute(prog):
     pS = SymbolTable()
@@ -535,23 +599,71 @@ display `This is b: {b}`;"""
 """
 
     prog = """
-var a = [1,2,3]
-a[0] = 100;
-displayl a;
-""" #! error in 2nd line
+var x = 5;
+fn foo(){
+    var x = 12;
+    fn bar(){
+        x;
+    }
+    bar; /> returns a function
+};
+var y = foo();
+displayl y();
+""" #works! (prints 12)
 
     prog = """
-    fn multiplier(factor) {
-        fn multiply(n) {
-            n * factor;
-        };
-        multiply;
+fn foo(g){
+    g() + 2;
+};
+fn haha(){
+    var x = 100;
+    fn bar(){
+        x;
+    }
+    foo(bar);
+};
+displayl haha();
+""" #works! (prints 102)
+
+    prog = """
+fn counter() {
+    var count = 0;
+    fn increment() {
+        count = count + 1;
+        count;
+    }
+    increment;
+}
+var c = counter();
+displayl c();
+displayl c();
+displayl c();
+    """# works! (prints 1 2 3)
+
+    prog = """
+fn multiplier(factor) {
+    fn multiply(n) {
+        n * factor;
     };
-    var double = multiplier(2);
-    var triple = multiplier(3);
-    displayl double(5);
-    displayl triple(5);
-    """ #! error (variable `factor` not found) <- closure example
+    multiply;
+};
+var double = multiplier(2);
+var triple = multiplier(3);
+displayl double(5);
+displayl triple(5);
+    """ # works! (prints 10 15)
+
+    prog = """
+var x = 100;
+fn foo(i){
+    fn bar(){
+        x+i;
+    };
+    if i==42 then bar else foo(i+1) end;
+};
+var y = foo(0);
+displayl y();
+""" # works! (prints 142)
 
     prog = """
 fn add(a, b) {
@@ -570,45 +682,28 @@ displayl operations[2](10, 5);
     """ #! error ('CallArr' object has no attribute 'var_name')
 
     prog = """
-fn counter() {
-    var count = 0;
-    fn increment() {
-        count = count + 1;
-        count;
-    }
-    increment;
+var a = [1,2,3]
+a[0] = 100;
+displayl a;
+""" #! error in 2nd line
+
+    prog = """
+var u = 100;
+for(var u=0; u<3; u+=1){
+    var b = 2;
+    displayl b;
 }
-var c = counter();
-displayl c();
-displayl c();
-displayl c();
-    """ #! error (Variable 'count' not found!) (should print `1 2 3` each in newline) <- closure example
+displayl 179;
+displayl u;
+    """ # works! (prints 2 2 2 179 100) (put in docs)
 
-    prog = """
-displayl "Hi";
-fn foo(){
-    fn bar(){
-        x+2;
-    }
-    bar; /> returns a function
-};
-var x = 40;
-var y = foo(); /> assigns to a variable
-displayl y;
-""" #! error (NameError: Variable 'x' not found!)
 
-    prog = """
-fn foo(){
-    x;
-};
-""" #! error (variable `x` not found
+    # parsed, gS = parse(prog, SymbolTable())
+    # print("------")
+    # pprint(parsed)
+    # print("------")
+    # pprint(gS.table)
 
-    parsed, gS = parse(prog, SymbolTable())
     print("------")
-    pprint(parsed)
-    print("------")
-    pprint(gS.table)
-
-    # # print("------")
-    # print("Program Output: ")
-    # execute(prog)
+    print("Program Output: ")
+    execute(prog)
