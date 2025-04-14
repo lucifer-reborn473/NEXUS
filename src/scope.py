@@ -10,6 +10,7 @@ class SymbolCategory(Enum):
     CONSTANT = "constant"
     HASH = "dict"
     SCHEMA ="class"
+    FIXED = "fixed"
     # Add more categories as needed
 
 @dataclass
@@ -74,17 +75,25 @@ class SymbolTable:
         return iden in self.table
 
     def find_and_update_arr(self, iden, index, val):
-        if iden in self.table and self.table[iden][1] == SymbolCategory.ARRAY:
-            array = self.table[iden][0]
-            array[index] = val
-            self.table[iden] = (array, SymbolCategory.ARRAY)
+        if iden in self.table:
+            category = self.table[iden][1]
+            if category == SymbolCategory.FIXED:
+                raise ValueError(f"Error: Cannot modify elements of fixed array '{iden}'")
+            
+            if category == SymbolCategory.ARRAY:
+                array = self.table[iden][0]
+                array[index] = val
+                self.table[iden] = (array, SymbolCategory.ARRAY)
         elif self.parent:
             self.parent.find_and_update_arr(iden, index, val)
         else:
             raise NameError(f"Variable '{iden}' nhi mila!")
+        
     def find_and_update(self, iden, val):
         if iden in self.table:
             category = self.table[iden][1]
+            if category == SymbolCategory.FIXED:
+                raise ValueError(f"Error: Cannot reassign to a fixed variable '{iden}'")
             self.table[iden] = (val, category)
         elif self.parent:
             self.parent.find_and_update(iden, val)
