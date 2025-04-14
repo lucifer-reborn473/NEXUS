@@ -460,36 +460,13 @@ def e(tree: AST, tS) -> Any:
                     raise ValueError(f"Unknown math function: {funcName}")
 
 def execute(prog):
-    lines, tS = parse(prog)
+    pS = SymbolTable()
+    lines, tS = parse(prog, pS)
     for line in lines.statements:
         e(line, tS)
 
+# ==================================================================
 if __name__ == "__main__":
-
-    # # expr = "display 0<= 1 >=2 "
-    # expr = " display( var integer x= 3+ 7 -1);"
-    # compound_assignment= "display (x-=2);"
-    # # loop <condition> then <statement> end
-    # # int32 x=2
-
-    # ========================================================
-    # Loading the Program
-    fileName = "sample-code.txt"
-    try:
-        with open(fileName, "r") as file:
-            prog_fin = file.read()
-    except FileNotFoundError:
-        print(f"The file {fileName} was not found.")
-    except IOError:
-        print("An error occurred while reading the file.")
-
-    def execute(prog):
-        lines, tS = parse(prog)
-        for line in lines.statements:
-            e(line, tS)
-
-    # ========================================================
-
 
     prog = """
     for(var i = 0; i < 5; i = i + 1) {
@@ -557,12 +534,81 @@ display `This is b: {b}`;"""
     displayl hash;
 """
 
-    parsed, gS = parse(prog)
+    prog = """
+var a = [1,2,3]
+a[0] = 100;
+displayl a;
+""" #! error in 2nd line
+
+    prog = """
+    fn multiplier(factor) {
+        fn multiply(n) {
+            n * factor;
+        };
+        multiply;
+    };
+    var double = multiplier(2);
+    var triple = multiplier(3);
+    displayl double(5);
+    displayl triple(5);
+    """ #! error (variable `factor` not found) <- closure example
+
+    prog = """
+fn add(a, b) {
+    a + b;
+}
+fn subtract(a, b) {
+    a - b;
+}
+fn multiply(a, b) {
+    a * b;
+}
+var operations = [add, subtract, multiply];
+displayl operations[0](10, 5);
+displayl operations[1](10, 5);
+displayl operations[2](10, 5);
+    """ #! error ('CallArr' object has no attribute 'var_name')
+
+    prog = """
+fn counter() {
+    var count = 0;
+    fn increment() {
+        count = count + 1;
+        count;
+    }
+    increment;
+}
+var c = counter();
+displayl c();
+displayl c();
+displayl c();
+    """ #! error (Variable 'count' not found!) (should print `1 2 3` each in newline) <- closure example
+
+    prog = """
+displayl "Hi";
+fn foo(){
+    fn bar(){
+        x+2;
+    }
+    bar; /> returns a function
+};
+var x = 40;
+var y = foo(); /> assigns to a variable
+displayl y;
+""" #! error (NameError: Variable 'x' not found!)
+
+    prog = """
+fn foo(){
+    x;
+};
+""" #! error (variable `x` not found
+
+    parsed, gS = parse(prog, SymbolTable())
     print("------")
     pprint(parsed)
     print("------")
     pprint(gS.table)
 
-    print("------")
-    print("Program Output: ")
-    execute(prog)
+    # # print("------")
+    # print("Program Output: ")
+    # execute(prog)
