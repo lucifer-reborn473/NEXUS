@@ -252,8 +252,8 @@ def map_type(value):
         return SymbolCategory.ARRAY
     elif isinstance(value, Hash):
         return SymbolCategory.HASH
-    elif isinstance(value, (FuncCall, FuncDef)):
-        return SymbolCategory.FUNCTION
+    # elif isinstance(value, (FuncCall, FuncDef)):
+    #     return SymbolCategory.FUNCTION
     else:
         return SymbolCategory.VARIABLE
 #==========================================================================================
@@ -1010,8 +1010,15 @@ def parse(s: str, defS) -> List[AST]:
             case VarToken(v):
                 # next(t)
                 return Variable(v)
-
+    
     return parse_program(defS)
+    
+    # try:
+    #     ast, scope = parse_program(defS)
+    #     return ast, scope, "complete"
+    # except IncompleteParseError as e:
+    #     return None, defS, "incomplete"
+
 
 
 if __name__ == "__main__":
