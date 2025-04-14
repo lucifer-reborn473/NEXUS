@@ -5,6 +5,7 @@ from enum import Enum
 class SymbolCategory(Enum):
     VARIABLE = "variable"
     FUNCTION = "function"
+    STRING = "string"
     ARRAY = "list"
     CONSTANT = "constant"
     HASH = "dict"

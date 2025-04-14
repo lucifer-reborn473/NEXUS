@@ -1,0 +1,6 @@
+var a=10.3;
+var b="This is me";
+var c= {1:[2,3,4],2:{4:[1,2],5:[1,3]}};
+displayl (typeof(c));
+displayl (typeof(b));
+displayl (typeof(a));

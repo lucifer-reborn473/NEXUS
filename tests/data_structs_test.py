@@ -244,6 +244,70 @@ def test_nested_structures(code, expected_output, capfd):
     assert captured.out.strip() == expected_output
 
 
+@pytest.mark.parametrize("code, expected_output", [
+    # Test string access and modification
+    ("""
+    var str = \"Hello, World!\";
+    displayl str[0];          /> Access the first character
+    str[7] = "w";            /> Modify the 7th index
+    displayl str;             /> Display the updated string
+    """, "H\nHello, world!"),
+
+    # Test string push and pop operations
+    ("""
+    var str = \"Hello\";
+    str.PushBack(\"!\");
+    displayl str;             /> Output: \"Hello!\"
+    str.PushFront(\"Say: \");
+    displayl str;             /> Output: \"Say: Hello!\"
+    str.PopBack;
+    displayl str;             /> Output: \"Say: Hello\"
+    str.PopFront;
+    displayl str;             /> Output: \"Hello\"
+    """, "Hello!\nSay: Hello!\nSay: Hello\nay: Hello"),
+
+    # Test string slicing
+    ("""
+    var str = \"Programming\";
+    var slice1 = str.Slice(0, 6);  /> Extract \"Progra\"
+    displayl slice1;
+    var slice2 = str.Slice(3, 9, 2);  /> Extract \"gam\" (step = 2)
+    displayl slice2;
+    """, "Progra\ngam"),
+
+    # Test string clearing
+    ("""
+    var str = \"Temporary String\";
+    display str;
+    str.Clear();
+    display str;             /> Output: \"\"
+    """, "Temporary String"),
+
+    # Test string length
+    ("""
+    var str = \"Length Test\";
+    var len = str.Length();
+    display len;             /> Output: 11
+    """, "11"),
+
+    # Test combined string operations
+    ("""
+    var str = \"Code\";
+    str.PushBack(\"!\");
+    str.PushFront(\"Let's \");
+    displayl str;             /> Output: \"Let's Code!\"
+    str[6] = \"c\";
+    displayl str;             /> Output: \"Let's code!\"
+    var slice = str.Slice(6, 10);
+    displayl slice;           /> Output: \"code\
+    """, "Let's Code!\nLet's code!\ncode")
+])
+def test_string_operations(code, expected_output, capfd):
+    execute(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
+
+
 if __name__ == "__main__":
     
     prog= """

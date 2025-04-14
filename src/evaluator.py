@@ -2,6 +2,7 @@ from parser import *
 from scope import SymbolCategory, SymbolTable
 import copy
 import math
+import re
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
@@ -52,7 +53,12 @@ def e(tree: AST, tS) -> Any:
             return tS.lookup(v)
         case FormatString(template, variables):
             varmods = {var: e(Variable(var), tS) for var in variables}
-            return template.format(**varmods)
+            # Use eval to evaluate expressions inside braces
+            def evaluate_expression(match):
+                expression = match.group(1)
+                return str(eval(expression, {}, varmods))
+            evaluated_template = re.sub(r'\{(.*?)\}', evaluate_expression, template)
+            return evaluated_template
         case Array(val):
             all_vals = list(map(lambda x: e(x, tS), val))
             return all_vals
@@ -194,63 +200,141 @@ def e(tree: AST, tS) -> Any:
             tS.define(name, var_val, category)  # binds in current scope
             return var_val
         case PushFront(arr_name, value):
-            arr= tS.lookup(arr_name)
-            arr.insert(0, e(value, tS))
+            arr = tS.lookup(arr_name)
+            if isinstance(arr, list):
+                arr.insert(0, e(value, tS))
+            elif isinstance(arr, str):
+                arr = e(value, tS) + arr
+            else:
+                raise TypeError(f"PushFront operation not supported for type {type(arr)}")
             tS.find_and_update(arr_name, arr)
             return arr
 
         case PushBack(arr_name, value):
             arr = tS.lookup(arr_name)
-            arr.append(e(value, tS))
+            if isinstance(arr, list):
+                arr.append(e(value, tS))
+            elif isinstance(arr, str):
+                arr += e(value, tS)
+            else:
+                raise TypeError(f"PushBack operation not supported for type {type(arr)}")
             tS.find_and_update(arr_name, arr)
             return arr
 
         case PopFront(arr_name):
             arr = tS.lookup(arr_name)
-            if len(arr) > 0:
-                value = arr.pop(0)
-                tS.find_and_update(arr_name, arr)
-                return value
+            if isinstance(arr, list):
+                if len(arr) > 0:
+                    value = arr.pop(0)
+                else:
+                    raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
+            elif isinstance(arr, str):
+                if len(arr) > 0:
+                    value = arr[0]
+                    arr = arr[1:]
+                else:
+                    raise IndexError(f"Cannot PopFront from an empty string: {arr_name}")
             else:
-                raise IndexError(f"Cannot PopFront from an empty array: {arr_name}")
+                raise TypeError(f"PopFront operation not supported for type {type(arr)}")
+            tS.find_and_update(arr_name, arr)
+            return value
 
         case PopBack(arr_name):
             arr = tS.lookup(arr_name)
-            if len(arr) > 0:
-                value = arr.pop()
-                tS.find_and_update(arr_name, arr)
-                return value
+            if isinstance(arr, list):
+                if len(arr) > 0:
+                    value = arr.pop()
+                else:
+                    raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
+            elif isinstance(arr, str):
+                if len(arr) > 0:
+                    value = arr[-1]
+                    arr = arr[:-1]
+                else:
+                    raise IndexError(f"Cannot PopBack from an empty string: {arr_name}")
             else:
-                raise IndexError(f"Cannot PopBack from an empty array: {arr_name}")
+                raise TypeError(f"PopBack operation not supported for type {type(arr)}")
+            tS.find_and_update(arr_name, arr)
+            return value
 
         case GetLength(arr_name):
-            return len(tS.lookup(arr_name))
+            arr = tS.lookup(arr_name)
+            if isinstance(arr, (list, str)):
+                return len(arr)
+            else:
+                raise TypeError(f"GetLength operation not supported for type {type(arr)}")
 
         case ClearArray(arr_name):
             arr = tS.lookup(arr_name)
-            arr.clear()
+            if isinstance(arr, list):
+                arr.clear()
+            elif isinstance(arr, str):
+                arr = ""
+            else:
+                raise TypeError(f"Clear operation not supported for type {type(arr)}")
             tS.find_and_update(arr_name, arr)
             return arr
 
         case InsertAt(arr_name, index, value):
             arr = tS.lookup(arr_name)
-            arr.insert(e(index, tS), e(value, tS))
+            if isinstance(arr, list):
+                arr.insert(e(index, tS), e(value, tS))
+            elif isinstance(arr, str):
+                idx = e(index, tS)
+                val = e(value, tS)
+                arr = arr[:idx] + val + arr[idx:]
+            else:
+                raise TypeError(f"InsertAt operation not supported for type {type(arr)}")
             tS.find_and_update(arr_name, arr)
             return arr
 
         case RemoveAt(arr_name, index):
             arr = tS.lookup(arr_name)
-            if 0 <= e(index, tS) < len(arr):
-                value = arr.pop(e(index, tS))
-                tS.find_and_update(arr_name, arr)
-                return value
+            if isinstance(arr, list):
+                if 0 <= e(index, tS) < len(arr):
+                    value = arr.pop(e(index, tS))
+                else:
+                    raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
+            elif isinstance(arr, str):
+                idx = e(index, tS)
+                if 0 <= idx < len(arr):
+                    value = arr[idx]
+                    arr = arr[:idx] + arr[idx+1:]
+                else:
+                    raise IndexError(f"Index {idx} out of bounds for string: {arr_name}")
             else:
-                raise IndexError(f"Index {e(index, tS)} out of bounds for array: {arr_name}")
-        # case BindArray(xname, atype, val):
-        #     all_vals = list(map(lambda x: e(x, tS), val))
-        #     tS.table[xname] = all_vals
-        #     tS.define(xname,all_vals,SymbolCategory.ARRAY)
-        #     return all_vals
+                raise TypeError(f"RemoveAt operation not supported for type {type(arr)}")
+            tS.find_and_update(arr_name, arr)
+            return value
+        case StringIdx(var_name, index):
+            string_val = tS.lookup(var_name)
+            if not isinstance(string_val, str):
+                raise TypeError(f"StringIdx operation not supported for type {type(string_val)}")
+            idx = e(index, tS)
+            if not (0 <= idx < len(string_val)):
+                raise IndexError(f"Index {idx} out of bounds for string: {var_name}")
+            return string_val[idx]
+        case AssignStringVal(var_name, index, value):
+            string_val = tS.lookup(var_name)
+            if not isinstance(string_val, str):
+                raise TypeError(f"AssignStringVal operation not supported for type {type(string_val)}")
+            idx = e(index, tS)
+            if not (0 <= idx < len(string_val)):
+                raise IndexError(f"Index {idx} out of bounds for string: {var_name}")
+            val = e(value, tS)
+            string_val = string_val[:idx] + val + string_val[idx + 1:]
+            tS.find_and_update(var_name, string_val)
+            return string_val
+        case Slice(var_name, start, end, step):
+            arr = tS.lookup(var_name)
+            if isinstance(arr, (list, str)):
+                start_idx = e(start, tS) if start else None
+                end_idx = e(end, tS) if end else None
+                step_val = e(step, tS) if step else None
+                return arr[start_idx:end_idx:step_val]
+            else:
+                raise TypeError(f"Slice operation not supported for type {type(arr)}")
+
         case AssignToVar(var_name, value):
             val_to_assign = e(value, tS)
             tS.find_and_update(var_name, val_to_assign)
@@ -524,6 +608,17 @@ display `This is b: {b}`;"""
     displayl hash["key1"]["nestedKey2"];
     hash["key2"]["nestedKey3"] = 50;
     displayl hash;
+""" 
+
+    prog="""
+    var str = \"Code\";
+    str.PushBack(\"!\");
+    str.PushFront(\"Let's \");
+    displayl str;             /> Output: \"Let's Code!\"
+    str[6] = \"c\";
+    displayl str;             /> Output: \"Let's code!\"
+    var slice = str.Slice(6, 10);
+    displayl slice;           /> Output: \"code\
 """
     parsed, gS = parse(prog)
     
