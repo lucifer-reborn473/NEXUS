@@ -15,6 +15,7 @@ keyword_tokens = (
     "end",
     "display",
     "displayl",
+    "fixed",
     # "loop",
     "while",
     "for",
