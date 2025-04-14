@@ -213,7 +213,7 @@ class Statements:
 @dataclass
 class FuncDef(AST):
     funcName: str
-    funcParams: List[Variable]  # list of variables
+    funcParams: List[Any]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
     funcScope: Any              # static scoping (scope is tied to function definition and not its call)
 
@@ -401,6 +401,21 @@ def parse(s: str) -> List[AST]:
                     category=map_type(value)
                     ast = VarBind(name, dtype, value,category)
                     tS.define(name,None,category)
+                case KeywordToken("fixed"):  # Add this case
+                    next(t)
+                    # Check if 'var' follows 'fixed'
+                    if not isinstance(t.peek(None), KeywordToken) or t.peek(None).kw_name != "var":
+                        print("Syntax Error! Expected 'var' after 'fixed'")
+                        exit()
+                    next(t)  # Consume 'var'
+                    dtype, name = parse_dtype_and_name()
+                    value = parse_value()
+                    if value is None:
+                        print(f"Error! Fixed variable `{name}` must be initialized.")
+                        exit()
+                    category = SymbolCategory.FIXED  # Use FIXED category
+                    ast = VarBind(name, dtype, value, category)
+                    tS.define(name, None, category)
                 case _:
                     return ast, tS
 
