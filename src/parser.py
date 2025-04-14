@@ -7,6 +7,11 @@ from scope import SymbolTable, SymbolCategory
 # ==========================================================================================
 # ==================================== PARSER ==============================================
 
+class SemanticError(Exception):
+    pass
+
+class RedeclarationError(SemanticError):
+    pass
 
 class AST:
     """
@@ -207,7 +212,7 @@ class If(AST):
     condScope: Any
 
 @dataclass
-class Statements:
+class Statements(AST):
     statements: List[AST]
 
 @dataclass
@@ -252,7 +257,7 @@ def map_type(value):
     else:
         return SymbolCategory.VARIABLE
 #==========================================================================================
-def parse(s: str) -> List[AST]:
+def parse(s: str, defS) -> List[AST]:
 
     t = peekable(lex(s))
 
@@ -271,9 +276,10 @@ def parse(s: str) -> List[AST]:
 
     
 
-    def parse_program(thisScope=None):
-        if thisScope is None:
-            thisScope = SymbolTable()  # forms the global scope
+    # def parse_program(thisScope=None):
+        # if thisScope is None:
+        #     thisScope = SymbolTable()  # forms the global scope
+    def parse_program(thisScope):
 
         statements = []
         while t.peek(None) is not None:
@@ -381,13 +387,13 @@ def parse(s: str) -> List[AST]:
             if isinstance(t.peek(None), VarToken):
                 name = t.peek(None).var_name
                 if tS.inScope(name):
-                    print(f"Error! Variable `{name}` is already declared. Can't declare again.")
-                    exit()
+                    raise RedeclarationError(f"Multiple declaration of variable `{name}` in the same scope is not allowed")
                 next(t)
                 return dtype, name
             else:
-                print("Syntax Error! Expected a variable name.")
-                exit()
+                raise SyntaxError("Expected a variable name.")
+                # print("Syntax Error! Expected a variable name.")
+                # exit()
 
         def parse_value():
             """Parse the value of the variable."""
@@ -395,8 +401,9 @@ def parse(s: str) -> List[AST]:
                 return None
             expect(OperatorToken("="))
             if isinstance(t.peek(None), SemicolonToken):
-                print(f"Syntax Error! Used `;` after `=` for identifier `{name}`")
-                exit()
+                raise SyntaxError(f"Used `;` after `=` for identifier `{name}`")
+                # print(f"Syntax Error! Used `;` after `=` for identifier `{name}`")
+                # exit()
             return parse_var(tS)[0]
 
         ast = parse_update_var(tS)
@@ -413,14 +420,16 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     # Check if 'var' follows 'fixed'
                     if not isinstance(t.peek(None), KeywordToken) or t.peek(None).kw_name != "var":
-                        print("Syntax Error! Expected 'var' after 'fixed'")
-                        exit()
+                        raise SyntaxError("Expected 'var' after 'fixed'")
+                        # print("Syntax Error! Expected 'var' after 'fixed'")
+                        # exit()
                     next(t)  # Consume 'var'
                     dtype, name = parse_dtype_and_name()
                     value = parse_value()
                     if value is None:
-                        print(f"Error! Fixed variable `{name}` must be initialized.")
-                        exit()
+                        raise SyntaxError(f"Fixed variable `{name}` must be initialized.")
+                        # print(f"Error! Fixed variable `{name}` must be initialized.")
+                        # exit()
                     category = SymbolCategory.FIXED  # Use FIXED category
                     ast = VarBind(name, dtype, value, category)
                     tS.define(name, None, category)
@@ -782,12 +791,14 @@ def parse(s: str) -> List[AST]:
                         funcName = t.peek(None).var_name
                         next(t)
                     else:
-                        print("Function name missing\nAborting")
-                        exit()
+                        raise SyntaxError("Function name missing.")
+                        # print("Function name missing\nAborting")
+                        # exit()
 
                     if tS.inScope(funcName):
-                        print(f"Error! Multiple declaration of function `{funcName}()` in the same scope (not allowed)")
-                        exit()
+                        raise RedeclarationError(f"Multiple declaration of function `{funcName}()` in the same scope is not allowed.")
+                        # print(f"Error! Multiple declaration of function `{funcName}()` in the same scope (not allowed)")
+                        # exit()
 
                     expect(LeftParenToken())
 
@@ -813,20 +824,6 @@ def parse(s: str) -> List[AST]:
                     
                     expect(LeftBraceToken()) # {
                     # function body begins
-                    
-                    # body = parse_var()
-                    # bodyCode = []
-                    # while not isinstance(t.peek(None), RightBraceToken):
-                    #     stmt = parse_display()      # Parse current statement
-                    #     bodyCode.append(stmt)       # collection of parsed statements
-                    # body = Statements(bodyCode)     # list of parsed statements
-                    # tS.define(funcName,None,SymbolCategory.FUNCTION)
-                    # (body, tS_f) = parse_program(tS_f) # get updated tS_f
-                    # next(t)
-                    # ast = FuncDef(funcName, params, body, tS_f, isRec)
-                    # # tS.table[funcName] = (params, body, tS_f, isRec)
-                    # tS.define(funcName,(params,body,tS_f,isRec),SymbolCategory.FUNCTION)
-
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
                     ast = FuncDef(funcName, params, body, tS_f)
@@ -873,7 +870,7 @@ def parse(s: str) -> List[AST]:
                     return call_vartoks(tS)
     
     def call_vartoks(tS): #handles all calls related to vartokens
-        ast =parse_atom(tS)
+        ast = parse_atom(tS)
         while True:
             match t.peek(None):
                 case VarToken(v):
@@ -1014,7 +1011,7 @@ def parse(s: str) -> List[AST]:
                 # next(t)
                 return Variable(v)
 
-    return parse_program()
+    return parse_program(defS)
 
 
 if __name__ == "__main__":
