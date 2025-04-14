@@ -231,10 +231,9 @@ class Statements:
 @dataclass
 class FuncDef(AST):
     funcName: str
-    funcParams: List[Variable]  # list of variables
+    funcParams: List[Any]  # list of variables
     funcBody: List[AST]         # assumed body is one-liner expression # will use {} for multiline
     funcScope: Any              # static scoping (scope is tied to function definition and not its call)
-    isRec: bool                 # recursive or not
 
 @dataclass 
 class FuncCall(AST):
@@ -313,7 +312,6 @@ def parse(s: str) -> List[AST]:
             statements.append(stmt)  # collection of parsed statements
 
         return Statements(statements), thisScope  # Return a list of parsed statements + scope
-
 
 
     def parse_while(tS):
@@ -431,6 +429,21 @@ def parse(s: str) -> List[AST]:
                     category=map_type(value)
                     ast = VarBind(name, dtype, value,category)
                     tS.define(name,None,category)
+                case KeywordToken("fixed"):  # Add this case
+                    next(t)
+                    # Check if 'var' follows 'fixed'
+                    if not isinstance(t.peek(None), KeywordToken) or t.peek(None).kw_name != "var":
+                        print("Syntax Error! Expected 'var' after 'fixed'")
+                        exit()
+                    next(t)  # Consume 'var'
+                    dtype, name = parse_dtype_and_name()
+                    value = parse_value()
+                    if value is None:
+                        print(f"Error! Fixed variable `{name}` must be initialized.")
+                        exit()
+                    category = SymbolCategory.FIXED  # Use FIXED category
+                    ast = VarBind(name, dtype, value, category)
+                    tS.define(name, None, category)
                 case _:
                     return ast, tS
 
@@ -776,11 +789,12 @@ def parse(s: str) -> List[AST]:
         ast = parse_brackets(tS)
         while True:
             match t.peek(None):
-                case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
-                    if t.peek(None).kw_name == "fnrec":
-                        isRec = True
-                    else:
-                        isRec = False
+                case KeywordToken("fn"): # function declaration
+                # case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
+                    # if t.peek(None).kw_name == "fnrec":
+                    #     isRec = True
+                    # else:
+                    #     isRec = False
 
                     next(t)
                     
@@ -815,8 +829,7 @@ def parse(s: str) -> List[AST]:
 
                     # add param names to function scope
                     for var_name in params:
-                        # tS_f.table[var_name] = None
-                        tS_f.define(var_name,None,SymbolCategory.VARIABLE)
+                        tS_f.define(var_name, None, SymbolCategory.VARIABLE)
                     
                     expect(LeftBraceToken()) # {
                     # function body begins
@@ -827,12 +840,17 @@ def parse(s: str) -> List[AST]:
                     #     stmt = parse_display()      # Parse current statement
                     #     bodyCode.append(stmt)       # collection of parsed statements
                     # body = Statements(bodyCode)     # list of parsed statements
-                    tS.define(funcName,None,SymbolCategory.FUNCTION)
+                    # tS.define(funcName,None,SymbolCategory.FUNCTION)
+                    # (body, tS_f) = parse_program(tS_f) # get updated tS_f
+                    # next(t)
+                    # ast = FuncDef(funcName, params, body, tS_f, isRec)
+                    # # tS.table[funcName] = (params, body, tS_f, isRec)
+                    # tS.define(funcName,(params,body,tS_f,isRec),SymbolCategory.FUNCTION)
+
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
                     next(t)
-                    ast = FuncDef(funcName, params, body, tS_f, isRec)
-                    # tS.table[funcName] = (params, body, tS_f, isRec)
-                    tS.define(funcName,(params,body,tS_f,isRec),SymbolCategory.FUNCTION)
+                    ast = FuncDef(funcName, params, body, tS_f)
+                    tS.define(funcName, (params, body, tS_f), SymbolCategory.FUNCTION)
                 
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call
@@ -873,13 +891,17 @@ def parse(s: str) -> List[AST]:
                             raise SyntaxError(f"Expected ')' got {t.peek(None)}")
                 case _:
                     return call_vartoks(tS)
+    
     def call_vartoks(tS): #handles all calls related to vartokens
         ast =parse_atom(tS)
         while True:
             match t.peek(None):
                 case VarToken(v):
                     next(t)
-                    category = tS.lookup(v,cat=True)
+                    if isinstance(t.peek(None), LeftParenToken):
+                        # means a function call
+                        return ast
+                    category = tS.lookup(v, cat = True)
                     match category:
                         case SymbolCategory.VARIABLE:
                             ast = Variable(v)
@@ -899,6 +921,7 @@ def parse(s: str) -> List[AST]:
                                 else:  # accessing a given index
                                     ast = CallArr(v, indices)
                             elif isinstance(t.peek(None), DotToken):
+
                                 next(t)
                                 operation = t.peek(None).kw_name
                                 next(t)
@@ -938,12 +961,14 @@ def parse(s: str) -> List[AST]:
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast = AddHashPair(v, key, val)
+                                        return ast
                                     case KeywordToken("Remove"):
                                         next(t)
                                         expect(LeftParenToken())
                                         key = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast = RemoveHashPair(v, key)
+                                        return ast
                                     case _:
                                         return ast
                             else:
@@ -995,6 +1020,9 @@ def parse(s: str) -> List[AST]:
             case MoveOnToken():
                 next(t)
                 return MoveOn()
+            case VarToken(v):
+                # next(t)
+                return Variable(v)
 
     return parse_program()
 

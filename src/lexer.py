@@ -280,3 +280,4 @@ def lex(s: str) -> Iterator[Token]:
                     yield ColonToken()
                 case _ :
                     raise SyntaxError(f"Unexpected character: {s[i]}")
+
