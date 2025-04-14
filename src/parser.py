@@ -285,7 +285,6 @@ def parse(s: str) -> List[AST]:
         return Statements(statements), thisScope  # Return a list of parsed statements + scope
 
 
-
     def parse_while(tS):
         """
         Parse a while loop.
@@ -854,7 +853,7 @@ def parse(s: str) -> List[AST]:
                             ast=Variable(v)
                         case SymbolCategory.ARRAY:
                             if isinstance(t.peek(None), LeftSquareToken):
-                                # next(t)
+                                next(t)
                                 index = parse_var(tS)[0]
                                 expect(RightSquareToken())
                                 if (isinstance(t.peek(None),OperatorToken) 
@@ -865,32 +864,38 @@ def parse(s: str) -> List[AST]:
                                 else: #calling a given index
                                     ast= CallArr(v, index)
                             elif (isinstance(t.peek(None),DotToken)):
-                                #  next(t)
-                                 match t.peek(None):
+                                next(t)
+                                match t.peek(None):
                                     case KeywordToken("PushFront"):
                                         next(t)
                                         expect(LeftParenToken())
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast=PushFront(v,val)
+                                        return ast
                                     case KeywordToken("PushBack"):
                                         next(t)
                                         expect(LeftParenToken())
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast=PushBack(v,val)
+                                        return ast
                                     case KeywordToken("PopFront"):
                                         next(t)
                                         ast=PopFront(v)
+                                        return ast
                                     case KeywordToken("PopBack"):
                                         next(t)
                                         ast=PopBack(v)
+                                        return ast
                                     case KeywordToken("Length"):
                                         next(t)
                                         ast=GetLength(v)
+                                        return ast
                                     case KeywordToken("Clear"):
                                         next(t)
                                         ast=ClearArray(v)
+                                        return ast
                                     case KeywordToken("Insert"):
                                         next(t)
                                         expect(LeftParenToken())
@@ -899,19 +904,21 @@ def parse(s: str) -> List[AST]:
                                         val = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast=InsertAt(v,index,val)    
+                                        return ast   
                                     case KeywordToken("Remove"):
                                         next(t)
                                         expect(LeftParenToken())
                                         index = parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast=RemoveAt(v,index)
+                                        return ast
                                     case _:
                                         return ast
                             else: #calling whole array
                                 ast = Variable(v)
                         case SymbolCategory.HASH:
                             if isinstance(t.peek(None), LeftSquareToken):
-                                # next(t)
+                                next(t)
                                 key = parse_var(tS)[0]
                                 expect(RightSquareToken())
                                 if (isinstance(t.peek(None),OperatorToken) 
@@ -922,7 +929,7 @@ def parse(s: str) -> List[AST]:
                                 else:
                                     ast=CallHashVal(v,key)
                             elif (isinstance(t.peek(None),DotToken)):
-                                # next(t)
+                                next(t)
                                 match t.peek(None):
                                     case KeywordToken("Add"):
                                         next(t)
@@ -932,12 +939,14 @@ def parse(s: str) -> List[AST]:
                                         val=parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast=AddHashPair(v,key,val)
+                                        return ast
                                     case KeywordToken("Remove"):
                                         next(t)
                                         expect(LeftParenToken())
                                         key=parse_var(tS)[0]
                                         expect(RightParenToken())
                                         ast = RemoveHashPair(v,key)
+                                        return ast
                                     case _:
                                         return ast
                             else:
@@ -962,11 +971,10 @@ def parse(s: str) -> List[AST]:
                 next(t)
                 return MoveOn()
             case VarToken(v):
-                next(t)
+                # next(t)
                 return Variable(v)
 
     return parse_program()
-
 
 
 if __name__ == "__main__":
