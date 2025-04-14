@@ -191,6 +191,10 @@ def e(tree: AST, tS) -> Any:
             return print(e(val, tS))
 
         case CompoundAssignment(var_name, op, value):
+            # Check if variable is fixed
+            category = tS.lookup(var_name, cat=True)
+            if category == SymbolCategory.FIXED:
+                raise ValueError(f"Error: Cannot modify fixed variable '{var_name}'")
             prev_val = tS.lookup(var_name)
             new_val = e(BinOp(op[0], Number(str(prev_val)), value), tS)
             tS.find_and_update(var_name, new_val)
