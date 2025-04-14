@@ -11,6 +11,7 @@ from scope import SymbolTable
 class NexusREPL:
     def __init__(self):
         self.global_scope = SymbolTable()
+        
         # Set up readline for history
         self.history_file = os.path.expanduser("~/.nexus_history")
         try:
@@ -25,8 +26,9 @@ class NexusREPL:
             "exit": self.exit_repl,
             "reset": self.reset_environment
         }
+        
+        # Initialize tab completion
         self.setup_completer()
-
     
     def show_help(self, *args):
         """Display help information about REPL commands"""
@@ -73,53 +75,57 @@ class NexusREPL:
             readline.parse_and_bind("tab: complete")
     
     def evaluate(self, code):
+        """Evaluate a piece of Nexus code"""
         try:
+            # Check for built-in commands first
             command = code.strip()
             if command in self.commands:
                 return self.commands[command]()
-           
-            ast, self.global_scope = parse(code, self.global_scope) # returned scope is ignored
             
-            result = e(ast, self.global_scope) # global scope
-
+            # Check for obviously incomplete input before parsing
+            if not self.is_balanced(code):
+                return None  # Signal incomplete input
+            
+            # If the code appears complete with balanced braces and ends properly
+            if self.is_balanced(code) and code.strip().endswith((";", "}")):
+                try:
+                    # Attempt to parse and evaluate
+                    ast, self.global_scope = parse(code, self.global_scope)
+                    result = e(ast, self.global_scope)
+                    # Success - make sure we return a non-None value to reset prompt
+                    return result if result is not None else ""
+                except Exception as err:
+                    # Only treat certain errors as incomplete input
+                    err_msg = str(err).lower()
+                    if any(pattern in err_msg for pattern in [
+                        "unexpected end", "expected", "rightbracetoken",
+                        "got none", "eof", "brace"
+                    ]):
+                        return None
+                    raise  # Re-raise other errors
+            
+            # Try normal parsing for other cases
+            ast, self.global_scope = parse(code, self.global_scope)
+            result = e(ast, self.global_scope)
             return result
+                
         except Exception as err:
-            # Handle errors without crashing
-            return f"Error: {str(err)}"
-
-    
-    def read_multiline_input(self):
-        lines = []
-        prompt = "nexus> "
-        
-        while True:
-            try:
-                line = input(prompt)
-                lines.append(line)
+            # Check for incomplete input errors
+            err_msg = str(err)
+            lower_err = err_msg.lower()
+            
+            # Catch various incomplete input patterns
+            if any(pattern in lower_err for pattern in [
+                "unexpected end", "expected", "rightbracetoken", 
+                "got none", "eof", "brace"
+            ]):
+                return None  # Signal incomplete input
                 
-                # Simple balanced braces check for multiline input
-                if "{" in line and not self.is_balanced("".join(lines)):
-                    prompt = "... "
-                    continue
-                
-                # Check for semicolon to end statement
-                if line.strip().endswith(";"):
-                    break
-                
-                # If single line with no open braces, execute immediately
-                if prompt == "nexus> " and "{" not in line:
-                    break
-                    
-            except EOFError:
-                print("")
-                if not lines:
-                    self.exit_repl()
-                break
-                
-        return "\n".join(lines)
+            # Regular error handling
+            return f"Error: {err_msg}"
     
     def is_balanced(self, text):
-        """Check if braces are balanced"""
+        """Check if braces are balanced in the input text"""
         stack = []
         for char in text:
             if char == "{":
@@ -130,29 +136,70 @@ class NexusREPL:
         return len(stack) == 0
     
     def run(self):
+        """Run the Nexus REPL"""
         print("Nexus Language REPL v0.1")
         print("Type 'help' for assistance or 'exit' to quit")
         
+        current_input = []
+        prompt = "nexus> "
+        
         while True:
             try:
-                # Read input (possibly multiline)
-                user_input = self.read_multiline_input()
+                # Get user input
+                line = input(prompt)
                 
-                # Skip empty lines
-                if not user_input.strip():
+                # Skip empty lines at the beginning
+                if not line.strip() and not current_input:
                     continue
                 
-                # Add to history
-                readline.add_history(user_input)
+                # Empty line with semicolon/brace at end of previous input might signal completion
+                if not line.strip() and current_input and current_input[-1].strip().endswith((";", "}")):
+                    full_code = "\n".join(current_input)
+                    if self.is_balanced(full_code):
+                        # Force evaluation of potentially complete input
+                        try:
+                            ast, self.global_scope = parse(full_code, self.global_scope)
+                            result = e(ast, self.global_scope)
+                            current_input = []
+                            prompt = "nexus> "
+                            if result is not None:
+                                print(result)
+                            continue
+                        except:
+                            # If it fails, just add the empty line and continue
+                            pass
                 
-                # Evaluate and print result
-                result = self.evaluate(user_input)
-                if result is not None:
-                    print(result)
+                # Add to current input buffer
+                current_input.append(line)
+                full_code = "\n".join(current_input)
+                
+                # Try to evaluate
+                result = self.evaluate(full_code)
+                
+                if result is None:
+                    # Incomplete input detected
+                    prompt = "... "
+                else:
+                    # Add completed input to history
+                    if full_code.strip():
+                        readline.add_history(full_code)
                     
+                    # Reset for new input
+                    current_input = []
+                    prompt = "nexus> "
+                    
+                    # Print result if not None
+                    if result is not None and result != "":
+                        print(result)
+                
+            except EOFError:
+                print("\nExiting Nexus REPL")
+                break
+                
             except KeyboardInterrupt:
                 print("\nOperation cancelled")
-                continue
+                current_input = []
+                prompt = "nexus> "
 
 if __name__ == "__main__":
     repl = NexusREPL()
