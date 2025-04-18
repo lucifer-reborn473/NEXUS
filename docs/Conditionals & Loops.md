@@ -71,3 +71,19 @@
     3
     ```
 
+- Example
+    ```
+    var u = 100;
+    for(var u=0; u<3; u+=1){
+        var b = u;
+        displayl b;
+    };
+    displayl u;
+    ```
+    Output:
+    ```
+    0
+    1
+    2
+    100
+    ```
