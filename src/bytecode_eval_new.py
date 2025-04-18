@@ -533,7 +533,6 @@ def run_program(program,display_bytecode=False):
 # Example usage
 if __name__ == "__main__":
     from parser import parse
-    from bytecode_gen import codegen
     
     # Sample program
     program = """
@@ -583,18 +582,6 @@ if __name__ == "__main__":
     displayl slice;           /> Output: "code
 """
     # run_program("displayl((5 + 3) * 2 - 4 / 2);")
-    program= """
-    displayl "Fibonacci:";
-
-    fn fib(a) {
-        /> displayl a;
-        if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
-    };
-    displayl "----";
-    var x = 30;
-    displayl x;
-    displayl fib(x);
-    """
     program="""displayl "Fibonacci:";
 
     fn fib(a) {
@@ -623,5 +610,16 @@ if __name__ == "__main__":
 #     displayl 179;
 #     displayl u;
 # """
-    
+    program="""var sum = 0;
+    for (var i = 0; i < 3; i += 1) {
+        var j = 0;
+        while (j < 2) {
+            repeat (2) {
+                sum += i + j;
+            }
+            j += 1;
+        }
+    }
+    displayl sum;"""
+
     run_program(program,display_bytecode=True)
