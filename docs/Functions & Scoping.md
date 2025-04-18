@@ -25,6 +25,35 @@
         ```
         Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
+    - Another example
+        ```
+        var x="hi";
+        fn foo(x){
+            x = x-1;
+        };
+        displayl foo(10);
+        displayl x;
+        ```
+        Output:
+        ```
+        9
+        hi
+        ```
+    - Example:
+        ```
+        fn foo(x){
+            fn bar(){
+                x = x - 1;
+            };
+            bar() + x; /> evaluates to 9 + 9 = 18
+        };
+        displayl foo(10);
+        ```
+        Output:
+        ```
+        18
+        ```
+
 #### Functions are first-class citizens in Nexus
 - Example 1:
     ```prog
@@ -69,7 +98,7 @@
 
 - Conditionals and loops have their own local scopes
 
-- Example 1:
+- Example 1 (produces an error, as no declaration for `a` found for `a = 42`):
     ```prog
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
@@ -136,20 +165,6 @@
     ```
 
 - Example 5:
-    ```
-    var a = "g-";
-    fn foo(x, i){
-        if i==1 then var a = "1-" else "dummy" end;
-        if x==1 then "k" else a + foo(x-1, i+1) end; 
-    };
-    displayl foo(5,1);
-    ```
-    Output:
-    ```prog
-    g-g-g-g-k
-    ```
-
-- Example 6:
     ```prog
     fn foo(i){
         fn bar(){
@@ -166,3 +181,175 @@
     ```prog
     10
     ```
+
+## Closures
+- Nexus also supports closures (passes Knuth's Man or Boy test)
+
+- Knuth's Man or Boy test as tested in Nexus:
+    ```
+    fn A(k, x, y, z, w, v) {
+        fn B() {
+            k = k - 1;
+            A(k, B, x, y, z, w);
+        };
+        
+        if k <= 0 then w() + v() else B() end;
+    };
+
+    fn one() { 1; };
+    fn negone() { 0-1; };
+    fn zero() { 0; };
+
+    for(var k = 0; k<=10; k+=1){
+        displayl A(k, one, negone, negone, one, zero);
+    };
+    ```
+    Output:
+    ```
+    1
+    0
+    -2
+    0
+    1
+    0
+    1
+    -1
+    -10
+    -30
+    -67
+    ```
+
+- The below simpler examples describe more on closure's functioning in Nexus:
+
+    - Example 1: 
+        ```prog
+        var x = 5;
+        fn foo(){
+            var x = 12;
+            fn bar(){
+                x;
+            }
+            bar; /> returns a function
+        };
+        var y = foo();
+        displayl y();
+        ```
+        Output:
+        ```
+        12
+        ```
+    
+    - Example 2: 
+        ```prog
+        fn foo(g){
+            g() + 2;
+        };
+        fn baz(){
+            var x = 100;
+            fn bar(){
+                x;
+            }
+            foo(bar);
+        };
+        displayl baz();
+        ```
+        Output
+        ```
+        102
+        ```
+    - Example 3: 
+        ```
+        var x = 100;
+        fn foo(i){
+            fn bar(){
+                x+i;
+            };
+            if i==42 then bar else foo(i+1) end;
+        };
+        var y = foo(0);
+        displayl y();
+        ```
+        Output:
+        ```
+        142
+        ```
+    - Example 4: A counter
+        ```prog
+        fn counter() {
+            var count = 0;
+            fn increment() {
+                count = count + 1;
+            }
+            increment;
+        }
+        var c = counter();
+        displayl c();
+        displayl c();
+        displayl c();
+        ```
+        Output:
+        ```
+        1
+        2
+        3
+        ```
+
+    - Example 5:
+        ```
+        fn multiplier(factor) {
+            fn multiply(n) {
+                n * factor;
+            };
+            multiply;
+        };
+        var twox        = multiplier(2);
+        var hundredx    = multiplier(100);
+
+        displayl twox(5);
+        displayl hundredx(5);
+        ```
+        Output:
+        ```
+        10
+        500
+        ```
+
+    - Example 6:
+        ```
+        var k = 1000;
+        fn foo(k){
+            fn bar(){
+                k = k-1;
+                displayl k;
+            };
+            bar;
+        };
+
+        var y = foo(10);
+        y();
+        var r = y;
+        r();
+        ```
+        Output:
+        ```
+        9
+        8
+        ```
+    
+    - Example 7:
+        ```
+        fn A(k, g){
+            fn B(){
+                k = k+5;
+            };
+            if k==0 then g() else A(k-1, B) + g() end;
+        };
+        fn five(){
+            5;
+        };
+        displayl A(2, five);
+        ```
+        Output:
+        ```
+        18
+        ```
