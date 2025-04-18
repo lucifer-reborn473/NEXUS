@@ -11,12 +11,13 @@ class SymbolCategory(Enum):
     HASH = "dict"
     SCHEMA ="class"
     FIXED = "fixed"
+    STRING = "string"
     # Add more categories as needed
 
 @dataclass
 class SymbolTable:
     def __init__(self, parent=None):
-        self.table = {}  # Format: {identifier: (value, category)}
+        self.table = {}  # Format: {iden: (value, category)}
         self.parent = parent  # enclosing scope
 
     def define(self, iden, value, category: SymbolCategory):
@@ -38,35 +39,11 @@ class SymbolTable:
     def lookup_fun(self, iden):
         if iden in self.table:
             value = self.table[iden]
-            # Check if this is a function
-            if value[1] == SymbolCategory.FUNCTION:
-                func_def = value[0]
-                
-                # Recursively unwrap nested function definitions
-                def unwrap_function(fd):
-                    # If it's a wrapped function with category
-                    if (isinstance(fd, tuple) and len(fd) == 2 and 
-                        isinstance(fd[1], SymbolCategory) and 
-                        fd[1] == SymbolCategory.FUNCTION):
-                        # Unwrap one level and check again
-                        return unwrap_function(fd[0])
-                    return fd
-                
-                # Get the fully unwrapped function definition
-                clean_func_def = unwrap_function(func_def)
-                return (clean_func_def, self)
-            
-            elif value[1] == SymbolCategory.VARIABLE:
-                func_value = value[0]
-                return (func_value, self)  # Return the function data with current scope
-            
-            else:
-                raise TypeError(f"'{iden}' is not a function")
+            return (value[0], self)
         elif self.parent:
             return self.parent.lookup_fun(iden)
         else:
             raise NameError(f"Function '{iden}' not found!")
-
 
 
     def inScope(self, iden):
