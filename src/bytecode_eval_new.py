@@ -622,4 +622,15 @@ if __name__ == "__main__":
     }
     displayl sum;"""
 
+    program="""
+    var integer c = 20;
+    for (var i = 0; i < 5; i += 1) {
+        for (var j = 0; j < 3; j += 1) {
+            displayl(i * j);
+        }
+    }
+    /> displayl i;
+    """
+
+
     run_program(program,display_bytecode=True)

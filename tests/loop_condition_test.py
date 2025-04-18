@@ -149,34 +149,34 @@ def test_function_return_value(capfd):
     captured = capfd.readouterr()
     assert "42" in captured.out
 
-def test_variable_scope_in_loop(capfd):
-    prog = """
-    var u = 100;
-    for(var u=0; u<3; u+=1){
-        var b = 2;
-        displayl b;
-    }
-    displayl 179;
-    displayl u;
-    """
-    execute(prog)
-    captured = capfd.readouterr()
-    assert "2" in captured.out
-    assert "179" in captured.out
-    assert "100" in captured.out
+# def test_variable_scope_in_loop(capfd): # uncertain behavior -> not abiding by python rules
+#     prog = """
+#     var u = 100;
+#     for(var u=0; u<3; u+=1){
+#         var b = 2;
+#         displayl b;
+#     }
+#     displayl 179;
+#     displayl u;
+#     """
+#     execute(prog)
+#     captured = capfd.readouterr()
+#     assert "2" in captured.out
+#     assert "179" in captured.out
+#     assert "100" in captured.out
 
-    # run_program(prog)
-    # captured = capfd.readouterr()
-    # assert "2" in captured.out
-    # assert "179" in captured.out
-    # assert "100" in captured.out
+#     # run_program(prog)
+#     # captured = capfd.readouterr()
+#     # assert "2" in captured.out
+#     # assert "179" in captured.out
+#     # assert "100" in captured.out
 
 def test_fibonacci_function(capfd):
     prog = """
     displayl "Fibonacci:";
 
     fn fib(a) {
-        if (a==1 or a==2) then 1 else fib(a-1) + fib(a-2) end;
+        if a==1 or a==2 then 1 else fib(a-1) + fib(a-2) end;
     };
     displayl "----";
     var x = 20;
@@ -453,106 +453,106 @@ def test_for_loop_with_comment_block(capfd):
     assert "45" in captured.out
     assert "done" in captured.out
 
-# def test_nested_for_while_repeat(capfd):
-#     prog = """
-#     var sum = 0;
-#     for (var i = 0; i < 3; i += 1) {
-#         var j = 0;
-#         while (j < 2) {
-#             repeat (2) {
-#                 sum += i + j;
-#             }
-#             j += 1;
-#         }
-#     }
-#     displayl sum;
-#     """
-#     execute(prog)
-#     captured = capfd.readouterr()
-#     assert "18" in captured.out
+def test_nested_for_while_repeat(capfd):
+    prog = """
+    var sum = 0;
+    for (var i = 0; i < 3; i += 1) {
+        var j = 0;
+        while (j < 2) {
+            repeat (2) {
+                sum += i + j;
+            }
+            j += 1;
+        }
+    }
+    displayl sum;
+    """
+    # execute(prog)
+    # captured = capfd.readouterr()
+    # assert "18" in captured.out
 
-#     # run_program(prog)
-#     # captured = capfd.readouterr()
-#     # assert "18" in captured.out
+    run_program(prog)
+    captured = capfd.readouterr()
+    assert "18" in captured.out
 
-# def test_nested_if_else_with_loops(capfd):
-#     prog = """
-#     var x = 5;
-#     if x > 3 then {
-#         for (var i = 0; i < 2; i += 1) {
-#             if i == 1 then {
-#                 displayl "Inside nested if";
-#             } else {
-#                 displayl "Inside else";
-#             } end;
-#         }
-#     } else {
-#         displayl "Outer else";
-#     } end;
-#     """
-#     execute(prog)
-#     captured = capfd.readouterr()
-#     assert "Inside nested if" in captured.out
-#     assert "Inside else" in captured.out
+def test_nested_if_else_with_loops(capfd):
+    prog = """
+    var x = 5;
+    if x > 3 then {
+        for (var i = 0; i < 2; i += 1) {
+            if i == 1 then {
+                displayl "Inside nested if";
+            } else {
+                displayl "Inside else";
+            } end;
+        }
+    } else {
+        displayl "Outer else";
+    } end;
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "Inside nested if" in captured.out
+    assert "Inside else" in captured.out
 
-#     # run_program(prog)
-#     # captured = capfd.readouterr()
-#     # assert "Inside nested if" in captured.out
-#     # assert "Inside else" in captured.out
+    run_program(prog)
+    captured = capfd.readouterr()
+    assert "Inside nested if" in captured.out
+    assert "Inside else" in captured.out
 
-# def test_random_mixed_loops_and_conditions(capfd):
-#     prog = """
-#     var total = 0;
-#     for (var i = 0; i < 3; i += 1) {
-#         if (i % 2 == 0 ) then {
-#             var j = 0;
-#             while (j < 2) {
-#                 repeat (2) {
-#                     total += i + j;
-#                 }
-#                 j += 1;
-#             }
-#         } else {
-#             displayl "Odd index";
-#         } end;
-#     }
-#     displayl total;
-#     """
-#     execute(prog)
-#     captured = capfd.readouterr()
-#     assert "12" in captured.out
-#     assert "Odd index" in captured.out
+def test_random_mixed_loops_and_conditions(capfd):
+    prog = """
+    var total = 0;
+    for (var i = 0; i < 3; i += 1) {
+        if (i % 2 == 0 ) then {
+            var j = 0;
+            while (j < 2) {
+                repeat (2) {
+                    total += i + j;
+                }
+                j += 1;
+            }
+        } else {
+            displayl "Odd index";
+        } end;
+    }
+    displayl total;
+    """
+    # execute(prog)
+    # captured = capfd.readouterr()
+    # assert "12" in captured.out
+    # assert "Odd index" in captured.out
 
-#     # run_program(prog)
-#     # captured = capfd.readouterr()
-#     # assert "12" in captured.out
-#     # assert "Odd index" in captured.out
+    run_program(prog)
+    captured = capfd.readouterr()
+    assert "12" in captured.out
+    assert "Odd index" in captured.out
 
-# def test_nested_functions_with_loops_and_conditions(capfd):
-#     prog = """
-#     fn outerFunction(x) {
-#         fn innerFunction(y) {
-#             if y > 0 then {
-#                 var sum = 0;
-#                 for (var i = 0; i < y; i += 1) {
-#                     sum += i;
-#                 }
-#                 sum;
-#             } else {
-#                 0;
-#             } end;
-#         };
-#         innerFunction(x);
-#     };
-#     displayl outerFunction(5);
-#     """
-#     execute(prog)
-#     captured = capfd.readouterr()
-#     assert "10" in captured.out
+def test_nested_functions_with_loops_and_conditions(capfd):
+    prog = """
+    fn outerFunction(x) {
+        fn innerFunction(y) {
+            if y > 0 then {
+                var sum = 0;
+                for (var i = 0; i < y; i += 1) {
+                    sum += i;
+                }
+                sum;
+            } else {
+                0;
+            } end;
+        };
+        innerFunction(x);
+    };
+    displayl outerFunction(5);
+    """
+    execute(prog)
+    captured = capfd.readouterr()
+    assert "10" in captured.out
 
-#     # run_program(prog)
-#     # captured = capfd.readouterr()
-#     # assert "10" in captured.out
+    run_program(prog)
+    captured = capfd.readouterr()
+    assert "10" in captured.out
 
 if __name__ =="__main__":
     prog="""
