@@ -189,16 +189,25 @@ def e(tree: AST, tS) -> Any:
 
         case FuncCall(fn_name, fn_args):
             # Step 1: Extract function body & adjust scope
-            cat = tS.lookup(fn_name, cat=True)
-            if cat == SymbolCategory.VARIABLE:
-                # means variable was assigned a function, and now being called
-                # closure applies here, i.e, parsedScope already "carries" the correct parent
-                (param_list, fn_body, parsedScope) = tS.lookup(fn_name)
+            if (isinstance(fn_name, CallArr)):
+                arr = tS.lookup(fn_name.xname)
+                for i_expr in fn_name.index:
+                    arr = arr[e(i_expr, tS)]
+            
+                (param_list, fn_body, parsedScope) = arr
                 eval_scope = SymbolTable(parsedScope.parent)
-            else:
-                # else we "find" the parent
-                ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
-                eval_scope = SymbolTable(fn_parent)
+
+            else:    
+                cat = tS.lookup(fn_name, cat=True)
+                if cat == SymbolCategory.VARIABLE:
+                    # means variable was assigned a function, and now being called
+                    # closure applies here, i.e, parsedScope already "carries" the correct parent
+                    (param_list, fn_body, parsedScope) = tS.lookup(fn_name)
+                    eval_scope = SymbolTable(parsedScope.parent)
+                else:
+                    # else we "find" the parent
+                    ((param_list, fn_body, parsedScope), fn_parent) = tS.lookup_fun(fn_name)
+                    eval_scope = SymbolTable(fn_parent)
 
             for key, value in parsedScope.table.items():
                 if value[1] == SymbolCategory.VARIABLE:
@@ -216,8 +225,16 @@ def e(tree: AST, tS) -> Any:
                     )
 
             # Step 2: Put argument values into function's scope
+
             for param, arg in zip(param_list, fn_args):
-                eval_scope.define(param, e(arg, tS), SymbolCategory.VARIABLE)
+                """
+                if variable/fn, pass by value
+                if array, pass by reference
+                """
+                if param[1]==SymbolCategory.VARIABLE:
+                    eval_scope.define(param[0], e(arg, tS), SymbolCategory.VARIABLE)
+                elif param[1]==SymbolCategory.ARRAY:
+                    eval_scope.define(param[0], e(arg, tS), SymbolCategory.ARRAY)
 
             # Step 3: Evaluate the function body
             ans = None
@@ -688,11 +705,6 @@ if __name__ == "__main__":
     displayl h;
     """
 
-    prog2 = """
-    repeat (10){
-        displayl 1;
-    }
-"""
     prog2 = """var arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
     var hash = {
         "key1": {"nestedKey1": 10, "nestedKey2": 20},
@@ -716,23 +728,7 @@ if __name__ == "__main__":
     displayl hash;
 """
 
-    prog2 = """
-fn add(a, b) {
-    a + b;
-};
-fn subtract(a, b) {
-    a - b;
-};
-fn multiply(a, b) {
-    a * b;
-};
-var funcs = [add, subtract, multiply];
-displayl funcs[0](10, 5);
-displayl funcs[1](10, 5);
-displayl funcs[2](10, 5);
-    """  #! error ('CallArr' object has no attribute 'var_name')
-
-    prog2 = """
+    prog = """
 fn A(w,v){
     w()+v();
 };
@@ -741,30 +737,33 @@ fn negone() { 0-1; };
 displayl A(one, negone);
 """  # works #! but why we have to put zero here?
 
-    prog = """
-var a = [1,2,3];
-fn foo(arr){
-    arr[0] = 100;
-};
-foo(a);
+    prog2 = """
+var a = 2;
+a[0] = 1;
 displayl a;
+""" #! handle errors for cases like this
+
+#! implement in-built sort() function for arrays
+    prog = """
+    fn add(a, b) {
+        a + b;
+    };
+    fn subtract(a, b) {
+        a - b;
+    };
+    fn multiply(a, b) {
+        a * b;
+    };
+    var funcs = [add, subtract, multiply];
+    displayl [funcs[0](10,5), funcs[1](10,5), funcs[2](10,5)];
 """
 
-    prog2 = """
-var a;
-a[0] = 100;
-"""  #! same error as in above
 
-    prog2 = """
-var a = fn foo(){100;};
-displayl a();
-"""
-
-    # parsed, gS = parse(prog, SymbolTable())
-    # print("------")
-    # pprint(parsed)
-    # print("------")
-    # pprint(gS.table)
+    parsed, gS = parse(prog, SymbolTable())
+    print("------")
+    pprint(parsed)
+    print("------")
+    pprint(gS.table)
 
     print("------")
     print("Program Output: ")
