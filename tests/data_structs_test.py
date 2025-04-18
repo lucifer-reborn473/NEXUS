@@ -311,10 +311,10 @@ def test_string_operations(code, expected_output, capfd):
 if __name__ == "__main__":
     
     prog= """
-    var y = 1.0;
-    for (var i = 0.5; i <= 2.0; i = i + 0.5) {
-        displayl (y + i) * (y * i) - (y / i);
-    }
+    var d= [1,2,40];
+    displayl d[2];
+    d[2]= 100;
+    displayl d;
     """ 
 
 

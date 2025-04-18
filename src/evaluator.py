@@ -652,6 +652,11 @@ display `This is b: {b}`;"""
     displayl slice;           /> Output: \"code\
 """
 
+    prog="""
+    var a = [2, 1];
+    a[0] = 100;
+    displayl a;
+"""
     parsed, gS = parse(prog)
     print("------")
     pprint(parsed)

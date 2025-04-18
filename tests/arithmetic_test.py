@@ -4,6 +4,7 @@ import math
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 from evaluator import *
+from bytecode_eval_new import * 
 
 
 @pytest.mark.parametrize("expression, expected", [
@@ -18,7 +19,13 @@ from evaluator import *
     ("-6 / 2", "-3.0")
 ])
 def test_arithmetic_operations(expression, expected, capfd):
-    execute(f"display({expression})")
+    # Test with execute
+    execute(f"displayl({expression})")
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected
+    
+    # Test with run_program
+    run_program(f"displayl({expression})")
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
 
@@ -55,7 +62,13 @@ def test_arithmetic_operations(expression, expected, capfd):
     ("round(E,10)", str(round(math.e,10)))
 ])
 def test_math_functions(expression, expected, capfd):
-    execute(f"display({expression})")
+    # Test with execute
+    execute(f"displayl({expression})")
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected
+    
+    # # Test with run_program
+    run_program(f"displayl({expression})")
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
 
@@ -99,7 +112,13 @@ def test_math_functions(expression, expected, capfd):
     """, "1.0")
 ])
 def test_combined_cases(program, expected, capfd):
+    # Test with execute
     execute(program)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected
+    
+    # Test with run_program
+    run_program(program)
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
 
