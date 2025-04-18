@@ -83,6 +83,7 @@ class AssigntoArr(AST):
     xname: str
     index: AST
     val: AST
+
 @dataclass
 class Array(AST):
     val : List[AST]
@@ -113,10 +114,6 @@ class AssignHashVal(AST):
     key : AST
     new_val: AST
 
-@dataclass
-class AssignFullArray(AST):
-    xname: str
-    val: List[AST]
 
 @dataclass
 class InsertAt(AST):
@@ -144,6 +141,29 @@ class Number(AST):
 @dataclass
 class String(AST):
     val: str
+
+@dataclass 
+class Slice(AST):
+    var_name: str
+    start : Optional[AST]
+    end : Optional[AST]
+    step : Optional[AST]
+
+@dataclass
+class StringIdx(AST):
+    var_name: str
+    index: AST
+ 
+@dataclass 
+class AssignStringVal(AST):
+    var_name: str
+    index: AST
+    value : AST
+
+@dataclass 
+class Sort(AST):
+    var_name: str
+    greater: Optional[AST]
 
 @dataclass
 class Boolean(AST):
@@ -200,7 +220,7 @@ class MoveOn(AST):
     pass
 
 @dataclass
-class AssignToVar(AST): # through assignment operator
+class UpdateVar(AST): # through assignment operator
     var_name: str
     val: AST
 
@@ -254,6 +274,8 @@ def map_type(value):
         return SymbolCategory.HASH
     # elif isinstance(value, (FuncCall, FuncDef)):
     #     return SymbolCategory.FUNCTION
+    elif isinstance(value,(String,FormatString)):
+        return SymbolCategory.STRING
     else:
         return SymbolCategory.VARIABLE
 #==========================================================================================
@@ -445,7 +467,7 @@ def parse(s: str, defS) -> List[AST]:
                     var_name = ast.var_name
                     next(t)
                     value = parse_var(tS)[0]
-                    ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else AssignToVar(var_name, value)
+                    ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else UpdateVar(var_name, value)
                 case _:
                     return ast
 
@@ -455,7 +477,7 @@ def parse(s: str, defS) -> List[AST]:
                 #         op = t.peek(None).o 
                 #         next(t)
                 #         value = parse_var(tS)[0]
-                #         ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else AssignToVar(var_name, value)
+                #         ast = CompoundAssignment(var_name,op,value) if op in compound_assigners else UpdateVar(var_name, value)
                 #     else:
                 #         return ast #! use?
                 # case _ :
@@ -822,6 +844,7 @@ def parse(s: str, defS) -> List[AST]:
                     for var_name in params:
                         tS_f.define(var_name, None, SymbolCategory.VARIABLE)
                     
+                    tS.define(funcName, None, SymbolCategory.FUNCTION) # add to scope
                     expect(LeftBraceToken()) # {
                     # function body begins
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
@@ -898,57 +921,18 @@ def parse(s: str, defS) -> List[AST]:
                                 else:  # accessing a given index
                                     ast = CallArr(v, indices)
                             elif isinstance(t.peek(None), DotToken):
-
                                 next(t)
-                                match t.peek(None):
-                                    case KeywordToken("PushFront"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        val = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast = PushFront(v, val)
-                                        return ast
-                                    case KeywordToken("PushBack"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        val = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast=PushBack(v, val)
-                                        return ast
-                                    case KeywordToken("PopFront"):
-                                        next(t)
-                                        ast=PopFront(v)
-                                        return ast
-                                    case KeywordToken("PopBack"):
-                                        next(t)
-                                        ast=PopBack(v)
-                                        return ast
-                                    case KeywordToken("Length"):
-                                        next(t)
-                                        ast=GetLength(v)
-                                        return ast
-                                    case KeywordToken("Clear"):
-                                        next(t)
-                                        ast=ClearArray(v)
-                                        return ast
-                                    case KeywordToken("Insert"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        index = parse_var(tS)[0]
-                                        expect(CommaToken())
-                                        val = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast = InsertAt(v, index, val)    
-                                        return ast   
-                                    case KeywordToken("Remove"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        index = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast = RemoveAt(v, index)
-                                        return ast
-                                    case _:
-                                        return ast
+                                operation = t.peek(None).kw_name
+                                next(t)
+                                args = []
+                                if isinstance(t.peek(None), LeftParenToken):
+                                    next(t)
+                                    while not isinstance(t.peek(None), RightParenToken):
+                                        args.append(parse_var(tS)[0])
+                                        if isinstance(t.peek(None), CommaToken):
+                                            next(t)
+                                    expect(RightParenToken())
+                                ast = handle_operations(v, tS, operation, *args)
                             else:  # calling the whole array
                                 ast = Variable(v)
                         case SymbolCategory.HASH:
@@ -988,6 +972,35 @@ def parse(s: str, defS) -> List[AST]:
                                         return ast
                             else:
                                 ast = Variable(v)
+
+                        case SymbolCategory.STRING:
+                            if isinstance(t.peek(None), LeftSquareToken):
+                                next(t)
+                                index= parse_var(tS)[0]
+                                expect(RightSquareToken())
+                                if (isinstance(t.peek(None), OperatorToken) 
+                                    and t.peek(None).o == "="): #assign new value to index
+                                    next(t)
+                                    value = parse_var(tS)[0]
+                                    ast = AssignStringVal(v, index, value)
+                                else:
+                                    ast = StringIdx(v, index)
+                            elif isinstance(t.peek(None), DotToken):
+                                while isinstance(t.peek(None), DotToken):
+                                    next(t)
+                                    operation = t.peek(None).kw_name
+                                    next(t)
+                                    args = []
+                                    if isinstance(t.peek(None), LeftParenToken):
+                                        next(t)
+                                        while not isinstance(t.peek(None), RightParenToken):
+                                            args.append(parse_var(tS)[0])
+                                            if isinstance(t.peek(None), CommaToken):
+                                                next(t)
+                                        expect(RightParenToken())
+                                    ast = handle_operations(v, tS, operation, *args)
+                            else:
+                                ast=Variable(v)
                         case _:
                             ast = Variable(v)
                 case _:
@@ -1019,64 +1032,46 @@ def parse(s: str, defS) -> List[AST]:
     # except IncompleteParseError as e:
     #     return None, defS, "incomplete"
 
+def handle_operations(var_name, tS, operation, *args):
+    """
+    Handles operations like push, pop, front, back, length, clear, and insert for strings and arrays.
+    Args:
+        var_name (str): The name of the variable.
+        tS (SymbolTable): The current scope.
+        operation (str): The operation to perform (e.g., 'PushFront', 'PushBack', 'PopFront', etc.).
+        *args: Additional arguments required for the operation.
+    Returns:
+        AST: The corresponding AST node for the operation.
+    """
+
+    category = tS.lookup(var_name, cat=True)
+    if category not in [SymbolCategory.ARRAY, SymbolCategory.STRING]:
+        raise TypeError(f"Operation '{operation}' is not valid for type '{category}'.")
+    
+    match operation:
+        case "PushFront":
+            return PushFront(var_name, args[0])
+        case "PushBack":
+            return PushBack(var_name, args[0])
+        case "PopFront":
+            return PopFront(var_name)
+        case "PopBack":
+            return PopBack(var_name)
+        case "Length":
+            return GetLength(var_name)
+        case "Clear":
+            return ClearArray(var_name)
+        case "Insert":
+            return InsertAt(var_name, args[0], args[1])
+        case "Remove":
+            return RemoveAt(var_name, args[0])
+        case "Slice":
+            return Slice(var_name, args[0] if len(args) > 0 else None, 
+                         args[1] if len(args) > 1 else None, 
+                         args[2] if len(args) > 2 else None)
+        case _:
+            raise ValueError(f"Unknown operation '{operation}'.")
 
 
 if __name__ == "__main__":
-   
-
-   prog="""
-    repeat (10){
-        displayl 1;
-    }
-"""
-   prog1="""
-    
-    
-"""
-   pprint(parse(prog1))
-
-
-# def array_dot_operations(v, tS, ast):
-#         next(t)
-#         match t.peek(None):
-#             case KeywordToken("PushFront"):
-#                 next(t)
-#                 expect(LeftParenToken())
-#                 val = parse_var(tS)[0]
-#                 expect(RightParenToken())
-#                 ast = PushFront(v, val)
-#             case KeywordToken("PushBack"):
-#                 next(t)
-#                 expect(LeftParenToken())
-#                 val = parse_var(tS)[0]
-#                 expect(RightParenToken())
-#                 ast = PushBack(v, val)
-#             case KeywordToken("PopFront"):
-#                 next(t)
-#                 ast = PopFront(v)
-#             case KeywordToken("PopBack"):
-#                 next(t)
-#                 ast = PopBack(v)
-#             case KeywordToken("Length"):
-#                 next(t)
-#                 ast = GetLength(v)
-#             case KeywordToken("Clear"):
-#                 next(t)
-#                 ast = ClearArray(v)
-#             case KeywordToken("Insert"):
-#                 next(t)
-#                 expect(LeftParenToken())
-#                 index = parse_var(tS)[0]
-#                 expect(CommaToken())
-#                 val = parse_var(tS)[0]
-#                 expect(RightParenToken())
-#                 ast = InsertAt(v, index, val)
-#             case KeywordToken("Remove"):
-#                 next(t)
-#                 expect(LeftParenToken())
-#                 index = parse_var(tS)[0]
-#                 expect(RightParenToken())
-#                 ast = RemoveAt(v, index)
-#             case _:
-#                 return ast
-#         return ast
+    pass
