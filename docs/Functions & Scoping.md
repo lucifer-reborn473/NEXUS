@@ -3,7 +3,11 @@
     - `fn` for non-recursive functions (does not calls itself)
     - `fnrec` for recursive functions
 - Redeclaration is not allowed in the same scope and is caught before evaluation.
+- Arrays are passed-by-value in functions
+    - Syntax: In the function signature, the array parameter name must be followed by `[]`. Example: `fn foo(a, b[])`
 - Calling a function with empty body returns `None`
+- Note: In this language, function declarations must appear at the top level or within other function bodies. You cannot assign a function directly to a variable using `var`. Use named function declarations instead.
+- <a id="changes-outer-var"> </a> Assigning to a variable inside a function modifies the outer-scope variable if it isn't redeclared locally.
 - Examples:
     - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
         ```prog
@@ -88,15 +92,39 @@
     42
     ```
 
+- Example 3:
+    ```
+    fn add(a, b) {
+        a + b;
+    };
+    fn subtract(a, b) {
+        a - b;
+    };
+    fn multiply(a, b) {
+        a * b;
+    };
+    var funcs = [add, subtract, multiply];
+    displayl [funcs[0](10,5), funcs[1](10,5), funcs[2](10,5)];
+    ```
+    Output:
+    ```
+    [15, 5, 50]
+    ```
+
 # Scoping
 - Nexus is based on lexical (or, static) scoping.
-
-- structural hierarchy of scopes made during parsing
-    - lexical structure captured while parsing
-    - helps identify and catch duplicate declarations for variables and functions
-- resolution of values during the evaluation phase (see Example 6 below)
-
-- Conditionals and loops have their own local scopes
+- Variables must be declared before their first use, even in outer scopes.
+    - Example: The below code will throw a parsing error.
+        ```
+        fn foo(a){
+            b = 100; /> sees undeclared b => error
+        };
+        var b = 10;
+        foo(b);
+        displayl b;
+        ```
+        Note: If you instead place the line `var b = 10;` before `foo`'s declaration, then the program would print `100` as the output (explanation [here](#changes-outer-var))
+- Conditionals and loops have their own local scopes.
 
 - Example 1 (produces an error, as no declaration for `a` found for `a = 42`):
     ```prog
@@ -106,6 +134,7 @@
     };
     displayl foo(1);
     ```
+
 - Example 2:
     ```prog
     var x = 9;
@@ -122,7 +151,6 @@
     ```prog
     9
     ```
-
 
 - Exampl 3:
     ```prog
@@ -352,4 +380,22 @@
         Output:
         ```
         18
+        ```
+    
+    - Example 8:
+        ```
+        fn foo(){
+            var k = "cosmos";
+            fn bar(){
+                k;
+            };
+            var A = [bar];
+            A[0];
+        };
+        var y = foo();
+        displayl y();
+        ```
+        Output:
+        ```
+        cosmos
         ```
