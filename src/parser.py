@@ -795,56 +795,57 @@ def parse(s: str, defS) -> List[AST]:
         #             body = parse_var(tS)[0] # temporary 
         #             ast=Loop(cond,body)
         #         case _:
-        #             return ast       
+        #             return ast   
+        #     
     def parse_func(tS): # Function definition and Function call
         ast = parse_brackets(tS)
         while True:
             match t.peek(None):
                 case KeywordToken("fn"): # function declaration
-                # case KeywordToken("fn") | KeywordToken("fnrec"): # function declaration
-                    # if t.peek(None).kw_name == "fnrec":
-                    #     isRec = True
-                    # else:
-                    #     isRec = False
-
-                    next(t)
-                    
+                    next(t)    
                     if isinstance(t.peek(None), VarToken):
                         funcName = t.peek(None).var_name
                         next(t)
                     else:
                         raise SyntaxError("Function name missing.")
-                        # print("Function name missing\nAborting")
-                        # exit()
 
                     if tS.inScope(funcName):
                         raise RedeclarationError(f"Multiple declaration of function `{funcName}()` in the same scope is not allowed.")
-                        # print(f"Error! Multiple declaration of function `{funcName}()` in the same scope (not allowed)")
-                        # exit()
-
-                    expect(LeftParenToken())
-
-                    # parse parameters
-                    params = []
-                    while isinstance(t.peek(None), VarToken):
-                        params.append(t.peek(None).var_name)
-                        next(t)
-                        if isinstance(t.peek(None), CommaToken):
-                            next(t) 
-                        else:
-                            expect(RightParenToken()) # parameter list end
-                            break    
-                    
-                    if len(params)==0:
-                        expect(RightParenToken()) # no parameters in the function declaration
-
-                    tS_f = SymbolTable(tS) # Function Scope (with tS as parent scope)
-
-                    # add param names to function scope
-                    for var_name in params:
-                        tS_f.define(var_name, None, SymbolCategory.VARIABLE)
                     
                     tS.define(funcName, None, SymbolCategory.FUNCTION) # add to scope
+                    tS_f = SymbolTable(tS) # Function Scope (with tS as parent scope)
+
+                    # parse parameters
+                    expect(LeftParenToken())
+                    params = []
+
+                    while isinstance(t.peek(None), VarToken):
+                        param_name = t.peek(None).var_name
+                        next(t)
+                        if isinstance(t.peek(None), LeftSquareToken):
+                            next(t)
+                            expect(RightSquareToken())
+                            tS_f.define(param_name, None, SymbolCategory.ARRAY)
+                            params.append((param_name, SymbolCategory.ARRAY))
+                        else:
+                            tS_f.define(param_name, None, SymbolCategory.VARIABLE)
+                            params.append((param_name, SymbolCategory.VARIABLE))
+
+                        if isinstance(t.peek(None), CommaToken):
+                            next(t)
+                            if not isinstance(t.peek(None), VarToken):
+                                expect(RightParenToken())
+                                break
+                        elif isinstance(t.peek(None), RightParenToken):
+                            # param list end
+                            next(t)
+                            break
+                        else:
+                            raise SyntaxError(f"Invalid synyax for formal parameter list in `{funcName}`.")
+
+                    if len(params)==0:
+                        expect(RightParenToken()) # no parameters in the function declaration
+                    
                     expect(LeftBraceToken()) # {
                     # function body begins
                     (body, tS_f) = parse_program(tS_f) # get updated tS_f
@@ -855,7 +856,10 @@ def parse(s: str, defS) -> List[AST]:
                 # Function call
                 case LeftParenToken(): # denotes the identifier is not a variable but a function call
                     # extract arguments
-                    funcName = ast.var_name
+                    if isinstance(ast, Variable):
+                        funcName = ast.var_name
+                    elif isinstance(ast, CallArr):
+                        funcName = ast
                     funcArgs = []
                     next(t)
                     while True: 
@@ -912,7 +916,6 @@ def parse(s: str, defS) -> List[AST]:
                                     next(t)
                                     indices.append(parse_var(tS)[0])
                                     expect(RightSquareToken())
-                                
                                 if (isinstance(t.peek(None), OperatorToken) 
                                     and t.peek(None).o == "="):  # assigning a new value
                                     next(t)
