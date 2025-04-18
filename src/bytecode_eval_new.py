@@ -10,9 +10,9 @@ class BytecodeVM:
         self.frame_index = 0       # Current frame index
         self.builtins = {  # Built-in functions
         # Existing built-ins
-        'chr': (chr, 1),
-        'ord': (ord, 1),
-        'len': (len, 1),
+        'char': (chr, 1),
+        'ascii': (ord, 1),
+        'length': (len, 1),
         'string': (str, 1),
         'integer': (int, 1),
         'decimal': (float, 1),
@@ -431,13 +431,19 @@ class BytecodeVM:
             case I.MAKE_HASH():
                 # Create a hash from the top 'size*2' values on the stack (key-value pairs)
                 size = instruction.size
-                hash_map = {}
+                keys = []
+                values = []
                 for _ in range(size):
                     value = self.pop()
                     key = self.pop()
-                    hash_map[key] = value
+                    # Insert at the beginning to restore original order
+                    keys.insert(0, key)
+                    values.insert(0, value)
+                # Create dictionary with preserved order
+                hash_map = {k: v for k, v in zip(keys, values)}
                 self.push(hash_map)
                 self.ip += 1
+
                 
             case I.ARRAY_GET():
                 # Get element from array
@@ -623,14 +629,10 @@ if __name__ == "__main__":
     displayl sum;"""
 
     program="""
-    var integer c = 20;
-    for (var i = 0; i < 5; i += 1) {
-        for (var j = 0; j < 3; j += 1) {
-            displayl(i * j);
-        }
-    }
-    /> displayl i;
+    var str = \"Length Test\";
+    var len = str.Length();
+    display len;
     """
 
-
+    # pprint(parse(program))
     run_program(program,display_bytecode=True)

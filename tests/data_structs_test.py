@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 from evaluator import *
+from bytecode_eval_new import * 
 from pprint import pprint
 
 @pytest.mark.parametrize("code, expected_output", [
@@ -42,7 +43,10 @@ def test_array_operations(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
-
+    run_program(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
+    
 @pytest.mark.parametrize("code, expected_output", [
     ("""
     var a = [1,2,3,4,5];
@@ -82,6 +86,9 @@ def test_array_functions(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
+    run_program(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
 
 @pytest.mark.parametrize("code, expected_output", [
     # Test arithmetic operations with variables
@@ -97,7 +104,7 @@ def test_array_functions(code, expected_output, capfd):
     var a = 5.5;
     var b = 2.2;
     displayl (a * b) - a + (a % b);
-    displayl (a / b) + (a ^ 2) - b; 
+    displayl (a / b) + (a ** 2) - b; 
     displayl (a > b) and (a < (b + 10)); 
     displayl not (a == b);
     """, "7.700000000000001\n30.55\nTrue\nTrue"),
@@ -106,7 +113,7 @@ def test_array_functions(code, expected_output, capfd):
     ("""
     var x = -3.3;
     displayl (x + 1.1) * (x - 1.1) / (x % 1.1 + 1.0);
-    displayl (x ^ 2.0) - (x * 2.0) + (x / 2.0);
+    displayl (x ** 2.0) - (x * 2.0) + (x / 2.0);
     """, "9.679999999999996\n15.839999999999998"),
 
     # # Test floating-point operations inside a loop with combined operators
@@ -120,8 +127,8 @@ def test_array_functions(code, expected_output, capfd):
     ("""
     fn calculate(x, y) {
         displayl (x + y) * (x - y) / (x % y + 1.0);
-        displayl (x ^ y) - (x * y) + (x / y);
-    }
+        displayl (x ** y) - (x * y) + (x / y);
+    };
     calculate(4.4, 2.2);
     """, "14.520000000000003\n18.35729647727544"),
 
@@ -129,7 +136,7 @@ def test_array_functions(code, expected_output, capfd):
     ("""
     fn compute(x, y) {
         (x * y) + (y / x) - (x % y);
-    }
+    };
     var z = 1.0;
     for (var j = 0.5; j <= 2.0; j += 0.5) {
         z = compute(z, j);
@@ -162,7 +169,7 @@ def test_array_functions(code, expected_output, capfd):
     ("""
     fn multiplyByTwo(x) {
         x * 2.0;
-    }
+    };
     var c = 1.25;
     displayl multiplyByTwo(c);
     """, "2.5"),
@@ -173,7 +180,7 @@ def test_array_functions(code, expected_output, capfd):
         var result = x + y;
         displayl result;
         result;
-    }
+    };
     var d = 0.5;
     for (var e = 1.0; e <= 2.0; e = e + 0.5) {
         d = addAndDisplay(d, e);
@@ -199,6 +206,9 @@ def test_floating_point_operations(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
+    run_program(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
 
 @pytest.mark.parametrize("code, expected_output", [
     # Test nested array access and modification
@@ -243,6 +253,9 @@ def test_nested_structures(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
+    run_program(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
 
 @pytest.mark.parametrize("code, expected_output", [
     # Test string access and modification
@@ -307,6 +320,9 @@ def test_string_operations(code, expected_output, capfd):
     captured = capfd.readouterr()
     assert captured.out.strip() == expected_output
 
+    run_program(code)
+    captured = capfd.readouterr()
+    assert captured.out.strip() == expected_output
 
 if __name__ == "__main__":
     

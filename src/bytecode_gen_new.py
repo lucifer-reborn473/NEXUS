@@ -264,9 +264,9 @@ def generate_bytecode(node, code):
                 case "~": code.emit(I.BITNOT())
                 case "not" | "!": code.emit(I.NOT())
                 case "ascii":
-                    code.emit(I.CALL("ord"))
+                    code.emit(I.CALL("ascii"))
                 case "char":
-                    code.emit(I.CALL("chr"))
+                    code.emit(I.CALL("char"))
         
         # Variable binding and assignment
         case VarBind(name, dtype, value, _):
@@ -721,7 +721,7 @@ def generate_bytecode(node, code):
 
         case GetLength(arr_name):
             code.emit(I.LOAD(arr_name))
-            code.emit(I.CALL("len"))
+            code.emit(I.CALL("length"))
 
         
         # String operations
