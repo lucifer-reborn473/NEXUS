@@ -822,7 +822,12 @@ def parse(s: str, defS) -> List[AST]:
                     while isinstance(t.peek(None), VarToken):
                         param_name = t.peek(None).var_name
                         next(t)
-                        if isinstance(t.peek(None), LeftSquareToken):
+                        if isinstance(t.peek(None), LeftBraceToken):
+                            next(t)
+                            expect(RightBraceToken())
+                            tS_f.define(param_name, None, SymbolCategory.HASH)
+                            params.append((param_name, SymbolCategory.ARRAY))
+                        elif isinstance(t.peek(None), LeftSquareToken):
                             next(t)
                             expect(RightSquareToken())
                             tS_f.define(param_name, None, SymbolCategory.ARRAY)
