@@ -25,7 +25,7 @@ code1="""
 """
 
 code2="""
-    var limit = 4 * 10^6;
+    var limit = 4 * 10**6;
     var a = 1;
     var b= 2;
     var sum = 0;
@@ -81,7 +81,7 @@ fn is_palindrome(n) {
         n /= 10;
     };
     original == reversed;
-}
+};
 
 var largest_palindrome = 0;
 var i = 999;

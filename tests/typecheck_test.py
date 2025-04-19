@@ -4,7 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 import pytest
 from evaluator import *
 from pprint import pprint
-
+from bytecode_eval_new import *
 
 @pytest.mark.parametrize("code, expected_output", [
     # Test integer type
@@ -151,6 +151,9 @@ def test_var_type_declarations(code, expected_output, capfd):
         execute(code)
         captured = capfd.readouterr()
         assert captured.out.strip() == expected_output
+        # run_program(prog)
+        # captured = capfd.readouterr()
+        # assert captured.out.strip() == expected_output
     except Exception as e:
         assert isinstance(e, expected_output)
 

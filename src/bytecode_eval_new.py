@@ -1,5 +1,6 @@
 from bytecode_gen_new import *
 import math
+from evaluator import execute
 
 class BytecodeVM:
     def __init__(self, bytecode):
@@ -616,23 +617,21 @@ if __name__ == "__main__":
 #     displayl 179;
 #     displayl u;
 # """
-    program="""var sum = 0;
-    for (var i = 0; i < 3; i += 1) {
-        var j = 0;
-        while (j < 2) {
-            repeat (2) {
-                sum += i + j;
-            }
-            j += 1;
-        }
-    }
-    displayl sum;"""
 
     program="""
-    var str = \"Length Test\";
-    var len = str.Length();
-    display len;
+    var res=0;
+    for (var i=100; i<=1000; i+=1){
+        for (var j=100; j<=1000; j+=1){
+            var string b= string(i*j);
+            var string c= b.Slice(None,None,-1);
+            var d = if b==c then i * j  else 0  end;
+            res=max([res,d]);
+        }
+    }
+    displayl res;
     """
 
+    # pprint(list(lex(program)))
     # pprint(parse(program))
     run_program(program,display_bytecode=True)
+    

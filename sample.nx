@@ -1,43 +1,10 @@
-/~ var limit = 4 * 10^6;
-    var a = 1;
-    var b= 2;
-    var sum = 0;
-    while (b < limit){
-        if (b%2==0) then{
-            sum+=b;
-        }
-        end;
-        var temp = a + b;
-        a = b;
-        b = temp;
-    };
-    displayl sum;
-~/
-var x = 10;
-var arr = [1, 2, 3];
-var hash = {"key1": 10, "key2": 20};
-
-arr.PushBack(4);
-hash.Add("key3", 30);
-
-fn multiply(a, b) {
-     a * b;
+var res=0;
+for (var i=100; i<=1000; i+=1){
+    for (var j=100; j<=1000; j+=1){
+        var b= string(i*j);
+        var c= b.Slice(b.Length,-1,-1);
+        var d = if b==c then i * j  else 0  end;
+        res=max(res,d);
+    }
 }
-
-
-if x > 5 then {
-    displayl "x is greater than 5";
-} else {
-    displayl "x is 5 or less";
-} end;
-
-while (x > 0) {
-    displayl x;
-    x = x - 1;
-}
-displayl ("array display:");
-for (var integer i = 0; i < arr.Length; i = i + 1) {
-    displayl arr[i];
-}
-
-displayl multiply(hash["key1"], 2);
+displayl res;

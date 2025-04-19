@@ -271,6 +271,7 @@ def lex(s: str) -> Iterator[Token]:
                     yield RightSquareToken()
                 case ',':
                     i+=1
+                    prevToken = CommaToken()
                     yield CommaToken()
                 case '.':
                     i+=1

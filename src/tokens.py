@@ -79,6 +79,7 @@ math_tokens = (
 boolean_tokens = (
     "True",
     "False",
+    "None",
 )
 
 base_type_tokens = (

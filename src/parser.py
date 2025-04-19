@@ -2,7 +2,7 @@ from more_itertools import peekable
 from typing import Optional, Any, List,Tuple
 from pprint import pprint
 from lexer import *
-from scope import SymbolTable, SymbolCategory
+from scope import SymbolTable, SymbolCategory, map_type_to_enum
 
 # ==========================================================================================
 # ==================================== PARSER ==============================================
@@ -426,7 +426,10 @@ def parse(s: str) -> List[AST]:
                     next(t)
                     dtype, name = parse_dtype_and_name()
                     value = parse_value()
-                    category=map_type(value)
+                    if dtype is not None:
+                        category=map_type_to_enum(dtype)
+                    else:
+                        category=map_type(value)
                     ast = VarBind(name, dtype, value,category)
                     tS.define(name,None,category)
                 case KeywordToken("fixed"):  # Add this case
@@ -766,7 +769,14 @@ def parse(s: str) -> List[AST]:
         match t.peek(None):
             case BooleanToken(b):
                 next(t)
-                return Boolean(b=="True")
+                if b == "True":
+                    return Boolean(True)
+                elif b == "False":
+                    return Boolean(False)
+                elif b == "None":
+                    return Boolean(None)
+                else:
+                    raise ValueError(f"Unexpected boolean value: {b}")
             case _:
                 return parse_func(tS)
     # def loop_parse(tS):
