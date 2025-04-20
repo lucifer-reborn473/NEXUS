@@ -1,0 +1,66 @@
+fn dfs(graph{}, node, visited[]) {
+    /> Mark the current node as visited
+    visited[node] = true;
+    
+    /> Process the current node
+    displayl node;
+    
+    /> Recur for all adjacent vertices
+    var neighbors = graph[node];
+    for(var i = 0; i < neighbors.Length; i += 1) {
+        var neighbor = neighbors[i];
+        if(!visited[neighbor]) then {
+            dfs(graph, neighbor, visited);
+        } end;
+    };
+};
+
+fn runDFS(graph{}, startNode) {
+    /> Create visited array
+    var visited = [];
+    for(var i = 0; i < 100; i += 1) {
+        visited.PushBack(false);
+    };
+    
+    /> Call DFS
+    dfs(graph, startNode, visited);
+};
+
+/>==========================
+fn iterativeDFS(graph{}, startNode) {
+    /> Create a stack for DFS
+    var stack = [];
+    
+    /> Create a visited array
+    var visited = [];
+    for(var i = 0; i < 100; i += 1) {
+        visited.PushBack(false);
+    };
+    
+    /> Push the starting node to stack
+    stack.PushBack(startNode);
+    
+    while(stack.Length > 0) {
+        /> Pop a vertex from stack
+        var current = stack[stack.Length - 1];
+        stack.PopBack();
+        
+        /> Skip if already visited
+        if(visited[current]) then {
+            moveon;
+        } end;
+        
+        /> Mark as visited and process
+        visited[current] = true;
+        displayl current;
+        
+        /> Get all adjacent vertices
+        var neighbors = graph[current];
+        for(var i = neighbors.Length - 1; i >= 0; i -= 1) {
+            var neighbor = neighbors[i];
+            if(!visited[neighbor]) then {
+                stack.PushBack(neighbor);
+            } end;
+        };
+    };
+};

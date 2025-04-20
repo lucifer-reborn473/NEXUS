@@ -1,0 +1,31 @@
+/> Function to create a matrix represented as a 1D array
+fn createMatrix(rows, cols, defaultValue) {
+    var matrix = [];
+    for(var i = 0; i < rows * cols; i += 1) {
+        matrix.PushBack(defaultValue);
+    };
+    matrix;
+};
+
+/> Function to get value at specific row,col
+fn getMatrixValue(matrix, rows, cols, row, col) {
+    if(row < 0 || row >= rows || col < 0 || col >= cols) then {
+        displayl "Error: Index out of bounds";
+        return -1;
+    } end;
+    
+    var index = row * cols + col;
+    matrix[index];
+};
+
+/> Function to set value at specific row,col
+fn setMatrixValue(matrix, rows, cols, row, col, value) {
+    if(row < 0 || row >= rows || col < 0 || col >= cols) then {
+        displayl "Error: Index out of bounds";
+        return matrix;
+    } end;
+    
+    var index = row * cols + col;
+    matrix[index] = value;
+    matrix;
+};

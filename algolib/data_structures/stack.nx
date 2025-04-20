@@ -1,0 +1,42 @@
+fn createStack() {
+    var stack = [];
+    
+    fn push(item) {
+        stack.PushBack(item);
+    };
+    
+    fn pop() {
+        if(stack.Length == 0) then {
+            displayl "Error: Cannot pop from empty stack";
+            return null;
+        } end;
+        var top = stack[stack.Length - 1];
+        stack.PopBack();
+        return top;
+    };
+    
+    fn peek() {
+        if(stack.Length == 0) then {
+            return null;
+        } end;
+        return stack[stack.Length - 1];
+    };
+    
+    fn isEmpty() {
+        return stack.Length == 0;
+    };
+    
+    fn size() {
+        return stack.Length;
+    };
+    
+    /> Return interface functions
+    var interface = {};
+    interface["push"] = push;
+    interface["pop"] = pop;
+    interface["peek"] = peek;
+    interface["isEmpty"] = isEmpty;
+    interface["size"] = size;
+    
+    interface;
+};

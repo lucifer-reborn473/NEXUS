@@ -1,0 +1,33 @@
+fn diagonalTraversal(matrix, rows, cols) {
+    displayl "Diagonal Traversal:";
+    
+    /> Traverse all diagonals starting from first column
+    for(var k = 0; k < rows; k += 1) {
+        var i = k;
+        var j = 0;
+        var diagStr = "";
+        
+        while(i >= 0 && j < cols) {
+            var index = i * cols + j;
+            diagStr = diagStr + matrix[index] + " ";
+            i -= 1;
+            j += 1;
+        };
+        displayl diagStr;
+    };
+    
+    /> Traverse all diagonals starting from last row (excluding first element)
+    for(var k = 1; k < cols; k += 1) {
+        var i = rows - 1;
+        var j = k;
+        var diagStr = "";
+        
+        while(i >= 0 && j < cols) {
+            var index = i * cols + j;
+            diagStr = diagStr + matrix[index] + " ";
+            i -= 1;
+            j += 1;
+        };
+        displayl diagStr;
+    };
+};

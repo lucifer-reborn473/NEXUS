@@ -1,0 +1,74 @@
+fn createPriorityQueue() {
+    var items = [];
+    
+    fn enqueue(item, priority) {
+        var queueItem = {};
+        queueItem["item"] = item;
+        queueItem["priority"] = priority;
+        
+        var added = false;
+        
+        for(var i = 0; i < items.Length; i += 1) {
+            if(priority < items[i]["priority"]) then {
+                /> Insert at this position
+                var temp = [];
+                /> Copy elements before insertion point
+                for(var j = 0; j < i; j += 1) {
+                    temp.PushBack(items[j]);
+                };
+                
+                /> Insert new item
+                temp.PushBack(queueItem);
+                
+                /> Copy remaining elements
+                for(var j = i; j < items.Length; j += 1) {
+                    temp.PushBack(items[j]);
+                };
+                
+                items = temp;
+                added = true;
+                break;
+            } end;
+        };
+        
+        if(!added) then {
+            items.PushBack(queueItem);
+        } end;
+    };
+    
+    fn dequeue() {
+        if(items.Length == 0) then {
+            displayl "Error: Cannot dequeue from empty priority queue";
+            return null;
+        } end;
+        
+        var item = items[0]["item"];
+        items.PopFront();
+        return item;
+    };
+    
+    fn front() {
+        if(items.Length == 0) then {
+            return null;
+        } end;
+        return items[0]["item"];
+    };
+    
+    fn isEmpty() {
+        return items.Length == 0;
+    };
+    
+    fn size() {
+        return items.Length;
+    };
+    
+    /> Return interface functions
+    var interface = {};
+    interface["enqueue"] = enqueue;
+    interface["dequeue"] = dequeue;
+    interface["front"] = front;
+    interface["isEmpty"] = isEmpty;
+    interface["size"] = size;
+    
+    interface;
+};

@@ -1,0 +1,11 @@
+fn columnMajorTraversal(matrix, rows, cols) {
+    displayl "Column Major Traversal:";
+    for(var j = 0; j < cols; j += 1) {
+        var colStr = "";
+        for(var i = 0; i < rows; i += 1) {
+            var index = i * cols + j;
+            colStr = colStr + matrix[index] + " ";
+        };
+        displayl colStr;
+    };
+};

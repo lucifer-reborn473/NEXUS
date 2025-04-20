@@ -1,0 +1,21 @@
+/> Create and populate a 3x4 matrix
+var rows = 3;
+var cols = 4;
+var matrix = createMatrix(rows, cols, 0);
+
+/> Fill the matrix with values 1 to 12
+for(var i = 0; i < rows; i += 1) {
+    for(var j = 0; j < cols; j += 1) {
+        var value = i * cols + j + 1;
+        matrix = setMatrixValue(matrix, rows, cols, i, j, value);
+    };
+};
+
+/> Display the matrix
+displayl "Matrix:";
+rowMajorTraversal(matrix, rows, cols);
+
+/> Try different traversals
+columnMajorTraversal(matrix, rows, cols);
+diagonalTraversal(matrix, rows, cols);
+spiralTraversal(matrix, rows, cols);

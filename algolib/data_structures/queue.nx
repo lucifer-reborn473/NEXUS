@@ -1,0 +1,42 @@
+fn createQueue() {
+    var queue = [];
+    
+    fn enqueue(item) {
+        queue.PushBack(item);
+    };
+    
+    fn dequeue() {
+        if(queue.Length == 0) then {
+            displayl "Error: Cannot dequeue from empty queue";
+            return null;
+        } end;
+        var front = queue[0];
+        queue.PopFront();
+        return front;
+    };
+    
+    fn front() {
+        if(queue.Length == 0) then {
+            return null;
+        } end;
+        return queue[0];
+    };
+    
+    fn isEmpty() {
+        return queue.Length == 0;
+    };
+    
+    fn size() {
+        return queue.Length;
+    };
+    
+    /> Return interface functions
+    var interface = {};
+    interface["enqueue"] = enqueue;
+    interface["dequeue"] = dequeue;
+    interface["front"] = front;
+    interface["isEmpty"] = isEmpty;
+    interface["size"] = size;
+    
+    interface;
+};

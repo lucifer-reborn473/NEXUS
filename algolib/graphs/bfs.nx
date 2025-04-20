@@ -1,0 +1,35 @@
+fn BFS(graph{}, startNode) {
+    /> Create a queue for BFS
+    var queue = [];
+    
+    /> Create visited array
+    var visited = [];
+    for(var i = 0; i < 100; i += 1) {
+        visited.PushBack(false);
+    };
+    
+    /> Mark the starting node as visited and enqueue it
+    visited[startNode] = true;
+    queue.PushBack(startNode);
+    
+    while(queue.Length > 0) {
+        /> Dequeue a vertex from queue
+        var current = queue[0];
+        queue.PopFront();
+        
+        /> Process the current node
+        displayl current;
+        
+        /> Get all adjacent vertices of the dequeued vertex
+        var neighbors = graph[current];
+        for(var i = 0; i < neighbors.Length; i += 1) {
+            var neighbor = neighbors[i];
+            
+            /> If not visited, mark it and enqueue it
+            if(!visited[neighbor]) then {
+                visited[neighbor] = true;
+                queue.PushBack(neighbor);
+            } end;
+        };
+    };
+};

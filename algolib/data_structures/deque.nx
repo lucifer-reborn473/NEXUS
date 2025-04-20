@@ -1,0 +1,66 @@
+fn createDeque() {
+    var deque = [];
+    
+    fn addFront(item) {
+        deque.PushFront(item);
+    };
+    
+    fn addRear(item) {
+        deque.PushBack(item);
+    };
+    
+    fn removeFront() {
+        if(deque.Length == 0) then {
+            displayl "Error: Cannot remove from empty deque";
+            return null;
+        } end;
+        var front = deque[0];
+        deque.PopFront();
+        return front;
+    };
+    
+    fn removeRear() {
+        if(deque.Length == 0) then {
+            displayl "Error: Cannot remove from empty deque";
+            return null;
+        } end;
+        var rear = deque[deque.Length - 1];
+        deque.PopBack();
+        return rear;
+    };
+    
+    fn getFront() {
+        if(deque.Length == 0) then {
+            return null;
+        } end;
+        return deque[0];
+    };
+    
+    fn getRear() {
+        if(deque.Length == 0) then {
+            return null;
+        } end;
+        return deque[deque.Length - 1];
+    };
+    
+    fn isEmpty() {
+        return deque.Length == 0;
+    };
+    
+    fn size() {
+        return deque.Length;
+    };
+    
+    /> Return interface functions
+    var interface = {};
+    interface["addFront"] = addFront;
+    interface["addRear"] = addRear;
+    interface["removeFront"] = removeFront;
+    interface["removeRear"] = removeRear;
+    interface["getFront"] = getFront;
+    interface["getRear"] = getRear;
+    interface["isEmpty"] = isEmpty;
+    interface["size"] = size;
+    
+    interface;
+};

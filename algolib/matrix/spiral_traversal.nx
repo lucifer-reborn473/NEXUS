@@ -1,0 +1,46 @@
+
+fn spiralTraversal(matrix, rows, cols) {
+    displayl "Spiral Traversal:";
+    var spiralStr = "";
+    
+    var top = 0;
+    var bottom = rows - 1;
+    var left = 0;
+    var right = cols - 1;
+    
+    while(top <= bottom && left <= right) {
+        /> Traverse right
+        for(var i = left; i <= right; i += 1) {
+            var index = top * cols + i;
+            spiralStr = spiralStr + matrix[index] + " ";
+        };
+        top += 1;
+        
+        /> Traverse down
+        for(var i = top; i <= bottom; i += 1) {
+            var index = i * cols + right;
+            spiralStr = spiralStr + matrix[index] + " ";
+        };
+        right -= 1;
+        
+        /> Traverse left
+        if(top <= bottom) then {
+            for(var i = right; i >= left; i -= 1) {
+                var index = bottom * cols + i;
+                spiralStr = spiralStr + matrix[index] + " ";
+            };
+            bottom -= 1;
+        } end;
+        
+        /> Traverse up
+        if(left <= right) then {
+            for(var i = bottom; i >= top; i -= 1) {
+                var index = i * cols + left;
+                spiralStr = spiralStr + matrix[index] + " ";
+            };
+            left += 1;
+        } end;
+    };
+    
+    displayl spiralStr;
+};

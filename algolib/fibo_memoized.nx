@@ -1,0 +1,25 @@
+fn fibonacciMemoized(n) {
+    var memo = {};
+    
+    fn fib(n) {
+        /> Base cases
+        if(n <= 0) then {
+            return 0;
+        } end;
+        
+        if(n == 1 || n == 2) then {
+            return 1;
+        } end;
+        
+        /> Check if already computed
+        if(memo[n] != null) then {
+            return memo[n];
+        } end;
+        
+        /> Compute and store result
+        memo[n] = fib(n-1) + fib(n-2);
+        return memo[n];
+    };
+    
+    fib(n);
+};
