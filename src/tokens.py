@@ -33,6 +33,7 @@ keyword_tokens = (
     "ascii",
     "char",
     "fn",
+    "return",
     "fnrec",
     "or",
     "not",
@@ -54,6 +55,8 @@ math_tokens = (
 "sqrt",
 "cbrt",
 "pow",
+"SUM",
+"AVG",
 "exp",
 "log",
 "log10",
@@ -78,6 +81,7 @@ math_tokens = (
 boolean_tokens = (
     "True",
     "False",
+    "None",
 )
 
 base_type_tokens = (
