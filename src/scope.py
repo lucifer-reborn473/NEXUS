@@ -5,13 +5,12 @@ from pprint import pprint
 
 class SymbolCategory(Enum):
     VARIABLE = "variable"
-    FUNCTION = "function"
     ARRAY = "list"
-    CONSTANT = "constant"
     HASH = "dict"
     SCHEMA ="class"
     FIXED = "fixed"
     STRING = "string"
+    FUNCTION = "function"
     # Add more categories as needed
 
 @dataclass
