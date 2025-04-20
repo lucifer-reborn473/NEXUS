@@ -6,6 +6,7 @@ from evaluator import *
 import time
 from tqdm import tqdm
 from pprint import pprint
+from bytecode_eval_new import *
 
 def run_nexus_file(file_path,display_ast=False):
     """Runs the given Nexus file and tracks execution time."""
@@ -20,7 +21,7 @@ def run_nexus_file(file_path,display_ast=False):
             print('\n')
         print(f"Running {file_path}...\n")
         start_time = time.perf_counter_ns()
-        execute(code)
+        run_program(code)
         end_time = time.perf_counter_ns()
         execution_time_us = (end_time - start_time) / 1000  # Convert nanoseconds to microseconds
         print(f"\nProgram execution completed in {execution_time_us:.2f} microseconds.")
