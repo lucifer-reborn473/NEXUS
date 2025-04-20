@@ -123,7 +123,7 @@ def e(tree: AST, tS) -> Any:
         case BinOp("|", l, r):
             return e(l, tS) | e(r, tS)
         case BinOp("^", l, r):
-            return e(l, tS) ** e(r, tS)
+            return e(l, tS) ^ e(r, tS)
         case BinOp("<<", l, r):
             return e(l, tS) << e(r, tS)
         case BinOp(">>", l, r):
@@ -188,6 +188,92 @@ def e(tree: AST, tS) -> Any:
             return (funcDefParams, funcDefBody, funcDefScope)
 
         case FuncCall(fn_name, fn_args):
+
+            # SOME IN-BUILT FUNCTION CALLS ********
+            if type(fn_name)==str and fn_name=="sort":
+                if len(fn_args)<1:
+                    raise ValueError("sort function requires at least one argument")
+
+                arr = e(fn_args[0], tS)
+                if not isinstance(arr, list):
+                    raise TypeError(f"sort function expects an array, got {type(arr)}")
+            
+                # Check for optional second argument (reverse flag)
+                reverse = False
+                if len(fn_args) > 1:
+                    reverse = e(fn_args[1], tS)
+                    if not isinstance(reverse, bool):
+                        raise TypeError(f"sort function's second argument must be a boolean, got {type(reverse)}")
+                # Return sorted array
+                try:
+                    return sorted(arr, reverse=reverse)
+                except TypeError:
+                    # Handle mixed type arrays by converting to strings for comparison
+                    return sorted(arr, key=str, reverse=reverse)
+
+            if type(fn_name) == str and fn_name == "lower":
+                if len(fn_args) != 1:
+                    raise ValueError("lower() function requires exactly one argument")
+                string_val = e(fn_args[0], tS)
+                if not isinstance(string_val, str):
+                    raise TypeError(f"lower() function expects a string, got {type(string_val)}")
+                return string_val.lower()
+            
+            if type(fn_name) == str and fn_name == "upper":
+                if len(fn_args) != 1:
+                    raise ValueError("upper() function requires exactly one argument")
+                string_val = e(fn_args[0], tS)
+                if not isinstance(string_val, str):
+                    raise TypeError(f"upper() function expects a string, got {type(string_val)}")
+                return string_val.upper()
+            
+            if type(fn_name) == str and fn_name == "reverse":
+                if len(fn_args) != 1:
+                    raise ValueError("reverse() function requires exactly one argument")
+                arr = e(fn_args[0], tS)
+                if not isinstance(arr, list):
+                    raise TypeError(f"reverse() function expects an array, got {type(arr)}")
+                return list(reversed(arr))
+
+            if type(fn_name) == str and fn_name == "unique":
+                if len(fn_args) != 1:
+                    raise ValueError("unique() function requires exactly one argument")
+                arr = e(fn_args[0], tS)
+                if not isinstance(arr, list):
+                    raise TypeError(f"unique() function expects an array, got {type(arr)}")
+                unique_arr = []
+                seen = set()
+                for item in arr:
+                    if item not in seen:
+                        seen.add(item)
+                        unique_arr.append(item)
+                return unique_arr
+
+            if type(fn_name) == str and fn_name == "so":
+                if len(fn_args) != 1:
+                    raise ValueError("so function expects exactly one argument")
+                return bool(e(fn_args[0], tS))
+
+            if type(fn_name) == str and fn_name == "num":
+                if len(fn_args) != 1:
+                    raise ValueError("num() function requires exactly one argument")
+                val = e(fn_args[0], tS)
+                if isinstance(val, (int, float)):
+                    return val
+                if isinstance(val, str):
+                    try:
+                        # Try converting to integer first
+                        return int(val)
+                    except ValueError:
+                        try:
+                            # Fallback to float conversion if integer conversion fails
+                            return float(val)
+                        except ValueError:
+                            raise ValueError(f"Cannot convert {val} to a number")
+                else:
+                    raise TypeError("num() function expects a string or a number")
+
+            # GENERAL FUNCTION CALLS ********
             # Step 1: Extract function body & adjust scope
             if (isinstance(fn_name, CallArr)):
                 arr = tS.lookup(fn_name.xname)
@@ -235,6 +321,8 @@ def e(tree: AST, tS) -> Any:
                     eval_scope.define(param[0], e(arg, tS), SymbolCategory.VARIABLE)
                 elif param[1]==SymbolCategory.ARRAY:
                     eval_scope.define(param[0], e(arg, tS), SymbolCategory.ARRAY)
+                elif param[1]==SymbolCategory.HASH:
+                    eval_scope.define(param[0], e(arg, tS), SymbolCategory.HASH)
 
             # Step 3: Evaluate the function body
             ans = None
@@ -737,33 +825,66 @@ fn negone() { 0-1; };
 displayl A(one, negone);
 """  # works #! but why we have to put zero here?
 
-    prog2 = """
+    prog = """
 var a = 2;
 a[0] = 1;
 displayl a;
-""" #! handle errors for cases like this
+""" #! handle errors for cases like this (but then REPL doesn't catch it!)
 
-#! implement in-built sort() function for arrays
+    prog2 = """
+var a = [1,2,3];
+displayl a.Length;
+""" #! dont have fixed as alag category, instead have a flag to disallow writes to a variable type
+
+
     prog = """
-    fn add(a, b) {
-        a + b;
-    };
-    fn subtract(a, b) {
-        a - b;
-    };
-    fn multiply(a, b) {
-        a * b;
-    };
-    var funcs = [add, subtract, multiply];
-    displayl [funcs[0](10,5), funcs[1](10,5), funcs[2](10,5)];
+var b;
+var a = so(b);
+if a then displayl "t" else displayl "f" end;
+""" #? add to docs
+
+    prog2 = """
+var a = typeof({});
+displayl typeof(a);
+""" #? add to docs (typeof returns a string)
+
+    prog = """
+fn foo(){};
+displayl so(foo);
+"""#? add to docs (functions always evaluate to True)
+
+    """
+    This is causing implicit static typing (a string type variable when assigned to a list dont make list methods run on it)
+    VARIABLE = "variable"
+
+    ARRAY = "list"
+    HASH = "dict"
+    SCHEMA ="class"
+    STRING = "string"
+
+    FIXED = "fixed"
+    
+    FUNCTION = "function"
+    """
+
+    # for t in lex(prog):
+    #     print(t)
+
+    # parsed, gS = parse(prog, SymbolTable())
+    # print("------")
+    # pprint(parsed)
+    # print("------")
+    # pprint(gS.table)
+
+    prog = """
+var arr = [1,3,2];
+var a = [];
+a = sort(arr);
+displayl a.PopBack;
+displayl a;
 """
 
 
-    parsed, gS = parse(prog, SymbolTable())
-    print("------")
-    pprint(parsed)
-    print("------")
-    pprint(gS.table)
 
     print("------")
     print("Program Output: ")
