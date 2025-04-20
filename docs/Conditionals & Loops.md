@@ -34,14 +34,36 @@
         ```
 
     - Nesting:
-        ```prog
-        var a = if 4<3 then if 3==2 then 5 else 100 end else 1000 end;
-        displayl a;
-        ```
-        Output:
-        ```prog
-        1000
-        ```
+        - Example 1:
+            ```prog
+            var a = if 4<3 then if 3==2 then 5 else 100 end else 1000 end;
+            displayl a;
+            ```
+            Output:
+            ```prog
+            1000
+            ```
+        -  Example 2:
+            ```
+            var a = 100;
+            var b;
+            if a<5 then {
+                b = "less than 5";
+            } else if a<50 then {
+                        b = "less than 50";
+                    } else if a<60 then {
+                            b = "less than 60";
+                        } else {
+                            b = "more than 60";
+                        } end
+                    end 
+            end;
+            displayl b;
+            ```
+            Output:
+            ```
+            more than 60
+            ```
 
 ### Loops
 - `for` and `while` loops supported with similar syntax as in C/C++.
