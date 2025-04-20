@@ -110,6 +110,7 @@ compound_assigners = (
     "-=",
     "/=",
     "%=",
+    "÷=",
 )
 
 bitwise_ops=(
