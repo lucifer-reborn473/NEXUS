@@ -1,43 +1,32 @@
-/~ var limit = 4 * 10^6;
-    var a = 1;
-    var b= 2;
-    var sum = 0;
-    while (b < limit){
-        if (b%2==0) then{
-            sum+=b;
-        }
-        end;
-        var temp = a + b;
-        a = b;
-        b = temp;
+fn compute() {
+    fn isprime(n) {
+        if n <= 1 then { 
+            return False; 
+        } end;
+        var i = 2;
+        while (i * i <= n) {
+            if (n % i == 0) then { 
+                return False; 
+            } end;
+            i += 1;
+        };
+        return True;
     };
-    displayl sum;
-~/
-var x = 10;
-var arr = [1, 2, 3];
-var hash = {"key1": 10, "key2": 20};
+    var count = 0;
+    var current = 2;
+    var ans = 0;
 
-arr.PushBack(4);
-hash.Add("key3", 30);
+    while (count < 10001) {
+        if (isprime(current)) then {
+            count += 1;
+            if (count == 10001) then {
+                ans = current;
+            } end;
+        } end;
+        current += 1;
+    };
 
-fn multiply(a, b) {
-     a * b;
-}
+    string(ans);
+};
 
-
-if x > 5 then {
-    displayl "x is greater than 5";
-} else {
-    displayl "x is 5 or less";
-} end;
-
-while (x > 0) {
-    displayl x;
-    x = x - 1;
-}
-displayl ("array display:");
-for (var integer i = 0; i < arr.Length; i = i + 1) {
-    displayl arr[i];
-}
-
-displayl multiply(hash["key1"], 2);
+displayl (compute());
