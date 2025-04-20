@@ -83,6 +83,8 @@ class BytecodeVM:
         'math_atanh': (lambda x: math.atanh(x), 1),
         'math_pi': (lambda: math.pi, 0),
         'math_e': (lambda: math.e, 0),
+        'math_sum': (lambda arr: sum(arr), 1),
+        'math_avg': (lambda arr: sum(arr) / len(arr), 1),
         }
     
     def current_frame(self):
@@ -618,20 +620,113 @@ if __name__ == "__main__":
 #     displayl u;
 # """
 
-    program="""
-    var res=0;
-    for (var i=100; i<=1000; i+=1){
-        for (var j=100; j<=1000; j+=1){
-            var string b= string(i*j);
-            var string c= b.Slice(None,None,-1);
-            var d = if b==c then i * j  else 0  end;
-            res=max([res,d]);
-        }
-    }
-    displayl res;
-    """
+    program = """
+fn compute() {
+    /> Implementation of Project Euler Problem 14 - Longest Collatz sequence
+    
+    fn collatz_chain_length(x) {
+        /> Create a cache to store already computed lengths
+        var hash cache = {};
+        
+        fn collatz_with_cache(n) {
+            /> Base case: if n is 1, the chain length is 1
+            if n == 1 then {
+                return 1;
+            } end;
+            
+            /> Check if we've already computed this value
+            if cache[n] then {
+                return cache[n];
+            } end;
+            
+            /> Calculate the next number in the sequence
+            var next = 0;
+            if n % 2 == 0 then {
+                next = n / 2;
+            } else {
+                next = n * 3 + 1;
+            } end;
+            
+            /> Calculate the chain length and store in cache
+            var lengthy = collatz_with_cache(next) + 1;
+            cache[n] = lengthy;
+            
+            return lengthy;
+        };
+        
+        return collatz_with_cache(x);
+    };
+    
+    var max_length = 0;
+    var max_number = 0;
+    
+    /> Loop through all numbers from 1 to 999,999
+    for (var i = 1; i < 1000000; i += 1) {
+        var lengthy = collatz_chain_length(i);
+        /> displayl max_length;
+        if lengthy > max_length then {
+            max_length = lengthy;
+            max_number = i;
+        } end;
+    };
+    
+    string(max_number);
+};
 
-    # pprint(list(lex(program)))
-    # pprint(parse(program))
+displayl(compute());
+
+"""
+    program ="""
+    fn compute() {
+    var array triangle = [  /> Mutable
+        [75],
+        [95,64],
+        [17,47,82],
+        [18,35,87,10],
+        [20, 4,82,47,65],
+        [19, 1,23,75, 3,34],
+        [88, 2,77,73, 7,63,67],
+        [99,65, 4,28, 6,16,70,92],
+        [41,41,26,56,83,40,80,70,33],
+        [41,48,72,33,47,32,37,16,94,29],
+        [53,71,44,65,25,43,91,52,97,51,14],
+        [70,11,33,28,77,73,17,78,39,68,17,57],
+        [91,71,52,38,17,14,91,43,58,50,27,29,48],
+        [63,66, 4,68,89,53,67,30,73,16,69,87,40,31],
+        [ 4,62,98,27,23, 9,70,98,73,93,38,53,60, 4,23]
+    ];
+    
+    var integer height = triangle.Length;
+
+    /> Process the triangle from bottom to top
+    for (var i = height - 2; i >= 0; i -= 1) {
+        var array idx = triangle[i];
+        var width = idx.Length ;  /> Get the width of the current row    
+           
+        for (var j = 0; j < width; j += 1) {
+            /> For each position, add the maximum of the two possible paths below
+            var integer path1 = triangle[i + 1][j];
+            var integer path2 = triangle[i + 1][j + 1];
+            
+            if (path1 > path2) then {
+                triangle[i][j] = triangle[i][j] + path1;
+            } else {
+                triangle[i][j] = triangle[i][j] + path2;
+            } end;
+        };
+        
+    };
+    /> The top element now contains the maximum path sum
+    return string(triangle[0][0]);
+};
+
+displayl(compute());
+
+"""
+
+
+    pprint(list(lex(program)))
+    pprint(parse(program))
     run_program(program,display_bytecode=True)
+    # execute(program)
     

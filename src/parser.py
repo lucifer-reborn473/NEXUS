@@ -258,6 +258,12 @@ class MathFunction(AST):
 @dataclass
 class TypeOf(AST):
     value : AST
+
+@dataclass
+class Return(AST):
+    value: AST  # The value to return
+
+
 # ==========================================================================================
 
 def map_type(value):
@@ -379,6 +385,10 @@ def parse(s: str) -> List[AST]:
         (ast, tS) = parse_var(tS)
         while True:
             match t.peek(None):
+                case KeywordToken("return"):
+                    next(t)
+                    return_value = parse_var(tS)[0]
+                    ast = Return(return_value)
                 case KeywordToken("display"):
                     next(t)
                     ast = Display(parse_var(tS)[0])

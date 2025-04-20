@@ -1,10 +1,32 @@
-var res=0;
-for (var i=100; i<=1000; i+=1){
-    for (var j=100; j<=1000; j+=1){
-        var b= string(i*j);
-        var c= b.Slice(b.Length,-1,-1);
-        var d = if b==c then i * j  else 0  end;
-        res=max(res,d);
-    }
-}
-displayl res;
+fn compute() {
+    fn isprime(n) {
+        if n <= 1 then { 
+            return False; 
+        } end;
+        var i = 2;
+        while (i * i <= n) {
+            if (n % i == 0) then { 
+                return False; 
+            } end;
+            i += 1;
+        };
+        return True;
+    };
+    var count = 0;
+    var current = 2;
+    var ans = 0;
+
+    while (count < 10001) {
+        if (isprime(current)) then {
+            count += 1;
+            if (count == 10001) then {
+                ans = current;
+            } end;
+        } end;
+        current += 1;
+    };
+
+    string(ans);
+};
+
+displayl (compute());

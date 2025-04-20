@@ -435,6 +435,11 @@ def generate_bytecode(node, code):
             else:
                 raise ValueError("MoveOn statement outside of loop")
 
+        case Return(value):
+            # Generate code for the return value
+            generate_bytecode(value, code)
+            # Emit return instruction
+            code.emit(I.RETURN())
 
         # Control structures
         case If(cond, then_body, else_body, _):
@@ -444,14 +449,28 @@ def generate_bytecode(node, code):
             generate_bytecode(cond, code)
             code.emit(I.JMP_IF_FALSE(else_label))
             
-            generate_bytecode(then_body, code)
-            code.emit(I.JMP(end_label))
+            # Check if then_body is a Statements object containing a Return
+            if isinstance(then_body, Statements):
+                for stmt in then_body.statements:
+                    generate_bytecode(stmt, code)
+                    # If this statement is a Return, don't emit a JMP
+                    if isinstance(stmt, Return):
+                        break
+            else:
+                generate_bytecode(then_body, code)
+            
+            # Only emit JMP if the then_body doesn't end with a Return
+            if not (isinstance(then_body, Statements) and 
+                    then_body.statements and 
+                    isinstance(then_body.statements[-1], Return)):
+                code.emit(I.JMP(end_label))
             
             code.emit_label(else_label)
             if else_body:
                 generate_bytecode(else_body, code)
             
             code.emit_label(end_label)
+
 
         case Repeat(times, body, _):
             # Prepare loop labels
