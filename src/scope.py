@@ -11,7 +11,19 @@ class SymbolCategory(Enum):
     FIXED = "fixed"
     STRING = "string"
     FUNCTION = "function"
-    # Add more categories as needed
+    BOOLEAN = "boolean"
+
+def map_type_to_enum(type_str: str) -> SymbolCategory:
+    type_mapping = {
+        "integer": SymbolCategory.VARIABLE,
+        "uinteger": SymbolCategory.VARIABLE,
+        "boolean": SymbolCategory.VARIABLE,
+        "decimal": SymbolCategory.VARIABLE,
+        "string": SymbolCategory.STRING,
+        "array": SymbolCategory.ARRAY,
+        "Hash": SymbolCategory.HASH,
+    }
+    return type_mapping.get(type_str, None)
 
 @dataclass
 class SymbolTable:
