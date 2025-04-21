@@ -106,7 +106,7 @@ class BytecodeVM:
         while self.ip < len(self.bytecode.insns):
             instruction = self.bytecode.insns[self.ip]
             self.execute_instruction(instruction)
-            print(f"IP: {self.ip}, Stack: {self.stack}") # printer
+            # print(f"IP: {self.ip}, Stack: {self.stack}") # printer
             
         # Return the top of the stack (if any) as the program result
         return self.stack[0] if self.stack else None
@@ -779,6 +779,7 @@ class BytecodeVM:
                     array = array[:index] + value + array[index + 1 :]
                 else:
                     array[index] = value
+                    self.ip+=1
                 self.push(array)  # Push the modified array back
                 self.ip += 1
                 
