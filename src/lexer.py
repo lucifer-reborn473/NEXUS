@@ -253,6 +253,7 @@ def lex(s: str) -> Iterator[Token]:
                     yield prevToken
                 case '{':
                     i+=1
+                    prevToken = LeftBraceToken()
                     yield LeftBraceToken()
                 case '}':
                     i+=1
