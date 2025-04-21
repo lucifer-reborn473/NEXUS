@@ -633,11 +633,13 @@ class BytecodeVM:
                             raise IndexError("Cannot PopBack from empty array")
                         value = obj.pop()  # Pop last element
                         self.push(value)   # Push the POPPED VALUE
+                        self.push(obj)  # Push the modified array back
                     elif isinstance(obj, str):
                         if len(obj) == 0:
                             raise IndexError("Cannot PopBack from empty string")
                         last_char = obj[-1]
                         self.push(last_char)
+                        self.push(obj[:-1])
                     else:
                         raise TypeError("PopBack requires an array")
                 elif operation == "PopFront":
@@ -647,11 +649,13 @@ class BytecodeVM:
                             raise IndexError("Cannot PopFront from empty array")
                         value = obj.pop(0)  # Pop first element
                         self.push(value)    # Push the POPPED VALUE
+                        self.push(obj)  # Push the modified array back
                     elif isinstance(obj, str):
                         if len(obj) == 0:
                             raise IndexError("Cannot PopBack from empty string")
-                        first_char = obj[1:]
+                        first_char = obj[0]
                         self.push(first_char)
+                        self.push(obj[1:])
                     else:
                         raise TypeError("PopFront requires an array")
                 elif operation == "Insert":
@@ -1142,15 +1146,10 @@ a[0] = "x";
 """
 
     program = """
-    var str = \"Hello\";
-    str.PushBack(\"!\");
-    displayl str;             /> Output: \"Hello!\"
-    str.PushFront(\"Say: \");
-    displayl str;             /> Output: \"Say: Hello!\"
-    str.PopBack;
-    displayl str;             /> Output: \"Say: Hello\"
-    str.PopFront;
-    displayl str;             /> Output: \"Hello\"
+    var arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    displayl arr[1][2];
+    arr[2][0] = 99;
+    displayl arr;
 """
 
     pprint(list(lex(program)))

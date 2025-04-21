@@ -335,7 +335,7 @@ def generate_bytecode(node, code):
             # Strings: NEVER store back (strings are immutable in Python)
             # Hashes: Add, Remove, Clear
             
-            if operation in ["PushBack", "PushFront", "Clear", "Insert", "Remove", "Add"] and var_name != "":
+            if operation in ["PopFront","PopBack","PushBack", "PushFront", "Clear", "Insert", "Remove", "Add"] and var_name != "":
                 # For string operations, we never store back - they return new strings
                 # Check we're not dealing with a temporary result with no name
                 code.emit(I.STORE(var_name))
