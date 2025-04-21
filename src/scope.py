@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 from enum import Enum
 from pprint import pprint
+from copy import copy
 
 class SymbolCategory(Enum):
     VARIABLE = "variable"
@@ -75,12 +76,13 @@ class SymbolTable:
         else:
             raise NameError(f"Variable '{iden}' not found!")
         
-    def find_and_update(self, iden, val):
+    def find_and_update(self, iden, val, new_category=None):
         if iden in self.table:
             category = self.table[iden][1]
             if category == SymbolCategory.FIXED:
                 raise ValueError(f"Error: Cannot reassign to a fixed variable '{iden}'")
-            self.table[iden] = (val, category)
+            category_to_use = new_category if new_category is not None else category
+            self.table[iden] = (val, category_to_use)
         elif self.parent:
             self.parent.find_and_update(iden, val)
         else:

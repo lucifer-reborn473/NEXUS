@@ -6,10 +6,23 @@ import re
 import sys
 
 sys.setrecursionlimit(10000)
+enable_cat_fn = True
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
 
+def determine_runtime_category(value):
+    """Determine the SymbolCategory of a runtime value."""
+    if isinstance(value, list):
+        return SymbolCategory.ARRAY
+    elif isinstance(value, dict):
+        return SymbolCategory.HASH
+    elif isinstance(value, str):
+        return SymbolCategory.STRING
+    # elif isinstance(value, tuple) and len(value) >= 2 and isinstance(value[1], Statements):
+    #     return SymbolCategory.FUNCTION
+    else:
+        return SymbolCategory.VARIABLE
 
 def perform_typecast(var_val, dtype, name=None):
     try:
@@ -142,6 +155,10 @@ def e(tree: AST, tS) -> Any:
             return ord(e(val, tS))
         case UnaryOp("char", val):
             return chr(e(val, tS))
+        case UnaryOp("+", val):
+            return +e(val, tS)
+        case UnaryOp("-", val):
+            return -e(val, tS)        
 
         # VARIABLE ACCESS, DECLARATION & UPDATE ========================================================
         case Variable(v):
@@ -164,12 +181,14 @@ def e(tree: AST, tS) -> Any:
         case VarBind(name, dtype, value, category):
             var_val = e(value, tS)
             var_val = perform_typecast(var_val, dtype, name)
+            category = determine_runtime_category(var_val)
             tS.define(name, var_val, category)  # binds in current scope
             return var_val
 
         case UpdateVar(var_name, value):
             val_to_assign = e(value, tS)
-            tS.find_and_update(var_name, val_to_assign)
+            category = determine_runtime_category(val_to_assign)
+            tS.find_and_update(var_name, val_to_assign, category)
             return val_to_assign
 
         case CompoundAssignment(var_name, op, value):
@@ -179,7 +198,8 @@ def e(tree: AST, tS) -> Any:
                 raise ValueError(f"Error: Cannot modify fixed variable '{var_name}'")
             prev_val = tS.lookup(var_name)
             new_val = e(BinOp(op[0], Number(str(prev_val)), value), tS)
-            tS.find_and_update(var_name, new_val)
+            new_category = determine_runtime_category(new_val)
+            tS.find_and_update(var_name, new_val, new_category)
             return new_val
 
         # FUNCTIONS ===========================================================================
@@ -272,6 +292,14 @@ def e(tree: AST, tS) -> Any:
                             raise ValueError(f"Cannot convert {val} to a number")
                 else:
                     raise TypeError("num() function expects a string or a number")
+
+            if enable_cat_fn and type(fn_name) == str and fn_name == "cat":
+                if len(fn_args) != 1:
+                    raise ValueError("cat() requires exactly one argument")
+                arg = fn_args[0]
+                if not isinstance(arg, Variable):
+                    raise TypeError("cat() argument must be a variable")
+                return tS.lookup(arg.var_name, cat=True)
 
             # GENERAL FUNCTION CALLS ********
             # Step 1: Extract function body & adjust scope
@@ -460,6 +488,191 @@ def e(tree: AST, tS) -> Any:
             else:
                 raise TypeError(f"Slice operation not supported for type {type(arr)}")
 
+        # PROPERTY ACCESS AT RUNTIME===================
+        case PropertyAccess(var_name, operation, args):
+            # Get the actual value and determine its runtime type
+            try:
+                var_value = tS.lookup(var_name) # var_name: (value, category)
+                # var_category = determine_runtime_category(var_value)
+
+                # Handle operations for each runtime type
+                if type(var_value)==list:
+                    match operation:
+                        case "Length":
+                            return len(var_value)
+                        case "PushFront":
+                            if len(args) < 1:
+                                raise ValueError(f"PushFront requires a value argument")
+                            arg_value = e(args[0], tS)
+                            var_value.insert(0, arg_value)
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "PushBack":
+                            if len(args) < 1:
+                                raise ValueError(f"PushBack requires a value argument")
+                            arg_value = e(args[0], tS)
+                            var_value.append(arg_value)
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "PopFront":
+                            if len(var_value) == 0:
+                                raise IndexError(f"Cannot PopFront from empty array")
+                            value = var_value.pop(0)
+                            tS.find_and_update(var_name, var_value)
+                            return value
+                        case "PopBack":
+                            if len(var_value) == 0:
+                                raise IndexError(f"Cannot PopBack from empty array")
+                            value = var_value.pop()
+                            tS.find_and_update(var_name, var_value)
+                            return value
+                        case "Clear":
+                            var_value.clear()
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Insert":
+                            if len(args) < 2:
+                                raise ValueError("Insert requires index and value arguments")
+                            idx = e(args[0], tS)
+                            if not isinstance(idx, int):
+                                raise TypeError("Index must be an integer for Insert operation")
+                            val = e(args[1], tS)
+                            var_value.insert(idx, val)
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+  
+                        case "Remove":
+                            if len(args) < 1:
+                                raise ValueError("Remove requires a value argument")
+                            idx_to_remove = e(args[0], tS)
+                            try:
+                                var_value.pop(idx_to_remove)
+                            except ValueError:
+                                raise ValueError("Value not found in array")
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+
+                        case "Slice":
+                            # Supports 1 to 3 arguments: start, end, step
+                            arg_len = len(args)
+                            start = e(args[0], tS) if arg_len >= 1 and args[0] is not None else None
+                            end   = e(args[1], tS) if arg_len >= 2 and args[1] is not None else None
+                            step  = e(args[2], tS) if arg_len >= 3 and args[2] is not None else None
+                            return var_value[start:end:step]
+
+                        case _:
+                            raise ValueError(f"Unknown operation '{operation}' for arrays")
+                            
+                # elif var_category == SymbolCategory.STRING:
+                elif type(var_value)==str:
+                    match operation:
+                        case "Length":
+                            return len(var_value)
+                        case "PushFront":
+                            if len(args) < 1:
+                                raise ValueError("PushFront requires a value argument")
+                            arg_value = str(e(args[0], tS))
+                            var_value = arg_value + var_value
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "PushBack":
+                            if len(args) < 1:
+                                raise ValueError("PushBack requires a value argument")
+                            arg_value = str(e(args[0], tS))
+                            var_value = var_value + arg_value
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "PopFront":
+                            if len(var_value) == 0:
+                                raise IndexError("Cannot PopFront from an empty string")
+                            char = var_value[0]
+                            var_value = var_value[1:]
+                            tS.find_and_update(var_name, var_value)
+                            return char
+                        case "PopBack":
+                            if len(var_value) == 0:
+                                raise IndexError("Cannot PopBack from an empty string")
+                            char = var_value[-1]
+                            var_value = var_value[:-1]
+                            tS.find_and_update(var_name, var_value)
+                            return char
+                        case "Clear":
+                            var_value = ""
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Insert":
+                            if len(args) < 2:
+                                raise ValueError("Insert requires index and value arguments")
+                            idx = e(args[0], tS)
+                            if not isinstance(idx, int):
+                                raise TypeError("Index must be an integer for Insert operation")
+                            insert_val = str(e(args[1], tS))
+                            var_value = var_value[:idx] + insert_val + var_value[idx:]
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Remove":
+                            if len(args) < 1:
+                                raise ValueError("Remove requires a value argument")
+                            substr = str(e(args[0], tS))
+                            idx = var_value.find(substr)
+                            if idx == -1:
+                                raise ValueError("Value not found in string")
+                            var_value = var_value[:idx] + var_value[idx+len(substr):]
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Slice":
+                            arg_len = len(args)
+                            start = e(args[0], tS) if arg_len >= 1 and args[0] is not None else None
+                            end   = e(args[1], tS) if arg_len >= 2 and args[1] is not None else None
+                            step  = e(args[2], tS) if arg_len >= 3 and args[2] is not None else None
+                            return var_value[start:end:step]
+                        
+                        case _:
+                            raise ValueError(f"Unknown operation '{operation}' for strings")
+                            
+                # elif var_category == SymbolCategory.HASH:
+                elif type(var_value)==dict:
+                    match operation:
+                        case "Length":
+                            return len(var_value)
+                        case "Clear":
+                            var_value.clear()
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Keys":
+                            return list(var_value.keys())
+                        case "Values":
+                            return list(var_value.values())
+                        case "Contains":
+                            if len(args) < 1:
+                                raise ValueError("Contains requires a key argument")
+                            key = e(args[0], tS)
+                            return key in var_value
+                        case "Add":
+                            if len(args) < 2:
+                                raise ValueError(f"Add requires key and value arguments")
+                            key = e(args[0], tS)
+                            value = e(args[1], tS)
+                            var_value[key] = value
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        case "Remove":
+                            if len(args) < 1:
+                                raise ValueError(f"Remove requires a key argument")
+                            key = e(args[0], tS)
+                            if key in var_value:
+                                del var_value[key]
+                            tS.find_and_update(var_name, var_value)
+                            return var_value
+                        # Add other hash operations as needed
+                        case _:
+                            raise ValueError(f"Unknown operation '{operation}' for hashes")
+                            
+                else:
+                    raise TypeError(f"Operation '{operation}' not supported for type {type(var_value)}")
+            except NameError:
+                raise NameError(f"Variable '{var_name}' not found")
+
         # ARRAY OPERATIONS ========================================================================
         case Array(val):
             all_vals = list(map(lambda x: e(x, tS), val))
@@ -472,13 +685,27 @@ def e(tree: AST, tS) -> Any:
             return arr
 
         case AssigntoArr(xname, indices, value):
-            arr = tS.lookup(xname)
-            *outer_indices, last_index = [e(index, tS) for index in indices]
-            for index in outer_indices:
-                arr = arr[index]
-            arr[last_index] = e(value, tS)
-            tS.find_and_update(xname, tS.lookup(xname))
-            return arr[last_index]
+            lookedup = tS.lookup(xname)
+            if type(lookedup)==str:
+                index = indices[0]
+                string_val = lookedup
+                if not isinstance(string_val, str):
+                    raise TypeError(f"AssignStringVal operation not supported for type {type(string_val)}")
+                idx = e(index, tS)
+                if not (0 <= idx < len(string_val)):
+                    raise IndexError(f"Index {idx} out of bounds for string: {xname}")
+                val = e(value, tS)
+                string_val = string_val[:idx] + val + string_val[idx + 1 :]
+                tS.find_and_update(xname, string_val)
+                return string_val
+            else:
+                arr = lookedup
+                *outer_indices, last_index = [e(index, tS) for index in indices]
+                for index in outer_indices:
+                    arr = arr[index]
+                arr[last_index] = e(value, tS)
+                tS.find_and_update(xname, tS.lookup(xname))
+                return arr[last_index]
 
         case PushFront(arr_name, value):
             arr = tS.lookup(arr_name)
@@ -662,7 +889,7 @@ def e(tree: AST, tS) -> Any:
                 expression = match.group(1)
                 return str(eval(expression, {}, varmods))
 
-            evaluated_template = re.sub(r"\{(.*?)\}", evaluate_expression, template)
+            evaluated_template = re.sub(r'\{(.*?)\}', evaluate_expression, template)
             return evaluated_template
 
         case TypeCast(dtype, value):
@@ -855,11 +1082,11 @@ displayl so(foo);
 
     """
     This is causing implicit static typing (a string type variable when assigned to a list dont make list methods run on it)
+    
     VARIABLE = "variable"
 
-    ARRAY = "list"
+    ARRAY = "list" 
     HASH = "dict"
-    SCHEMA ="class"
     STRING = "string"
 
     FIXED = "fixed"
@@ -869,23 +1096,37 @@ displayl so(foo);
 
     # for t in lex(prog):
     #     print(t)
-
-    # parsed, gS = parse(prog, SymbolTable())
-    # print("------")
-    # pprint(parsed)
-    # print("------")
-    # pprint(gS.table)
-
+    
     prog = """
-var arr = [1,3,2];
-var a = [];
-a = sort(arr);
-displayl a.PopBack;
-displayl a;
+var a = 2;
+a = [1,2,3];
+displayl a.Length;
 """
 
+    prog = """
+var a = "example";
+var new = "";
+for(var i = 0; i<=a.Length; i+=1){
+    if i==0 then new = new + 
+}
+"""
 
+    prog = """
+var a = "zoo";
+a[0] = "x";
+displayl a;
+"""
+    prog = """
+var a = "ab";
+a.PushBack("x");
+"""
 
-    print("------")
-    print("Program Output: ")
+    parsed, gS = parse(prog, SymbolTable())
+    # # print("------")
+    pprint(parsed)
+    # # print("------")
+    # # pprint(gS.table)
+
+    # print("------")
+    # print("Program Output: ")
     execute(prog)

@@ -101,7 +101,7 @@ class MathToken(Token):
 def lex(s: str) -> Iterator[Token]:
     i = 0
     # prev_char = None
-    prev_token= None
+    prevToken= None
     while True:
         while i < len(s) and s[i].isspace():
             i = i + 1
@@ -196,44 +196,44 @@ def lex(s: str) -> Iterator[Token]:
        
         else:
             match t := s[i]:
-                case "-":
-                    if (s[i+1]=="="):
-                        i=i+2
-                        yield OperatorToken("-=")
-                    else:
-                        # prev_char = s[i]
-                        i = i + 1
-                        # must be a number or a variable identifier
-                        # consume all spaces
-                        while i<len(s) and s[i].isspace():
-                            i+=1
+                # case "-":
+                #     if (s[i+1]=="="):
+                #         i=i+2
+                #         yield OperatorToken("-=")
+                #     else:
+                #         # prev_char = s[i]
+                #         i = i + 1
+                #         # must be a number or a variable identifier
+                #         # consume all spaces
+                #         while i<len(s) and s[i].isspace():
+                #             i+=1
 
-                        if s[i].isdigit():
-                            # unary negation / subtration on a number
-                            # is prevToken is digit or alpha, means subtraction, else unary neg
-                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
-                                # means subtraction from a number or variable
-                                yield OperatorToken('+') # example: -3 => +(-3)
+                #         if s[i].isdigit():
+                #             # unary negation / subtration on a number
+                #             # is prevToken is digit or alpha, means subtraction, else unary neg
+                #             if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
+                #                 # means subtraction from a number or variable
+                #                 yield OperatorToken('+') # example: -3 => +(-3)
 
-                            # form the number
-                            while i < len(s) and (s[i].isdigit() or s[i]=="."):
-                                t += s[i] # with the leading `-` sign
-                                i += 1
-                            yield NumberToken(t)
+                #             # form the number
+                #             while i < len(s) and (s[i].isdigit() or s[i]=="."):
+                #                 t += s[i] # with the leading `-` sign
+                #                 i += 1
+                #             yield NumberToken(t)
 
-                        # unary negation on a variable
-                        elif s[i].isalpha():
-                            while i < len(s) and s[i].isalpha():
-                                t += s[i]
-                                i += 1
-                            if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
-                                yield OperatorToken('+')
-                            yield NumberToken("-1")
-                            yield OperatorToken("*")
-                            yield VarToken(t[1:]) # variable name (identifier)
+                #         # unary negation on a variable
+                #         elif s[i].isalpha():
+                #             while i < len(s) and s[i].isalpha():
+                #                 t += s[i]
+                #                 i += 1
+                #             if isinstance(prevToken, NumberToken) or isinstance(prevToken, VarToken) or (isinstance(prevToken, KeywordToken) and prevToken.kw_name not in ("display","displayl")):
+                #                 yield OperatorToken('+')
+                #             yield NumberToken("-1")
+                #             yield OperatorToken("*")
+                #             yield VarToken(t[1:]) # variable name (identifier)
                         
-                        elif s[i]=='(':
-                            yield(OperatorToken('-'))
+                #         elif s[i]=='(':
+                #             yield(OperatorToken('-'))
 
 
                 case t if t in (base_operator_tokens+bitwise_ops):
@@ -253,7 +253,8 @@ def lex(s: str) -> Iterator[Token]:
                     yield prevToken
                 case '{':
                     i+=1
-                    yield LeftBraceToken()
+                    prevToken = LeftBraceToken()
+                    yield prevToken
                 case '}':
                     i+=1
                     yield RightBraceToken()
@@ -271,6 +272,7 @@ def lex(s: str) -> Iterator[Token]:
                     yield RightSquareToken()
                 case ',':
                     i+=1
+                    prevToken = CommaToken()
                     yield CommaToken()
                 case '.':
                     i+=1

@@ -36,7 +36,13 @@ class I:
     
     class POW:
         pass
-    
+        
+    class UPLUS:
+        pass
+
+    class UMINUS:
+        pass
+
     # Comparison operations
     class EQ:
         pass
@@ -125,6 +131,10 @@ class I:
             self.label = label
             self.name = name
     
+    # String
+    class STRING_INDEX_ASSIGN:
+        pass
+
     # Array/collection operations
     class MAKE_ARRAY:
         def __init__(self, size):
@@ -146,6 +156,10 @@ class I:
     class HASH_SET:
         pass
     
+    class PROPERTY_ACCESS:
+        def __init__(self, operation):
+            self.operation = operation
+
     # I/O operations
     class PRINT:
         pass
@@ -198,6 +212,8 @@ class ByteCode:
                     print(f"{i:=4} {'PUSH':<15} value = {insn.value}")
                 case I.PUSHFN():
                     print(f"{i:=4} {'PUSHFN':<15} target = {insn.label.target}, name = {insn.name}")
+                case I.PROPERTY_ACCESS():
+                    print(f"{i:=4} {'PROPERTY_ACCESS':<15} operation = {insn.operation}")
                 case I.MAKE_ARRAY():
                     print(f"{i:=4} {'MAKE_ARRAY':<15} size = {insn.size}")
                 case I.MAKE_HASH():
@@ -221,7 +237,7 @@ def generate_bytecode(node, code):
                 code.emit(I.PUSH(float(n)))
             else:
                 code.emit(I.PUSH(int(n)))
-        
+
         case String(s):
             code.emit(I.PUSH(s))
         
@@ -261,6 +277,8 @@ def generate_bytecode(node, code):
         case UnaryOp(op, val):
             generate_bytecode(val, code)
             match op:
+                case "+": code.emit(I.UPLUS())
+                case "-": code.emit(I.UMINUS())
                 case "~": code.emit(I.BITNOT())
                 case "not" | "!": code.emit(I.NOT())
                 case "ascii":
@@ -299,6 +317,29 @@ def generate_bytecode(node, code):
                 
             code.emit(I.STORE(var_name))
         
+# PROPERTY_ACCESS handling in bytecode_gen_new.py
+
+        case PropertyAccess(var_name, operation, args):
+            # Load the variable
+            code.emit(I.LOAD(var_name))
+            
+            # Generate code for arguments in reverse order (stack order)
+            for arg in reversed(args):
+                generate_bytecode(arg, code)
+            
+            # Emit property access instruction with operation name
+            code.emit(I.PROPERTY_ACCESS(operation))
+            
+            # Store back only for operations that modify the original object in-place
+            # Arrays: PushBack, PushFront, Clear, Insert, Remove
+            # Strings: NEVER store back (strings are immutable in Python)
+            # Hashes: Add, Remove, Clear
+            
+            if operation in ["PushBack", "PushFront", "Clear", "Insert", "Remove", "Add"] and var_name != "":
+                # For string operations, we never store back - they return new strings
+                # Check we're not dealing with a temporary result with no name
+                code.emit(I.STORE(var_name))
+
         # Array operations
         case Array(elements):
             for element in elements:
@@ -319,6 +360,7 @@ def generate_bytecode(node, code):
             generate_bytecode(indices[-1], code)
             generate_bytecode(value, code)
             code.emit(I.ARRAY_SET())
+            code.emit(I.STORE(array_name))
         
         # Hash operations
         case Hash(pairs):
@@ -435,6 +477,11 @@ def generate_bytecode(node, code):
             else:
                 raise ValueError("MoveOn statement outside of loop")
 
+        case Return(value):
+            # Generate code for the return value
+            generate_bytecode(value, code)
+            # Emit return instruction
+            code.emit(I.RETURN())
 
         # Control structures
         case If(cond, then_body, else_body, _):
@@ -444,8 +491,21 @@ def generate_bytecode(node, code):
             generate_bytecode(cond, code)
             code.emit(I.JMP_IF_FALSE(else_label))
             
-            generate_bytecode(then_body, code)
-            code.emit(I.JMP(end_label))
+            # Check if then_body is a Statements object containing a Return
+            if isinstance(then_body, Statements):
+                for stmt in then_body.statements:
+                    generate_bytecode(stmt, code)
+                    # If this statement is a Return, don't emit a JMP
+                    if isinstance(stmt, Return):
+                        break
+            else:
+                generate_bytecode(then_body, code)
+            
+            # Only emit JMP if the then_body doesn't end with a Return
+            if not (isinstance(then_body, Statements) and 
+                    then_body.statements and 
+                    isinstance(then_body.statements[-1], Return)):
+                code.emit(I.JMP(end_label))
             
             code.emit_label(else_label)
             if else_body:
@@ -612,7 +672,7 @@ def generate_bytecode(node, code):
             # Store parameters in reverse order
             for param in reversed(params):
                 code.emit(I.STORE(param[0]))
-
+                
             generate_bytecode(body, code)
             code.emit(I.RETURN())
             

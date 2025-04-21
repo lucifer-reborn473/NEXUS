@@ -269,6 +269,13 @@ class TypeOf(AST):
 @dataclass
 class Return(AST):
     value: AST  # The value to return
+
+@dataclass
+class PropertyAccess(AST):
+    var_name: str
+    operation: str
+    args: List[AST]
+
 # ==========================================================================================
 
 def map_type(value):
@@ -663,14 +670,27 @@ def parse(s: str, defS) -> List[AST]:
                     return ast
                 
     def parse_exp(tS):
-        ast = parse_ascii_char(tS)
+        ast = parse_unary(tS)
         if isinstance(t.peek(None), OperatorToken) and t.peek(None).o == "**":
             next(t)
             right = parse_exp(tS)
             ast = BinOp("**", ast, right)
         return ast
 
-                
+
+    def parse_unary(tS):
+        # Check for unary operators
+        if isinstance(t.peek(None), OperatorToken) and t.peek(None).o in ["+", "-"]:
+            op = t.peek(None).o
+            next(t)
+            # Parse the operand with higher precedence than binary operators
+            operand = parse_unary(tS)  # Recursive to handle multiple unary ops
+            return UnaryOp(op, operand)
+        else:
+            # If not a unary operator, proceed with normal atom parsing
+            return parse_ascii_char(tS)
+
+
     def parse_ascii_char(tS):
         ast = parse_typecast(tS)
         while True:
@@ -921,119 +941,163 @@ def parse(s: str, defS) -> List[AST]:
                 case _:
                     return call_vartoks(tS)
     
-    def call_vartoks(tS): #handles all calls related to vartokens
+    # def call_vartoks(tS): #handles all calls related to vartokens
+    #     ast = parse_atom(tS)
+    #     while True:
+    #         match t.peek(None):
+    #             case VarToken(v):
+    #                 next(t)
+    #                 if isinstance(t.peek(None), LeftParenToken):
+    #                     # means a function call
+    #                     return ast
+    #                 category = tS.lookup(v, cat = True)
+    #                 match category:
+    #                     case SymbolCategory.VARIABLE:
+    #                         ast = Variable(v)
+    #                     case SymbolCategory.ARRAY:
+    #                         if isinstance(t.peek(None), LeftSquareToken):  # array access
+    #                             indices = []
+    #                             while isinstance(t.peek(None), LeftSquareToken):
+    #                                 next(t)
+    #                                 indices.append(parse_var(tS)[0])
+    #                                 expect(RightSquareToken())
+    #                             if (isinstance(t.peek(None), OperatorToken) 
+    #                                 and t.peek(None).o == "="):  # assigning a new value
+    #                                 next(t)
+    #                                 value = parse_var(tS)[0]
+    #                                 ast = AssigntoArr(v, indices, value)
+    #                             else:  # accessing a given index
+    #                                 ast = CallArr(v, indices)
+    #                         elif isinstance(t.peek(None), DotToken):
+    #                             next(t)
+    #                             operation = t.peek(None).kw_name
+    #                             next(t)
+    #                             args = []
+    #                             if isinstance(t.peek(None), LeftParenToken):
+    #                                 next(t)
+    #                                 while not isinstance(t.peek(None), RightParenToken):
+    #                                     args.append(parse_var(tS)[0])
+    #                                     if isinstance(t.peek(None), CommaToken):
+    #                                         next(t)
+    #                                 expect(RightParenToken())
+    #                             ast = handle_operations(v, tS, operation, *args)
+    #                         else:  # calling the whole array
+    #                             ast = Variable(v)
+    #                     case SymbolCategory.HASH:
+    #                         if isinstance(t.peek(None), LeftSquareToken):
+    #                             keys = []
+    #                             while isinstance(t.peek(None), LeftSquareToken):
+    #                                 next(t)
+    #                                 keys.append(parse_var(tS)[0])
+    #                                 expect(RightSquareToken())
+    #                             if (isinstance(t.peek(None), OperatorToken) 
+    #                                 and t.peek(None).o == "="):  # assigning a new value
+    #                                 next(t)
+    #                                 value = parse_var(tS)[0]
+    #                                 ast = AssignHashVal(v, keys, value)  # Handle nested keys
+    #                             else:
+    #                                 ast = CallHashVal(v, keys)  # Handle nested keys
+    #                         elif isinstance(t.peek(None), DotToken):
+    #                             next(t)
+    #                             match t.peek(None):
+    #                                 case KeywordToken("Add"):
+    #                                     next(t)
+    #                                     expect(LeftParenToken())
+    #                                     key = parse_var(tS)[0]
+    #                                     expect(CommaToken())
+    #                                     val = parse_var(tS)[0]
+    #                                     expect(RightParenToken())
+    #                                     ast = AddHashPair(v, key, val)
+    #                                     return ast
+    #                                 case KeywordToken("Remove"):
+    #                                     next(t)
+    #                                     expect(LeftParenToken())
+    #                                     key = parse_var(tS)[0]
+    #                                     expect(RightParenToken())
+    #                                     ast = RemoveHashPair(v, key)
+    #                                     return ast
+    #                                 case _:
+    #                                     return ast
+    #                         else:
+    #                             ast = Variable(v)
+
+    #                     case SymbolCategory.STRING:
+    #                         if isinstance(t.peek(None), LeftSquareToken):
+    #                             next(t)
+    #                             index= parse_var(tS)[0]
+    #                             expect(RightSquareToken())
+    #                             if (isinstance(t.peek(None), OperatorToken) 
+    #                                 and t.peek(None).o == "="): #assign new value to index
+    #                                 next(t)
+    #                                 value = parse_var(tS)[0]
+    #                                 ast = AssignStringVal(v, index, value)
+    #                             else:
+    #                                 ast = StringIdx(v, index)
+    #                         elif isinstance(t.peek(None), DotToken):
+    #                             while isinstance(t.peek(None), DotToken):
+    #                                 next(t)
+    #                                 operation = t.peek(None).kw_name
+    #                                 next(t)
+    #                                 args = []
+    #                                 if isinstance(t.peek(None), LeftParenToken):
+    #                                     next(t)
+    #                                     while not isinstance(t.peek(None), RightParenToken):
+    #                                         args.append(parse_var(tS)[0])
+    #                                         if isinstance(t.peek(None), CommaToken):
+    #                                             next(t)
+    #                                     expect(RightParenToken())
+    #                                 ast = handle_operations(v, tS, operation, *args)
+    #                         else:
+    #                             ast=Variable(v)
+    #                     case _:
+    #                         ast = Variable(v)
+    #             case _:
+    #                 return ast   
+
+    def call_vartoks(tS):
         ast = parse_atom(tS)
         while True:
             match t.peek(None):
                 case VarToken(v):
                     next(t)
-                    if isinstance(t.peek(None), LeftParenToken):
-                        # means a function call
+                    # Handle dot notation uniformly for all variable types
+                    if isinstance(t.peek(None), DotToken):
+                        next(t)
+                        operation = t.peek(None).kw_name
+                        next(t)
+                        args = []
+                        if isinstance(t.peek(None), LeftParenToken):
+                            next(t)
+                            while not isinstance(t.peek(None), RightParenToken):
+                                args.append(parse_var(tS)[0])
+                                if isinstance(t.peek(None), CommaToken):
+                                    next(t)
+                            expect(RightParenToken())
+                        # Create PropertyAccess node regardless of variable's parse-time category
+                        ast = PropertyAccess(v, operation, args)
                         return ast
-                    category = tS.lookup(v, cat = True)
-                    match category:
-                        case SymbolCategory.VARIABLE:
-                            ast = Variable(v)
-                        case SymbolCategory.ARRAY:
-                            if isinstance(t.peek(None), LeftSquareToken):  # array access
-                                indices = []
-                                while isinstance(t.peek(None), LeftSquareToken):
-                                    next(t)
-                                    indices.append(parse_var(tS)[0])
-                                    expect(RightSquareToken())
-                                if (isinstance(t.peek(None), OperatorToken) 
-                                    and t.peek(None).o == "="):  # assigning a new value
-                                    next(t)
-                                    value = parse_var(tS)[0]
-                                    ast = AssigntoArr(v, indices, value)
-                                else:  # accessing a given index
-                                    ast = CallArr(v, indices)
-                            elif isinstance(t.peek(None), DotToken):
-                                next(t)
-                                operation = t.peek(None).kw_name
-                                next(t)
-                                args = []
-                                if isinstance(t.peek(None), LeftParenToken):
-                                    next(t)
-                                    while not isinstance(t.peek(None), RightParenToken):
-                                        args.append(parse_var(tS)[0])
-                                        if isinstance(t.peek(None), CommaToken):
-                                            next(t)
-                                    expect(RightParenToken())
-                                ast = handle_operations(v, tS, operation, *args)
-                            else:  # calling the whole array
-                                ast = Variable(v)
-                        case SymbolCategory.HASH:
-                            if isinstance(t.peek(None), LeftSquareToken):
-                                keys = []
-                                while isinstance(t.peek(None), LeftSquareToken):
-                                    next(t)
-                                    keys.append(parse_var(tS)[0])
-                                    expect(RightSquareToken())
-                                if (isinstance(t.peek(None), OperatorToken) 
-                                    and t.peek(None).o == "="):  # assigning a new value
-                                    next(t)
-                                    value = parse_var(tS)[0]
-                                    ast = AssignHashVal(v, keys, value)  # Handle nested keys
-                                else:
-                                    ast = CallHashVal(v, keys)  # Handle nested keys
-                            elif isinstance(t.peek(None), DotToken):
-                                next(t)
-                                match t.peek(None):
-                                    case KeywordToken("Add"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        key = parse_var(tS)[0]
-                                        expect(CommaToken())
-                                        val = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast = AddHashPair(v, key, val)
-                                        return ast
-                                    case KeywordToken("Remove"):
-                                        next(t)
-                                        expect(LeftParenToken())
-                                        key = parse_var(tS)[0]
-                                        expect(RightParenToken())
-                                        ast = RemoveHashPair(v, key)
-                                        return ast
-                                    case _:
-                                        return ast
-                            else:
-                                ast = Variable(v)
+                    
+                    # Handle array/string/hash index access/update
+                    elif isinstance(t.peek(None), LeftSquareToken):
+                        indices = []
+                        while isinstance(t.peek(None), LeftSquareToken):
+                            next(t)
+                            indices.append(parse_var(tS)[0])
+                            expect(RightSquareToken())
 
-                        case SymbolCategory.STRING:
-                            if isinstance(t.peek(None), LeftSquareToken):
-                                next(t)
-                                index= parse_var(tS)[0]
-                                expect(RightSquareToken())
-                                if (isinstance(t.peek(None), OperatorToken) 
-                                    and t.peek(None).o == "="): #assign new value to index
-                                    next(t)
-                                    value = parse_var(tS)[0]
-                                    ast = AssignStringVal(v, index, value)
-                                else:
-                                    ast = StringIdx(v, index)
-                            elif isinstance(t.peek(None), DotToken):
-                                while isinstance(t.peek(None), DotToken):
-                                    next(t)
-                                    operation = t.peek(None).kw_name
-                                    next(t)
-                                    args = []
-                                    if isinstance(t.peek(None), LeftParenToken):
-                                        next(t)
-                                        while not isinstance(t.peek(None), RightParenToken):
-                                            args.append(parse_var(tS)[0])
-                                            if isinstance(t.peek(None), CommaToken):
-                                                next(t)
-                                        expect(RightParenToken())
-                                    ast = handle_operations(v, tS, operation, *args)
-                            else:
-                                ast=Variable(v)
-                        case _:
-                            ast = Variable(v)
+                        if (isinstance(t.peek(None), OperatorToken) and 
+                            t.peek(None).o == "="):
+                            next(t)
+                            value = parse_var(tS)[0]
+                            ast = AssigntoArr(v, indices, value)
+                        else:
+                            ast = CallArr(v, indices)
+                    else:
+                        # Default to variable access
+                        ast = Variable(v)
                 case _:
-                    return ast    
-    
+                    return ast
+                
     def parse_atom(tS): #! while True may be included in future
         match t.peek(None):
             case NumberToken(n):

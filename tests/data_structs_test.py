@@ -63,7 +63,7 @@ def test_array_operations(code, expected_output, capfd):
     a.Insert(3, 10);
     displayl a;
     a.Remove(1);
-    displayl a;
+    displayl a; 
     a.Clear;
     displayl a;
     displayl a.Length;

@@ -1,5 +1,6 @@
 from bytecode_gen_new import *
 import math
+from evaluator import execute
 
 class BytecodeVM:
     def __init__(self, bytecode):
@@ -82,6 +83,8 @@ class BytecodeVM:
         'math_atanh': (lambda x: math.atanh(x), 1),
         'math_pi': (lambda: math.pi, 0),
         'math_e': (lambda: math.e, 0),
+        'math_sum': (lambda arr: sum(arr), 1),
+        'math_avg': (lambda arr: sum(arr) / len(arr), 1),
         }
     
     def current_frame(self):
@@ -103,7 +106,7 @@ class BytecodeVM:
         while self.ip < len(self.bytecode.insns):
             instruction = self.bytecode.insns[self.ip]
             self.execute_instruction(instruction)
-            # print(f"IP: {self.ip}, Stack: {self.stack}")
+            print(f"IP: {self.ip}, Stack: {self.stack}") # printer
             
         # Return the top of the stack (if any) as the program result
         return self.stack[0] if self.stack else None
@@ -178,7 +181,7 @@ class BytecodeVM:
                 left = self.pop()
                 self.push(left - right)
                 self.ip += 1
-                
+            
             case I.MUL():
                 right = self.pop()
                 left = self.pop()
@@ -203,6 +206,19 @@ class BytecodeVM:
                 self.push(left ** right)
                 self.ip += 1
                 
+            # Unary operations
+            case I.UPLUS():
+                # Unary plus - essentially does nothing
+                value = self.pop()
+                self.push(+value)  # Unary plus (maintains value)
+                self.ip += 1
+                
+            case I.UMINUS():
+                # Unary minus - negates the value
+                value = self.pop()
+                self.push(-value)  # Unary negation
+                self.ip += 1
+
             # Comparison operations
             case I.EQ():
                 right = self.pop()
@@ -444,7 +460,305 @@ class BytecodeVM:
                 self.push(hash_map)
                 self.ip += 1
 
+            # case I.PROPERTY_ACCESS():
+            #     obj = self.pop()
+            #     operation = instruction.operation
+
+            #     # Handle array operations
+            #     if isinstance(obj, list):
+            #         if operation == "Length":
+            #             self.push(len(obj))
+            #         elif operation == "PushBack":
+            #             value = self.pop()
+            #             obj.append(value)
+            #             self.push(obj)  # Return modified array
+            #         elif operation == "PushFront":
+            #             value = self.pop()
+            #             obj.insert(0, value)
+            #             self.push(obj)  # Return modified array
+            #         elif operation == "PopBack":
+            #             if len(obj) == 0:
+            #                 raise IndexError("Cannot PopBack from empty array")
+            #             value = obj.pop()  # Pop last element
+            #             self.push(value)   # Push the POPPED VALUE
+            #         elif operation == "PopFront":
+            #             if len(obj) == 0:
+            #                 raise IndexError("Cannot PopFront from empty array")
+            #             value = obj.pop(0)  # Pop first element
+            #             self.push(value)    # Push the POPPED VALUE
+            #         elif operation == "Insert":
+            #             index = self.pop()
+            #             value = self.pop()
+            #             if index < 0:
+            #                 index = 0
+            #             elif index > len(obj):
+            #                 index = len(obj)
+            #             obj.insert(index, value)
+            #             self.push(obj)  # Return modified array
+            #         elif operation == "Remove":
+            #             index = self.pop()
+            #             if 0 <= index < len(obj):
+            #                 obj.pop(index)
+            #             self.push(obj)  # Return modified array
+            #         elif operation == "Clear":
+            #             obj.clear()
+            #             self.push(obj)  # Return modified array
+            #         elif operation == "Slice":
+            #             end = self.pop()
+            #             start = self.pop()
+            #             # Handle optional step parameter if present
+            #             if len(self.stack) > 0 and isinstance(self.peek(), int):
+            #                 step = self.pop()
+            #                 self.push(obj[start:end:step])
+            #             else:
+            #                 self.push(obj[start:end])
+            #         else:
+            #             raise ValueError(f"Unknown operation '{operation}' for arrays")
                 
+            #     # Handle string operations
+            #     elif isinstance(obj, str):
+            #         if operation == "Length":
+            #             self.push(len(obj))
+            #         elif operation == "PushBack":
+                        # value = self.pop()
+                        # self.push(obj + str(value))  # Return new string
+            #         elif operation == "PushFront":
+            #             value = self.pop()
+            #             self.push(str(value) + obj)  # Return new string
+            #         elif operation == "PopBack":
+            #             if len(obj) == 0:
+            #                 raise IndexError("Cannot PopBack from empty string")
+            #             last_char = obj[-1]
+            #             self.push(obj[:-1])  # Return new string with last char removed
+            #         elif operation == "PopFront":
+            #             if len(obj) == 0:
+            #                 raise IndexError("Cannot PopFront from empty string")
+            #             first_char = obj[0]
+            #             self.push(obj[1:])  # Return new string with first char removed
+            #         elif operation == "Slice":
+            #             end = self.pop()
+            #             start = self.pop()
+            #             # Handle optional step parameter if present
+            #             if len(self.stack) > 0 and isinstance(self.peek(), int):
+            #                 step = self.pop()
+            #                 self.push(obj[start:end:step])
+            #             else:
+            #                 self.push(obj[start:end])
+            #         elif operation == "Clear":
+            #             self.push("")  # Return empty string
+            #         elif operation == "Insert":
+            #             index = self.pop()
+            #             value = self.pop()
+            #             if index < 0:
+            #                 index = 0
+            #             elif index > len(obj):
+            #                 index = len(obj)
+            #             self.push(obj[:index] + str(value) + obj[index:])
+            #         elif operation == "Remove":
+            #             index = self.pop()
+            #             if 0 <= index < len(obj):
+            #                 self.push(obj[:index] + obj[index+1:])
+            #             else:
+            #                 self.push(obj)
+            #         else:
+            #             raise ValueError(f"Unknown operation '{operation}' for strings")
+                
+            #     # Handle dictionary operations
+            #     elif isinstance(obj, dict):
+            #         if operation == "Length":
+            #             self.push(len(obj))
+            #         elif operation == "Keys":
+            #             self.push(list(obj.keys()))
+            #         elif operation == "Values":
+            #             self.push(list(obj.values()))
+            #         elif operation == "Contains":
+            #             key = self.pop()
+            #             self.push(key in obj)
+            #         elif operation == "Add":
+            #             key = self.pop()
+            #             value = self.pop()
+            #             obj[key] = value
+            #             self.push(obj)  # Return modified dict
+            #         elif operation == "Remove":
+            #             key = self.pop()
+            #             if key in obj:
+            #                 del obj[key]
+            #             self.push(obj)  # Return modified dict
+            #         elif operation == "Clear":
+            #             obj.clear()
+            #             self.push(obj)  # Return modified dict
+            #         else:
+            #             raise ValueError(f"Unknown operation '{operation}' for dictionaries")
+                
+            #     # Handle other types
+            #     else:
+            #         raise TypeError(f"Object of type {type(obj).__name__} does not support operation '{operation}'")
+                
+                # self.ip += 1
+
+            case I.PROPERTY_ACCESS():
+                operation = instruction.operation
+
+                if operation == "Length":
+                    obj=self.pop()
+                    if isinstance(obj, list) or isinstance(obj, str):
+                        self.push(len(obj))
+                    elif isinstance(obj, dict):
+                        self.push(len(obj.keys()))
+                
+                elif operation == "PushBack":
+                    value = self.pop()
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        obj.append(value)
+                        self.push(obj)  # Return modified array
+                    elif isinstance(obj, str):
+                        self.push(obj + str(value))  # Return new string
+                    else:
+                        raise TypeError("PushBack requires an array")
+                elif operation == "PushFront":
+                    value = self.pop()
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        obj.insert(0, value)
+                        self.push(obj)  # Return modified array
+                    elif isinstance(obj, str):
+                        self.push(str(value) + obj)  # Return new string
+                    else:
+                        raise TypeError("PushFront requires an array")
+                elif operation == "PopBack":
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        if len(obj) == 0:
+                            raise IndexError("Cannot PopBack from empty array")
+                        value = obj.pop()  # Pop last element
+                        self.push(value)   # Push the POPPED VALUE
+                    elif isinstance(obj, str):
+                        if len(obj) == 0:
+                            raise IndexError("Cannot PopBack from empty string")
+                        last_char = obj[-1]
+                        self.push(last_char)
+                    else:
+                        raise TypeError("PopBack requires an array")
+                elif operation == "PopFront":
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        if len(obj) == 0:
+                            raise IndexError("Cannot PopFront from empty array")
+                        value = obj.pop(0)  # Pop first element
+                        self.push(value)    # Push the POPPED VALUE
+                    elif isinstance(obj, str):
+                        if len(obj) == 0:
+                            raise IndexError("Cannot PopBack from empty string")
+                        first_char = obj[1:]
+                        self.push(first_char)
+                    else:
+                        raise TypeError("PopFront requires an array")
+                elif operation == "Insert":
+                    index = self.pop()
+                    value = self.pop()
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        if index < 0:
+                            index = 0
+                        elif index > len(obj):
+                            index = len(obj)
+                        obj.insert(index, value)
+                        self.push(obj)  # Return modified array
+                    elif isinstance(obj, str):
+                        if index < 0:
+                            index = 0
+                        elif index > len(obj):
+                            index = len(obj)
+                        self.push(obj[:index] + str(value) + obj[index:])
+                    else:
+                        raise TypeError("Insert requires an array")
+                elif operation == "Remove":
+                    index = self.pop()
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        if 0 <= index < len(obj):
+                            obj.pop(index)
+                        self.push(obj)  # Return modified array
+                    elif isinstance(obj, str):
+                        if 0 <= index < len(obj):
+                            self.push(obj[:index] + obj[index+1:])
+                        else:
+                            self.push(obj)
+                    else:
+                        raise TypeError("Remove requires an array")
+                elif operation == "Clear":
+                    obj = self.pop()  # Get the array from stack
+                    if isinstance(obj, list):
+                        obj.clear()
+                        self.push(obj)  # Return modified array
+                    elif isinstance(obj, str):
+                        self.push("")
+                    else:
+                        raise TypeError("Clear requires an array")
+                elif operation == "Slice":
+                    # assumed atleast three items on stack
+                    start = self.pop()
+                    end = self.pop()
+                    n3 = self.pop()
+
+                    if type(n3)==int:
+                        step = n3
+                        obj = self.pop()
+                    else:
+                        step = None
+                        obj = n3
+                    if isinstance(obj, list) or isinstance(obj, str):
+                        # Handle optional step parameter if present
+                        if step:
+                            self.push(obj[start:end:step])
+                        else:
+                            self.push(obj[start:end])
+                    else:
+                        raise TypeError("Slice requires an array or string")
+
+                # Dictionary Operations
+                elif operation == "Keys":
+                    obj = self.pop()  # Get the dictionary from stack
+                    if isinstance(obj, dict):
+                        self.push(list(obj.keys()))
+                    else:
+                        raise TypeError("Keys requires a dictionary")
+                elif operation == "Values":
+                    obj = self.pop()  # Get the dictionary from stack
+                    if isinstance(obj, dict):
+                        self.push(list(obj.values()))
+                    else:
+                        raise TypeError("Values requires a dictionary")
+                elif operation == "Contains":
+                    key = self.pop()
+                    obj = self.pop()  # Get the dictionary from stack
+                    if isinstance(obj, dict):
+                        self.push(key in obj)
+                    else:
+                        raise TypeError("Contains requires a dictionary")
+                elif operation == "Add":
+                    value = self.pop()
+                    key = self.pop()
+                    obj = self.pop()  # Get the dictionary from stack
+                    if isinstance(obj, dict):
+                        obj[key] = value
+                        self.push(obj)  # Return modified dict
+                    else:
+                        raise TypeError("Add requires a dictionary")
+                elif operation == "Remove":
+                    key = self.pop()
+                    obj = self.pop()  # Get the dictionary from stack
+                    if isinstance(obj, dict):
+                        if key in obj:
+                            del obj[key]
+                        self.push(obj)  # Return modified dict
+                    else:
+                        raise TypeError("Remove requires a dictionary")
+
+                self.ip += 1
+
+
             case I.ARRAY_GET():
                 # Get element from array
                 index = self.pop()
@@ -457,7 +771,10 @@ class BytecodeVM:
                 value = self.pop()
                 index = self.pop()
                 array = self.pop()
-                array[index] = value
+                if type(array)==str:
+                    array = array[:index] + value + array[index + 1 :]
+                else:
+                    array[index] = value
                 self.push(array)  # Push the modified array back
                 self.ip += 1
                 
@@ -616,33 +933,227 @@ if __name__ == "__main__":
 #     displayl 179;
 #     displayl u;
 # """
-    program="""var sum = 0;
-    for (var i = 0; i < 3; i += 1) {
-        var j = 0;
-        while (j < 2) {
-            repeat (2) {
-                sum += i + j;
-            }
-            j += 1;
-        }
-    }
-    displayl sum;"""
 
-    program="""
-    var str = \"Length Test\";
-    var len = str.Length();
-    display len;
-    """
-
-    # pprint(parse(program))
-    # run_program(program,display_bytecode=True)
-
-    prog = """
-    fn calculate(x, y) {
-        displayl (x + y) * (x - y) / (x % y + 1.0);
-        displayl (x ** y) - (x * y) + (x / y);
+    program = """
+fn compute() {
+    /> Implementation of Project Euler Problem 14 - Longest Collatz sequence
+    
+    fn collatz_chain_length(x) {
+        /> Create a cache to store already computed lengths
+        var hash cache = {};
+        
+        fn collatz_with_cache(n) {
+            /> Base case: if n is 1, the chain length is 1
+            if n == 1 then {
+                return 1;
+            } end;
+            
+            /> Check if we've already computed this value
+            if cache[n] then {
+                return cache[n];
+            } end;
+            
+            /> Calculate the next number in the sequence
+            var next = 0;
+            if n % 2 == 0 then {
+                next = n / 2;
+            } else {
+                next = n * 3 + 1;
+            } end;
+            
+            /> Calculate the chain length and store in cache
+            var lengthy = collatz_with_cache(next) + 1;
+            cache[n] = lengthy;
+            
+            return lengthy;
+        };
+        
+        return collatz_with_cache(x);
     };
-    calculate(4.4, 2.2);
+    
+    var max_length = 0;
+    var max_number = 0;
+    
+    /> Loop through all numbers from 1 to 999,999
+    for (var i = 1; i < 1000000; i += 1) {
+        var lengthy = collatz_chain_length(i);
+        /> displayl max_length;
+        if lengthy > max_length then {
+            max_length = lengthy;
+            max_number = i;
+        } end;
+    };
+    
+    string(max_number);
+};
+
+displayl(compute());
+
 """
-    pprint(parse(prog, SymbolTable()))
-    run_program(prog, display_bytecode=True)
+    program ="""
+    fn compute() {
+    var array triangle = [  /> Mutable
+        [75],
+        [95,64],
+        [17,47,82],
+        [18,35,87,10],
+        [20, 4,82,47,65],
+        [19, 1,23,75, 3,34],
+        [88, 2,77,73, 7,63,67],
+        [99,65, 4,28, 6,16,70,92],
+        [41,41,26,56,83,40,80,70,33],
+        [41,48,72,33,47,32,37,16,94,29],
+        [53,71,44,65,25,43,91,52,97,51,14],
+        [70,11,33,28,77,73,17,78,39,68,17,57],
+        [91,71,52,38,17,14,91,43,58,50,27,29,48],
+        [63,66, 4,68,89,53,67,30,73,16,69,87,40,31],
+        [ 4,62,98,27,23, 9,70,98,73,93,38,53,60, 4,23]
+    ];
+    
+    var integer height = triangle.Length;
+
+    /> Process the triangle from bottom to top
+    for (var i = height - 2; i >= 0; i -= 1) {
+        var array idx = triangle[i];
+        var width = idx.Length ;  /> Get the width of the current row    
+           
+        for (var j = 0; j < width; j += 1) {
+            /> For each position, add the maximum of the two possible paths below
+            var integer path1 = triangle[i + 1][j];
+            var integer path2 = triangle[i + 1][j + 1];
+            
+            if (path1 > path2) then {
+                triangle[i][j] = triangle[i][j] + path1;
+            } else {
+                triangle[i][j] = triangle[i][j] + path2;
+            } end;
+        };
+        
+    };
+    /> The top element now contains the maximum path sum
+    return string(triangle[0][0]);
+};
+
+displayl(compute());
+
+"""
+
+    program = """
+fn foo(){-1;};
+displayl foo();
+"""
+
+    program = """
+fn foo(){
+    -1;
+};
+displayl foo();
+"""
+
+    program = """
+fn compute() {
+    fn edit(a, b) {
+        var string adash = a;
+        var string bdash = b;
+        var integer out = 0;
+        for (var integer i = 0; i < adash.Length; i += 1) {
+            if (adash[i] != bdash[i]) then {
+                out += 1;
+            } end;
+        };
+        return out;
+    };
+    
+    var array strings = ["cat", "cot", "pot", "pat"];
+    var integer maxi = 0;
+    
+    for (var integer i = 0; i < strings.Length; i += 1) {
+        for (var integer j = i; j < strings.Length; j += 1) {
+            var integer distance = edit(strings[i], strings[j]);
+            if (distance > maxi) then {
+                maxi = distance;
+            } end;
+        };
+    };
+    
+    return string(maxi);
+};
+
+displayl(compute());
+"""
+
+    program = """
+    var a = [1,2,3,4,5];
+    a.PushFront(0);
+    displayl a;
+    a.PushBack(6);
+    displayl a;
+    displayl a.PopFront;
+    displayl a[a.Length-1];
+    displayl a;
+    displayl a.PopBack;
+    displayl a;
+    displayl a.Length;
+    a.Insert(3, 10);
+    displayl a;
+    a.Remove(1);
+    displayl a; 
+    a.Clear;
+    displayl a;
+    displayl a.Length;
+"""
+
+    program = """
+    var str = \"Code\";
+    str.PushBack(\"!\");
+    str.PushFront(\"Let's \");
+    displayl str;             /> Output: \"Let's Code!\"
+    str[6] = \"c\";
+    displayl str;             /> Output: \"Let's code!\"
+    var slice = str.Slice(6, 10);
+    displayl slice;           /> Output: \"code\
+"""
+
+    program = """
+var a = "ab";
+a.PushBack("x");
+"""
+    program ="""
+var a = "ab";
+a[0] = "x";
+"""
+
+    program = """
+    var str = \"Hello, World!\";
+    displayl str[0];          /> Access the first character
+    str[7] = "w";            /> Modify the 7th index
+    displayl str;             /> Display the updated string
+"""
+
+    program = """
+    var str = \"Code\";
+    str.PushBack(\"!\");
+    str.PushFront(\"Let's \");
+    displayl str;             /> Output: \"Let's Code!\"
+    str[6] = \"c\";
+    displayl str;             /> Output: \"Let's code!\"
+    var slice = str.Slice(6, 10);
+    displayl slice;           /> Output: \"code\
+"""
+
+    program = """
+    var str = \"Hello\";
+    str.PushBack(\"!\");
+    displayl str;             /> Output: \"Hello!\"
+    str.PushFront(\"Say: \");
+    displayl str;             /> Output: \"Say: Hello!\"
+    str.PopBack;
+    displayl str;             /> Output: \"Say: Hello\"
+    str.PopFront;
+    displayl str;             /> Output: \"Hello\"
+"""
+
+    pprint(list(lex(program)))
+    pprint(parse(program, SymbolTable()))
+    run_program(program,display_bytecode=True)
+    # execute(program)

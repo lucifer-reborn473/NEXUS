@@ -1,17 +1,22 @@
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 import pytest
 from evaluator import *
-from bytecode_eval_new import * 
+from bytecode_eval_new import *
 
-@pytest.mark.parametrize("expression, expected", [
-    ("if 5 < 10 then 1 else 0 end", "1"),
-    ("if 5 < 10 then if 2 < 3 then 1 else 0 end else 0 end", "1"),
-    ("if 0 < 1 then 1 else 0 end", "1"),
-    ("if 2 < 3 then if 4 > 5 then 0 else 1 end else 2 end", "1"),
-    ("if 5 == 5 then 10 end", "10")
-])
+
+@pytest.mark.parametrize(
+    "expression, expected",
+    [
+        ("if 5 < 10 then 1 else 0 end", "1"),
+        ("if 5 < 10 then if 2 < 3 then 1 else 0 end else 0 end", "1"),
+        ("if 0 < 1 then 1 else 0 end", "1"),
+        ("if 2 < 3 then if 4 > 5 then 0 else 1 end else 2 end", "1"),
+        ("if 5 == 5 then 10 end", "10"),
+    ],
+)
 def test_conditional_expressions(expression, expected, capfd):
     execute(f"display({expression})")
     captured = capfd.readouterr()
@@ -20,6 +25,7 @@ def test_conditional_expressions(expression, expected, capfd):
     run_program(f"display({expression})")
     captured = capfd.readouterr()
     assert captured.out.strip() == expected
+
 
 def test_for_loop_sum(capfd):
     code2 = """
@@ -39,6 +45,7 @@ def test_for_loop_sum(capfd):
     captured = capfd.readouterr()
     assert "45" in captured.out
     assert "done" in captured.out
+
 
 def test_loop_function(capfd):
     prog = """fn loopFunction(n) {
@@ -62,6 +69,7 @@ def test_loop_function(capfd):
     assert "Calling loopFunction with x=5" in captured.out
     assert captured.out.strip().endswith("0\n1\n2\n3\n4")
 
+
 def test_char_ascii_operations(capfd):
     prog = """var a= char (66);
     displayl a;
@@ -80,6 +88,7 @@ def test_char_ascii_operations(capfd):
     assert "B" in captured.out
     assert "65" in captured.out
     assert "y" in captured.out
+
 
 def test_conditional_execution_1(capfd):
     prog = """var x = 10;
@@ -100,7 +109,8 @@ def test_conditional_execution_1(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "greater than 8" in captured.out
-    
+
+
 def test_while_loop_divisibility(capfd):
     prog = """
     var x=1000;
@@ -129,6 +139,7 @@ def test_while_loop_divisibility(capfd):
     assert "999" in captured.out
     assert "Not divisible by 3 or 5" in captured.out
 
+
 def test_function_return_value(capfd):
     prog = """
     fn foo() {
@@ -148,6 +159,7 @@ def test_function_return_value(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "42" in captured.out
+
 
 # def test_variable_scope_in_loop(capfd): # uncertain behavior -> not abiding by python rules
 #     prog = """
@@ -170,6 +182,7 @@ def test_function_return_value(capfd):
 #     # assert "2" in captured.out
 #     # assert "179" in captured.out
 #     # assert "100" in captured.out
+
 
 def test_fibonacci_function(capfd):
     prog = """
@@ -195,6 +208,7 @@ def test_fibonacci_function(capfd):
     assert "20" in captured.out
     assert "6765" in captured.out
 
+
 def test_conditional_execution_2(capfd):
     prog = """var x = 0;
     displayl if x > 5 then 
@@ -217,7 +231,10 @@ def test_conditional_execution_2(capfd):
     assert "less than 5" in captured.out
     assert "not greater than 5" in captured.out
 
-@pytest.mark.parametrize("input_value, expected_output", [
+
+@pytest.mark.parametrize(
+    "input_value, expected_output",
+    [
         ("42", "42"),  # Integer input
         ("3.14", "3.14"),  # Float input
         ("Hello, World!", "Hello, World!"),  # String input
@@ -226,16 +243,20 @@ def test_conditional_execution_2(capfd):
         ("null", "null"),  # Null-like string input
         ("special_chars!@#$%^&*()", "special_chars!@#$%^&*()"),  # Special characters
         ("123abc", "123abc"),  # Alphanumeric input
-        ("   spaced input   ", "   spaced input   "),  # Input with leading/trailing spaces
+        (
+            "   spaced input   ",
+            "   spaced input   ",
+        ),  # Input with leading/trailing spaces
         ("'quoted'", "'quoted'"),  # Quoted string input
-    ])
+    ],
+)
 def test_feed_input_handling(input_value, expected_output, monkeypatch, capfd):
     prog = """
     var a = feed("Enter input:");
     displayl a;
     """
     # Mock the input function to simulate user input
-    monkeypatch.setattr('builtins.input', lambda _: input_value)
+    monkeypatch.setattr("builtins.input", lambda _: input_value)
     execute(prog)
     captured = capfd.readouterr()
     assert expected_output in captured.out
@@ -243,6 +264,7 @@ def test_feed_input_handling(input_value, expected_output, monkeypatch, capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert expected_output in captured.out
+
 
 def test_array_and_hash_operations(capfd):
     prog = """
@@ -253,7 +275,7 @@ def test_array_and_hash_operations(capfd):
     hash.Add("key3", 30);
 
     displayl ("array display:");
-    for (var integer i = 0; i < arr.Length; i = i + 1) {
+    for (var i = 0; i < arr.Length; i = i + 1) {
         displayl arr[i];
     }
     fn multiply(a, b) {
@@ -278,6 +300,7 @@ def test_array_and_hash_operations(capfd):
     assert "3" in captured.out
     assert "4" in captured.out
     assert "20" in captured.out
+
 
 def test_conditional_and_loop_execution(capfd):
     prog = """
@@ -322,6 +345,7 @@ def test_conditional_and_loop_execution(capfd):
     assert "2" in captured.out
     assert "1" in captured.out
 
+
 def test_function_multiply(capfd):
     prog = """
     fn multiply(a, b) {
@@ -338,6 +362,7 @@ def test_function_multiply(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "20" in captured.out
+
 
 def test_repeat_loop_with_array(capfd):
     prog = """
@@ -356,6 +381,7 @@ def test_repeat_loop_with_array(capfd):
     captured = capfd.readouterr()
     assert "6" in captured.out
 
+
 def test_repeat_loop_fixed_iterations(capfd):
     prog = """
     repeat (10) {
@@ -369,6 +395,7 @@ def test_repeat_loop_fixed_iterations(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert captured.out.strip().count("1") == 10
+
 
 def test_repeat_loop_with_function_calls(capfd):
     prog = """
@@ -389,38 +416,57 @@ def test_repeat_loop_with_function_calls(capfd):
     captured = capfd.readouterr()
     assert "5" in captured.out
 
-@pytest.mark.parametrize("prog, expected", [
-    ("""
+
+@pytest.mark.parametrize(
+    "prog, expected",
+    [
+        (
+            """
     fn factorial(n) {
         if n == 0 then 1 else n * factorial(n - 1) end;
     };
     displayl factorial(5);
-    """, "120"),
-    ("""
+    """,
+            "120",
+        ),
+        (
+            """
     fn gcd(a, b) {
         if b == 0 then a else gcd(b, a % b) end;
     };
     displayl gcd(48, 18);
-    """, "6"),
-    ("""
+    """,
+            "6",
+        ),
+        (
+            """
     fn power(base, expp) {
         if expp == 0 then 1 else base * power(base, expp - 1) end;
     };
     displayl power(2, 10);
-    """, "1024"),
-    ("""
+    """,
+            "1024",
+        ),
+        (
+            """
     fn sum_of_digits(n) {
         if n <= 0 then 0 else (n % 10) + sum_of_digits(floor(n / 10)) end;
     };
     displayl sum_of_digits(1234);
-    """, "10"),
-    ("""
+    """,
+            "10",
+        ),
+        (
+            """
     fn fibonacci(n) {
         if n == 1 or n == 2 then 1 else fibonacci(n - 1) + fibonacci(n - 2) end;
     };
     displayl fibonacci(7);
-    """, "13")
-])
+    """,
+            "13",
+        ),
+    ],
+)
 def test_recursive_functions(prog, expected, capfd):
     execute(prog)
     captured = capfd.readouterr()
@@ -430,7 +476,7 @@ def test_recursive_functions(prog, expected, capfd):
     captured = capfd.readouterr()
     assert expected in captured.out
 
- 
+
 def test_for_loop_with_comment_block(capfd):
     prog = """
     var integer sum=0;
@@ -453,6 +499,7 @@ def test_for_loop_with_comment_block(capfd):
     assert "45" in captured.out
     assert "done" in captured.out
 
+
 def test_nested_for_while_repeat(capfd):
     prog = """
     var sum = 0;
@@ -474,6 +521,7 @@ def test_nested_for_while_repeat(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "18" in captured.out
+
 
 def test_nested_if_else_with_loops(capfd):
     prog = """
@@ -499,6 +547,7 @@ def test_nested_if_else_with_loops(capfd):
     captured = capfd.readouterr()
     assert "Inside nested if" in captured.out
     assert "Inside else" in captured.out
+
 
 def test_random_mixed_loops_and_conditions(capfd):
     prog = """
@@ -528,6 +577,7 @@ def test_random_mixed_loops_and_conditions(capfd):
     assert "12" in captured.out
     assert "Odd index" in captured.out
 
+
 def test_nested_functions_with_loops_and_conditions(capfd):
     prog = """
     fn outerFunction(x) {
@@ -554,8 +604,9 @@ def test_nested_functions_with_loops_and_conditions(capfd):
     captured = capfd.readouterr()
     assert "10" in captured.out
 
-if __name__ =="__main__":
-    prog="""
+
+if __name__ == "__main__":
+    prog = """
     var integer sum=2;
     for (var i=1;i<10;i+=1){
         sum+=i;
@@ -567,7 +618,6 @@ if __name__ =="__main__":
     display "done";
 """
 
-    
     # pprint(list(lex(prog)))
     pprint(parse(prog))
     execute(prog)
