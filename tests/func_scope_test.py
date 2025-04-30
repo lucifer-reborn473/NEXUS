@@ -220,9 +220,9 @@ def test_higher_order_function(capfd):
     fn multiplier(factor) {
         fn multiply(n) {
             n * factor;
-        }
+        };
         multiply;
-    }
+    };
     var double = multiplier(2);
     var triple = multiplier(3);
     displayl double(5);
@@ -462,15 +462,16 @@ def test_man_or_boy(capfd):
 if __name__ == "__main__":
     # Simple test case for direct execution
     prog = """
-    fn foo(i){
-        fn bar(){
-            i;
+    fn multiplier(factor) {
+        fn multiply(n) {
+            n * factor;
         };
-        fn baz(){
-            bar();
-        };
-        if i==10 then baz() else foo(i+1) end;
+        multiply;
     };
-    displayl foo(0);
+    var double = multiplier(2);
+    var triple = multiplier(3);
+    displayl double(5);
+    displayl triple(5);
     """
+    pprint(parse(prog, SymbolTable()))
     execute(prog)

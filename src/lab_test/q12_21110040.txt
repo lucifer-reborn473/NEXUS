@@ -1,0 +1,86 @@
+fn isSubsetSumRec(arr, n, target_sum) {
+    if target_sum == 0 then
+        True;
+    else {
+        if n==0 then False;
+
+        else{
+          if arr[n - 1] > target_sum then
+               isSubsetSumRec(arr, n - 1, target_sum);
+           
+          else{
+             (isSubsetSumRec(arr, n - 1, target_sum) or 
+         isSubsetSumRec(arr, n - 1, target_sum - arr[n - 1]));
+          }end;
+        }end;
+    } end;
+   
+};
+
+fn isSubsetSum(arr, target) {
+    var array_length = arr.Length;
+    if isSubsetSumRec(arr, array_length, target) then "YES" else "NO" end;
+    
+};
+
+
+var numbers = [3, 1, 4, 12, 5, 2]; 
+var target_value = 9;
+displayl target_value - numbers [2];
+displayl "Array: [3, 1, 4, 12, 5, 2], Target: " + string(target_value);
+displayl isSubsetSum(numbers, target_value); /> Expected: 3 1 5 or 4 5 or 3 4 2 etc.
+
+var numbers2 = [
+    341835794,
+    129262015,
+    446653186,
+    173151548,
+    257363959,
+    420346099,
+    420455834,
+    320952346,
+    100086772,
+    427405173,
+    260698675,
+    108105182,
+    457738910,
+    389289752,
+    145505875,
+    161482628,
+    377188110,
+    244711243,
+    380815083,
+    188171290,
+    123832180,
+    232578136,
+    298963308,
+    334715643,
+    481403633,
+    354891731,
+    220805776,
+    199507932,
+    235721041,
+    488103709
+]; /> Array declared with []
+var target_value2 = 488103709 + 220805776;
+/> displayl "Array: [1, 8, 2, 5], Target: " + string(target_value2);
+displayl isSubsetSum(numbers2, target_value2);
+
+var numbers3=  [
+    327285663,
+    433995612,
+    446583812,
+    188541247,
+    194600543,
+    300157004,
+    380418159,
+    337672726,
+    228681054,
+    336574819,
+    228071553,
+    432851990
+];
+
+var target_value3 = 1489926782;
+
+displayl isSubsetSum(numbers3, target_value3);

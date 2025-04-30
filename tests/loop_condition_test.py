@@ -109,8 +109,7 @@ def test_conditional_execution_1(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "greater than 8" in captured.out
-
-
+    
 def test_while_loop_divisibility(capfd):
     prog = """
     var x=1000;
@@ -416,57 +415,38 @@ def test_repeat_loop_with_function_calls(capfd):
     captured = capfd.readouterr()
     assert "5" in captured.out
 
-
-@pytest.mark.parametrize(
-    "prog, expected",
-    [
-        (
-            """
+@pytest.mark.parametrize("prog, expected", [
+    ("""
     fn factorial(n) {
         if n == 0 then 1 else n * factorial(n - 1) end;
     };
     displayl factorial(5);
-    """,
-            "120",
-        ),
-        (
-            """
+    """, "120"),
+    ("""
     fn gcd(a, b) {
         if b == 0 then a else gcd(b, a % b) end;
     };
     displayl gcd(48, 18);
-    """,
-            "6",
-        ),
-        (
-            """
+    """, "6"),
+    ("""
     fn power(base, expp) {
         if expp == 0 then 1 else base * power(base, expp - 1) end;
     };
     displayl power(2, 10);
-    """,
-            "1024",
-        ),
-        (
-            """
+    """, "1024"),
+    ("""
     fn sum_of_digits(n) {
         if n <= 0 then 0 else (n % 10) + sum_of_digits(floor(n / 10)) end;
     };
     displayl sum_of_digits(1234);
-    """,
-            "10",
-        ),
-        (
-            """
+    """, "10"),
+    ("""
     fn fibonacci(n) {
         if n == 1 or n == 2 then 1 else fibonacci(n - 1) + fibonacci(n - 2) end;
     };
     displayl fibonacci(7);
-    """,
-            "13",
-        ),
-    ],
-)
+    """, "13")
+])
 def test_recursive_functions(prog, expected, capfd):
     execute(prog)
     captured = capfd.readouterr()
@@ -476,7 +456,7 @@ def test_recursive_functions(prog, expected, capfd):
     captured = capfd.readouterr()
     assert expected in captured.out
 
-
+ 
 def test_for_loop_with_comment_block(capfd):
     prog = """
     var integer sum=0;
@@ -499,7 +479,6 @@ def test_for_loop_with_comment_block(capfd):
     assert "45" in captured.out
     assert "done" in captured.out
 
-
 def test_nested_for_while_repeat(capfd):
     prog = """
     var sum = 0;
@@ -521,7 +500,6 @@ def test_nested_for_while_repeat(capfd):
     run_program(prog)
     captured = capfd.readouterr()
     assert "18" in captured.out
-
 
 def test_nested_if_else_with_loops(capfd):
     prog = """
@@ -547,7 +525,6 @@ def test_nested_if_else_with_loops(capfd):
     captured = capfd.readouterr()
     assert "Inside nested if" in captured.out
     assert "Inside else" in captured.out
-
 
 def test_random_mixed_loops_and_conditions(capfd):
     prog = """
@@ -577,7 +554,6 @@ def test_random_mixed_loops_and_conditions(capfd):
     assert "12" in captured.out
     assert "Odd index" in captured.out
 
-
 def test_nested_functions_with_loops_and_conditions(capfd):
     prog = """
     fn outerFunction(x) {
@@ -604,9 +580,8 @@ def test_nested_functions_with_loops_and_conditions(capfd):
     captured = capfd.readouterr()
     assert "10" in captured.out
 
-
-if __name__ == "__main__":
-    prog = """
+if __name__ =="__main__":
+    prog="""
     var integer sum=2;
     for (var i=1;i<10;i+=1){
         sum+=i;

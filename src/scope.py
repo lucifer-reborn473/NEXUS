@@ -9,10 +9,10 @@ class SymbolCategory(Enum):
     ARRAY = "list"
     HASH = "dict"
     SCHEMA ="class"
+    BOOLEAN = "boolean"
     FIXED = "fixed"
     STRING = "string"
     FUNCTION = "function"
-    BOOLEAN = "boolean"
 
 def map_type_to_enum(type_str: str) -> SymbolCategory:
     type_mapping = {

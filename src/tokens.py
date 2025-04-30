@@ -26,7 +26,7 @@ keyword_tokens = (
     "Clear",
     "Insert",
     "Remove",
-    "Slice", 
+    "Slice",
     "Sort",
     "Add",
     "var",

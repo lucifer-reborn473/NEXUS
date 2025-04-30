@@ -1,0 +1,23 @@
+/> Function to calculate and print Pascal's Triangle
+fn printPascal(height) {
+
+    for (var row = 0; row < height; row += 1) {
+        var value = 1; 
+        var line_str = ""; 
+
+        
+        for (var col = 0; col <= row; col += 1) {
+            line_str += string(value) + " "; 
+            if col < row then
+                 value = floor(value * (row - col) / (col + 1));
+            end;
+        };
+        
+        displayl line_str; /> Print the completed row with a newline
+    };
+};
+
+var triangleHeight = 50;
+
+displayl "Height " + string(triangleHeight) + " is:"; 
+printPascal(triangleHeight);
