@@ -1,6 +1,6 @@
 # Getting Started
 
-Nexus is a powerful high-level, dynamically-typed, lexically-scoped, expression-oriented, imperative programming language.
+Nexus is a powerful high-level, dynamically-typed, lexically-scoped, expression-oriented, multi-paradigm programming language supporting both imperative and functional styles, with first-class functions and closures.
 
 ### Installation
 

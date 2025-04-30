@@ -66,34 +66,54 @@
             ```
 
 ### Loops
-- `for` and `while` loops supported with similar syntax as in C/C++.
-- Example:
+- Nexus supports three loop constructs
+    - for
+    - while
+    - repeat
 
-    ```prog
-    for(var i=0; i<10; i+=1){
-        displayl i;
+- for and while loops follows same syntax as in C/C++
+    - Example code (prints 0 to 9, each in a new line):
+
+        ```prog
+        for(var i=0; i<10; i+=1){
+            displayl i;
+        }
+        ```
+
+- Example code demonstrating the syntax of `repeat` loop construct:
+    ```
+    var a = 100;
+    repeat(3){
+        displayl a;
+        a+=1;
     }
+    ```
+    Output:
+    ```
+    100
+    101
+    102
     ```
 
 - `moveon` statement equivalent to `continue` statement in Python.
 - `breakout` statement equivalent to `break` statement in Python.
+    - Example:
+
+        ```prog
+        while (i < 5) {
+            i += 1;
+            if i == 2 then moveon end;
+            if i == 4 then breakout end;
+            display i;
+        }
+        ```
+        Output:
+        ```prog
+        1
+        3
+        ```
+
 - Example:
-
-    ```prog
-    while (i < 5) {
-        i += 1;
-        if i == 2 then moveon end;
-        if i == 4 then breakout end;
-        display i;
-    }
-    ```
-    Output:
-    ```prog
-    1
-    3
-    ```
-
-- Example
     ```
     var u = 100;
     for(var u=0; u<3; u+=1){
