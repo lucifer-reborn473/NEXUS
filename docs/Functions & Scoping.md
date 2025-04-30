@@ -1,15 +1,6 @@
 ### Functions
-- There are two types of keyword for declaring functions in Nexus:
-    - `fn` for non-recursive functions (does not calls itself)
-    - `fnrec` for recursive functions
-- Redeclaration is not allowed in the same scope and is caught before evaluation.
-- Arrays are passed-by-value in functions
-    - Syntax: In the function signature, the array parameter name must be followed by `[]`. Example: `fn foo(a, b[])`
-- Calling a function with empty body returns `None`
-- Note: In this language, function declarations must appear at the top level or within other function bodies. You cannot assign a function directly to a variable using `var`. Use named function declarations instead.
-- <a id="changes-outer-var"> </a> Assigning to a variable inside a function modifies the outer-scope variable if it isn't redeclared locally.
-- Examples:
-    - The below example declares and calls a function `giveSum()` which takes two parameters `a` and `b` and returns their sum
+- Functions are declared using the `fn` keyword
+     - Example: The below example declares and calls a function `giveSum` which takes two parameters `a` and `b` and returns their sum
         ```prog
         fn giveSum(a, b){
             a+b;
@@ -20,6 +11,30 @@
         ```prog
         42
         ```
+
+- Nexus supports some useful in-built functions:
+    - `sort(A)` takes an array argument `A` and returns the sorted version
+        - Takes an optional second argument of boolean type (`False` means sort in non-decreasing order, `True` means sort in non-increasing order)
+    - `so(x)` returns the boolean value for `x` where `x` is of any type
+    - `typeof(x)` returns the type of `x`
+        - Possible values: integer, decimal, string, array, Hash, boolean, None
+        - Return type of this function is `string`
+    - `lower(s)` returns the lower-cased version of string `s`
+    - `upper(s)` returns the upper-cased version of string `s`
+    - `reverse(A)` returns the reversed-version of the array argument `A`
+    - `unique(A)` returns the array `A` afrer removing all duplicates from it
+    - `num(s)` returns the number form of string `s` (e.g. num("2.3") returns 2.3)
+        - for a number type argument `n`, `num(n)` returns the argument as is (e.g. num(30) returns 30)
+    
+
+- Redeclaration is not allowed in the same scope and is caught before evaluation.
+- Arrays and hashes are passed-by-value in functions
+- Calling a function with empty body returns `None`
+- `return` keyword is supported in the bytecode VM, and not in the tree-walk interpreter (a work under progress). Below examples demonstrate the several ways you can use functions in Nexus without needing the `return` keyword.
+- Note: In this language, function declarations must appear at the top level or within other function bodies. You cannot assign a function declaration to a variable using `var`. Use the name of function declaration instead. 
+    - Example: `var a = fn foo() {...};` is not allowed; you should instead do `fn foo(){...}; var a = foo;`
+- <a id="changes-outer-var"> </a> Assigning to a non-local variable inside a function finds and modifies the outer-scope variable (if it exists), else throws error that the variable was not found (in any of its parent scope).
+- Examples:
     - Function to calculate the nth Fibonacci number:
         ```prog
         fn fib(n){
@@ -27,13 +42,13 @@
         };
         displayl fib(10); /> outputs 55
         ```
-        Note: fib(31) takes nearly 22.8 seconds, while fib(32) takes nearly 35.4 seconds (averaged over 3 iterations)
 
     - Another example
         ```
         var x="hi";
         fn foo(x){
             x = x-1;
+            x;
         };
         displayl foo(10);
         displayl x;
@@ -48,6 +63,7 @@
         fn foo(x){
             fn bar(){
                 x = x - 1;
+                x;
             };
             bar() + x; /> evaluates to 9 + 9 = 18
         };
@@ -64,10 +80,10 @@
     var x = 100;
     fn bar(){
         x;
-    }
+    };
     fn foo(g){ 
-        g() + 2; /> takes function as parameter
-    }
+        g() + 2; /> function can be passed as parameter
+    };
     displayl foo(bar);
     ```
     Output
@@ -80,11 +96,11 @@
     fn foo(){
         fn bar(){
             x+2;
-        }
-        bar; /> returns a function
-    }
+        };
+        bar; /> functions can be returned
+    };
     var x = 40;
-    var y = foo(); /> assigns to a variable
+    var y = foo(); /> assigned to a variable
     displayl y();
     ```
     Output
@@ -103,7 +119,8 @@
     fn multiply(a, b) {
         a * b;
     };
-    var funcs = [add, subtract, multiply];
+    var funcs = [add, subtract, multiply]; /> functions as elements in an array
+
     displayl [funcs[0](10,5), funcs[1](10,5), funcs[2](10,5)];
     ```
     Output:
@@ -113,20 +130,9 @@
 
 # Scoping
 - Nexus is based on lexical (or, static) scoping.
-- Variables must be declared before their first use, even in outer scopes.
-    - Example: The below code will throw a parsing error.
-        ```
-        fn foo(a){
-            b = 100; /> sees undeclared b => error
-        };
-        var b = 10;
-        foo(b);
-        displayl b;
-        ```
-        Note: If you instead place the line `var b = 10;` before `foo`'s declaration, then the program would print `100` as the output (explanation [here](#changes-outer-var))
 - Conditionals and loops have their own local scopes.
 
-- Example 1 (produces an error, as no declaration for `a` found for `a = 42`):
+- Example 1 (produces an error, as no declaration for `a` found corresponding to `a = 42`):
     ```prog
     fn foo(i){
         if i==1 then var a = 2 else 5 end;
@@ -177,14 +183,13 @@
 
 - Example 4:
     ```
-    var x = 1000;
     fn foo() {
         fn bar() {
             x;
-        }
+        };
         var x = 117;
         bar();
-    }
+    };
     displayl foo();
     ```
     Output
@@ -211,9 +216,9 @@
     ```
 
 ## Closures
-- Nexus also supports closures (passes Knuth's Man or Boy test)
+- Nexus also supports closures (passes the Knuth's Man or Boy test)
 
-- Knuth's Man or Boy test as tested in Nexus:
+- Knuth's Man or Boy test as tested in Nexus (the below code outputs for different `k` values (k=0 to k=10)):
     ```
     fn A(k, x, y, z, w, v) {
         fn B() {

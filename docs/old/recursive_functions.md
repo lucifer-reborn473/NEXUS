@@ -19,10 +19,6 @@ fn fib(n) {
 displayl fib(10); /> Outputs: 55
 ```
 
-**Note:** Recursive functions can be computationally expensive. For example:
-- `fib(31)` takes nearly 22.8 seconds.
-- `fib(32)` takes nearly 35.4 seconds (averaged over 3 iterations).
-
 ---
 
 ## Functions as First-Class Citizens

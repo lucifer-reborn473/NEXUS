@@ -1,4 +1,4 @@
-fn binarySearch(arr[], target) {
+fn binarySearch(arr, target) {
     var left = 0;
     var right = arr.Length - 1;
     
@@ -13,7 +13,7 @@ fn binarySearch(arr[], target) {
         /> If target greater, ignore left half
         if(arr[mid] < target) then {
             left = mid + 1;
-        } 
+        }
         else {
             right = mid - 1;
         } end;

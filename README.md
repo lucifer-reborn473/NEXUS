@@ -1,70 +1,28 @@
 # CS 327: Compilers (2025) Project
 
-## Making our own Programming Language & its Compiler
+## Introducing NEXUS ⚛️  
 
-## Basic Syntax
+Nexus is a powerful high-level, dynamically-typed, lexically-scoped, expression-oriented, multi-paradigm programming language supporting both imperative and functional styles, with first-class functions and closures.
 
-### Operator Precedence Table (Highest to Lowest)
+### Installation
 
-| **Precedence** | **Operator**                           | **Description**                   | **Associativity**                                          |
-| -------------------- | -------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------- |
-| 1                    | **Numbers**                            | Numeric values (constants or variables) | N/A                                                              |
-| 2                    | `()`                                       | Parentheses (for grouping expressions)  | Left-to-Right                                                    |
-| 3                    | `**`                                       | Exponentiation                          | Right-to-Left                                                    |
-| 4                    | `div_dot`                                  | Regualar Division using dot notation       | Left-to-Right                                                    |
-| 5                    | `div_slash`                                | Regular Division using slash notation   | Left-to-Right                                                    |
-| 6                    | `%`                                        | Modulo (Remainder)                      | Left-to-Right                                                    |
-| 7                    | `*`                                        | Multiplication                          | Left-to-Right                                                    |
-| 8                    | `-`                                        | Subtraction                             | Left-to-Right                                                    |
-| 9                    | `+`                                        | Addition                                | Left-to-Right                                                    |
-| 10                   | `<<`, `>>`                               | Bitwise Shift (Left, Right)             | Left-to-Right                                                    |
-| 11                   | `<`, `>`, `<=`, `>=`, `==`, `!=` | Comparison Operators                    | Left-to-Right                                                    |
-| 12                   | `&`, `^`, `~`                          | Bitwise Operators                       | Left-to-Right                                                    |
-| 13                   | `and`, `or`, `not`                     | Logical Operators                       | Left-to-Right (`and`, `or`) <br> Right-to-Left (`not`) |
+Follow these steps to install Nexus:
 
-To-implement:
+1. Download the latest release from [GitHub Releases](https://github.com/lucifer-reborn473/Our_Compiler).
+2. Run the installer for your operating system.
+3. Verify the installation by running `nexus --version`.
 
-1. Bytecode generation
-2. Hash function
-3. Documentation
-4. Pointers and Garbage collection (not sure)
-5. Pre-commit docs
-6. Docs make nice
-7. User inputs
-8. math operations
-9. 
+### Hello, World!
+The below steps describes how to write a simple progam in Nexus that outputs "Hello, World!" onto the screen.
+1. Open a directory in your favorite code editor.
+2. Create a file `helloworld.nex`
+3. Enter the below code:
+    ```
+    displayl "Hello, World!";
+    ```
+4. Save the file.
+5. Open terminal and write `nexus helloworld.nex` and press enter!  
 
-### Conditionals
+Woohoo! You just wrote your first "Hello, World!" program in Nexus.
 
-### Loops
-
-#### Scoping
-
-## Data Structures
-
-### Arrays
-
-    - numpy format
-
-### Hashmaps
-
-- similar to pandas (pandas operations)
-- Reading and writing files
-
-### Classes / Structs  [To be implemented]
-
-## Bytecode Generation
-
-## Test Coverage
-
-## Benchmarking
-
-    - Show runtime
-
-## Syntax coloring
-
-    - develop extension based file
-    - .exe file can be downloaded and configured
-    - dockerfile making
-
-Make github.io page
+Happy Coding!

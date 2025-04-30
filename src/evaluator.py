@@ -6,7 +6,7 @@ import re
 import sys
 
 sys.setrecursionlimit(10000)
-enable_cat_fn = True
+enable_cat_fn = False
 
 # ==========================================================================================
 # ==================================== (TREE-WALK) EVALUATOR ===============================
@@ -271,7 +271,7 @@ def e(tree: AST, tS) -> Any:
 
             if type(fn_name) == str and fn_name == "so":
                 if len(fn_args) != 1:
-                    raise ValueError("so function expects exactly one argument")
+                    raise ValueError("so() function expects exactly one argument")
                 return bool(e(fn_args[0], tS))
 
             if type(fn_name) == str and fn_name == "num":
@@ -911,6 +911,7 @@ def e(tree: AST, tS) -> Any:
                 list: "array",
                 dict: "Hash",
                 bool: "boolean",
+                type(None): "None",
             }
             return type_mapping.get(python_type, "unknown")
 
@@ -994,139 +995,16 @@ def execute(prog):
 # ==================================================================
 if __name__ == "__main__":
 
-    prog2 = """
-    var decimal x =10.34;
-    var integer y = 10; 
-    displayl (string(x) + " dip " + (string(y)));
-    displayl (integer(x) + y);
-    """
-
-    prog2 = """
-    var array nums = [1.1, 2.2, 3.3];
-    var integer sum = 0;
-    for (var i=0; i<3; i+=1) {
-        sum = sum + integer(nums[i]);
-    };
-    displayl sum;
-"""
-
-    prog2 = """
-    var array h = [1, 2, 3];
-    var sum=0;
-    repeat (h.Length){
-        sum += h.PopFront;
-    }
-    displayl sum;
-    displayl h;
-    """
-
-    prog2 = """var arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
-    var hash = {
-        "key1": {"nestedKey1": 10, "nestedKey2": 20},
-        "key2": {"nestedKey3": 30, "nestedKey4": 40}
-    };
-    
-    displayl arr[1][2];  /> Accessing nested array element
-    displayl hash["key1"]["nestedKey2"];  /> Accessing nested hash value
-    arr[2][0] = 99;  /> Modifying nested array element
-    hash["key2"]["nestedKey3"] = 50;  /> Modifying nested hash value
-    displayl arr;
-    displayl hash;"""
-
-    prog2 = """
-    var hash = {
-        "key1": {"nestedKey1": 10, "nestedKey2": 20},
-        "key2": {"nestedKey3": 30, "nestedKey4": 40}
-    };
-    displayl hash["key1"]["nestedKey2"];
-    hash["key2"]["nestedKey3"] = 50;
-    displayl hash;
-"""
-
     prog = """
-fn A(w,v){
-    w()+v();
-};
-fn one() { 1; };
-fn negone() { 0-1; };
-displayl A(one, negone);
-"""  # works #! but why we have to put zero here?
 
-    prog = """
-var a = 2;
-a[0] = 1;
-displayl a;
-""" #! handle errors for cases like this (but then REPL doesn't catch it!)
-
-    prog2 = """
-var a = [1,2,3];
-displayl a.Length;
-""" #! dont have fixed as alag category, instead have a flag to disallow writes to a variable type
-
-
-    prog = """
-var b;
-var a = so(b);
-if a then displayl "t" else displayl "f" end;
-""" #? add to docs
-
-    prog2 = """
-var a = typeof({});
-displayl typeof(a);
-""" #? add to docs (typeof returns a string)
-
-    prog = """
-fn foo(){};
-displayl so(foo);
-"""#? add to docs (functions always evaluate to True)
-
-    """
-    This is causing implicit static typing (a string type variable when assigned to a list dont make list methods run on it)
-    
-    VARIABLE = "variable"
-
-    ARRAY = "list" 
-    HASH = "dict"
-    STRING = "string"
-
-    FIXED = "fixed"
-    
-    FUNCTION = "function"
-    """
-
-    # for t in lex(prog):
-    #     print(t)
-    
-    prog = """
-var a = 2;
-a = [1,2,3];
-displayl a.Length;
-"""
-
-    prog = """
-var a = "example";
-var new = "";
-for(var i = 0; i<=a.Length; i+=1){
-    if i==0 then new = new + 
-}
-"""
-
-    prog = """
-var a = "zoo";
-a[0] = "x";
-displayl a;
-"""
-    prog = """
-var a = "ab";
-a.PushBack("x");
 """
 
     parsed, gS = parse(prog, SymbolTable())
-    # # print("------")
+    print("------")
     pprint(parsed)
-    # # print("------")
-    # # pprint(gS.table)
+    print("------")
+    pprint(gS.table)
 
-    # print("------")
-    # print("Program Output: ")
+    print("------")
+    print("Program Output: ")
     execute(prog)
