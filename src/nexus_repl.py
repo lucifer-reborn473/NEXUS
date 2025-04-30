@@ -38,7 +38,7 @@ class NexusREPL:
         print("  reset        - Reset the environment (clear all variables)")
         print("\nExample Nexus Code:")
         print("  var x = 10;")
-        print("  fn add(a, b) { a + b; }")
+        print("  fn add(a, b) { a + b; };")
         print("  displayl add(5, 7);")
         return None
     
