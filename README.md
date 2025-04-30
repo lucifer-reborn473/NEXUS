@@ -25,4 +25,7 @@ The below steps describes how to write a simple progam in Nexus that outputs "He
 
 Woohoo! You just wrote your first "Hello, World!" program in Nexus.
 
+The complete documentation can be found in the `/docs` folder. So, go ahead and start your journey with Nexus.
+Feel free to contribute!
+
 Happy Coding!
